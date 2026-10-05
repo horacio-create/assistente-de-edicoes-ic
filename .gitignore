@@ -1,0 +1,14 @@
+.venv/
+venv/
+dados/
+__pycache__/
+*.py[cod]
+.env
+.env.*
+!.env.example
+build/
+dist/
+*.spec
+*.exe
+*.zip
+erro-inicializacao.txt
