@@ -96,3 +96,10 @@ A versão atual aparece no rodapé esquerdo, inclusive com a barra recolhida. Ct
 O desfazer mantém até 100 ações da edição aberta e reinicia ao criar ou recuperar outra edição ou recarregar a página. Ele não apaga arquivos exportados. Campos de nome mantêm o desfazer normal do navegador.
 
 No lote, os nomes usam VT 1, VT 2… Após exportar todos os arquivos com sucesso, um check verde e “Edição finalizada” aparecem durante três segundos. Falhas parciais continuam detalhadas, sem indicação de conclusão completa.
+
+
+## Versão atual 1.6.2 — 05/10/2026
+
+35 testes Python e cinco JavaScript aprovados no Windows. Regressões novas: PDF sem fundo, PNG/TIFF cinza de 16 bits, endpoint de pastas removido, salvamento concorrente durante exportação, publicação sem arquivo parcial, Host contra DNS rebinding, chegada tardia de arquivo, alternativa Windows sem hard links, revisão alterada durante render, sinalização portátil, fechamento pelo perfil e aviso de perda da sessão. Os seis bugs obrigatórios foram reproduzidos antes de suas correções.
+
+O build do executável único foi realizado no Windows com MinGW e Python embutido. A janela do Edge apareceu, mas o teste de interface foi interrompido porque a automação não conseguiu identificar sua URL com segurança. Não foram confirmados no executável real: importação dos três formatos, exportação, aviso ao fechar e remoção de IndoorChannel-… do TEMP. A versão web preserva histórico persistente; o portátil foi projetado para usar dados e perfil temporários, descartados ao sair, mantendo apenas exportações. A otimização opcional de prévias não foi incluída.

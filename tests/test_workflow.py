@@ -27,6 +27,125 @@ def sample(fmt='PNG'):
     b=io.BytesIO(); im.save(b,fmt); return b.getvalue()
 
 class WorkflowTests(unittest.TestCase):
+    def test_atomic_publication_preserves_file_created_after_review(self):
+        from unittest.mock import patch
+        plan = self.plan()
+        dest = Path(plan['files'][0]['path'])
+        real_link = os.link
+        def late_file(temp, target):
+            Path(target).write_bytes(b'Arquivo de outra pessoa')
+            return real_link(temp, target)
+        with patch.object(server.os, 'link', side_effect=late_file):
+            result = api('/api/export', {'token':plan['token']})
+        self.assertFalse(result['results'][0]['ok'])
+        self.assertEqual(dest.read_bytes(), b'Arquivo de outra pessoa')
+        self.assertEqual(list(self.folder.glob('.indoor-*.tmp')), [])
+
+    @unittest.skipUnless(os.name == 'nt', 'Windows rename is the non-replacing fallback')
+    def test_atomic_publication_windows_fallback_refuses_overwrite(self):
+        from unittest.mock import patch
+        temp, dest = self.folder/'source.tmp', self.folder/'destination.png'
+        temp.write_bytes(b'Complete file')
+        with patch.object(server.os, 'link', side_effect=OSError('Hard links unsupported')):
+            server.publish_new(temp, dest)
+        self.assertEqual(dest.read_bytes(), b'Complete file')
+        temp.write_bytes(b'Other file')
+        with patch.object(server.os, 'link', side_effect=OSError('Hard links unsupported')):
+            with self.assertRaises(FileExistsError): server.publish_new(temp, dest)
+        self.assertEqual(dest.read_bytes(), b'Complete file')
+
+    def test_revision_change_during_render_prevents_publication(self):
+        from unittest.mock import patch
+        original = server.render
+        plan = self.plan()
+        def changed(*args):
+            api('/api/save', self.job)
+            return original(*args)
+        with patch.object(server, 'render', side_effect=changed):
+            result = api('/api/export', {'token':plan['token']})
+        self.assertFalse(result['results'][0]['ok'])
+        self.assertFalse(Path(plan['files'][0]['path']).exists())
+
+    def test_portable_session_is_advertised_in_info(self):
+        from unittest.mock import patch
+        with patch.dict(os.environ, {'INDOOR_PORTABLE':'1'}):
+            self.assertTrue(api('/api/info', method='GET')['portable'])
+        with patch.dict(os.environ, {'INDOOR_PORTABLE':''}):
+            self.assertFalse(api('/api/info', method='GET')['portable'])
+
+    def test_host_header_rejects_rebinding_even_with_matching_origin(self):
+        def request(host):
+            status = []
+            env = {'REQUEST_METHOD':'GET', 'PATH_INFO':'/api/info', 'HTTP_HOST':host,
+                   'HTTP_ORIGIN':'http://' + host, 'wsgi.input':io.BytesIO()}
+            body = b''.join(server.app(env, lambda code, headers: status.append(code)))
+            return status[0], json.loads(body)
+        status, body = request('attacker.example:8080')
+        self.assertEqual(status, '400 Bad Request')
+        self.assertIn('Host', body['error'])
+        for host in ('localhost:8080', '127.0.0.1:8080', '[::1]:8080', server.socket.gethostname()+':8080'):
+            self.assertEqual(request(host)[0], '200 OK')
+
+    def test_new_export_never_exposes_partial_destination(self):
+        from unittest.mock import patch
+        plan = self.plan()
+        dest = Path(plan['files'][0]['path'])
+        real_open = Path.open
+        class InterruptedWrite:
+            def __enter__(self):
+                self.file = real_open(dest, 'xb')
+                return self
+            def write(self, data):
+                self.file.write(data[:10])
+                self.file.flush()
+                raise OSError('Queda simulada durante gravação')
+            def __exit__(self, *args): self.file.close()
+        def intercept(path, *args, **kwargs):
+            if path == dest and args and args[0] == 'xb': return InterruptedWrite()
+            return real_open(path, *args, **kwargs)
+        with patch.object(Path, 'open', intercept):
+            result = api('/api/export', {'token':plan['token']})
+        if dest.exists():
+            with Image.open(dest) as image: image.load()
+        self.assertTrue(result['results'][0]['ok'])
+        self.assertEqual(list(self.folder.glob('.indoor-*.tmp')), [])
+
+    def test_export_does_not_block_another_job_save_during_render(self):
+        import threading
+        from unittest.mock import patch
+        other = api('/api/jobs')
+        done = threading.Event()
+        workers, saved_during_render = [], []
+        original = server.render
+        def save_other():
+            api('/api/save', other)
+            done.set()
+        def slow_render(*args):
+            worker = threading.Thread(target=save_other)
+            workers.append(worker)
+            worker.start()
+            saved_during_render.append(done.wait(1))
+            return original(*args)
+        with patch.object(server, 'render', side_effect=slow_render):
+            result = api('/api/export', {'token':self.plan()['token']})
+        for worker in workers: worker.join(3)
+        self.assertTrue(result['results'][0]['ok'])
+        self.assertEqual(saved_during_render, [True])
+
+    def test_unused_folder_listing_is_not_available(self):
+        with self.assertRaisesRegex(ValueError, 'Operação não encontrada'):
+            api('/api/folders', method='GET', query={'path':[str(self.folder)]})
+
+    def test_16_bit_grayscale_is_scaled_before_conversion(self):
+        from modules.images import rgb
+        for mode in ('I;16', 'I;16L', 'I;16B', 'I'):
+            with self.subTest(mode=mode):
+                self.assertEqual(rgb(Image.new(mode, (4,4), 40000)).getpixel((0,0)), (156,156,156,255))
+        for fmt, ext in (('PNG', '.png'), ('TIFF', '.tiff')):
+            raw = io.BytesIO()
+            Image.new('I;16', (4,4), 40000).save(raw, fmt)
+            self.assertEqual(next(decode(raw.getvalue(), ext))[1].getpixel((0,0)), (156,156,156,255))
+
     def setUp(self):
         self.job=api('/api/jobs')
         self.job=api('/api/upload',query={'job':[self.job['id']],'revision':['0'],'name':['arte.png']},raw=sample())['job']
@@ -63,6 +182,22 @@ class WorkflowTests(unittest.TestCase):
         self.assertEqual(moved.getpixel((50,175)), (0,255,0))
         self.assertEqual(moved.getpixel((350,25)), (30,80,210))
         self.assertEqual(get_job(self.job['id'])['media'][0]['settings']['logoId'], response['logoId'])
+
+    def test_pdf_without_background_is_white_and_text_survives_export(self):
+        with pymupdf.open() as doc:
+            page = doc.new_page(width=320, height=180)
+            page.insert_text((25, 70), 'Texto preto', fontsize=24, color=(0, 0, 0))
+            data = doc.tobytes()
+        page, image, _ = next(decode(data, '.pdf'))
+        self.assertEqual(image.getpixel((0, 0)), (255, 255, 255, 255))
+        self.job = api('/api/upload', query={'job':[self.job['id']], 'revision':[str(self.job['revision'])], 'name':['texto.pdf']}, raw=data)['job']
+        media = self.job['media'][-1]
+        self.job = api('/api/save', self.job)
+        result = api('/api/export', {'token':self.plan(ids=[media['id']], format='png')['token']})
+        self.assertTrue(result['results'][0]['ok'])
+        with Image.open(next(self.folder.glob('*.png'))) as exported:
+            self.assertEqual(exported.size, (1280, 720))
+            self.assertGreater(len(exported.getcolors(1_000_000)), 2)
 
     def test_version_and_numbered_template_spacing(self):
         from version import VERSION

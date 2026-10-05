@@ -1,5 +1,16 @@
 # Histórico de versões
 
+## 1.6.2 — 05/10/2026
+
+- PDFs rasterizados com fundo branco opaco.
+- Cinza de 16 bits reduzido para 8 bits antes da conversão.
+- Remoção do endpoint de listagem de pastas.
+- Exportação libera o lock global durante renderização e gravação; revisão revalidada antes de publicar.
+- Arquivos novos publicados completos, sem sobrescrever chegadas tardias, com alternativa segura no Windows.
+- Host validado contra nomes e endereços locais conhecidos.
+- Campo portable e aviso ao fechar sessão com mídias; lançador C/MinGW e build Windows, com detecção do fechamento pelo lockfile.
+- 35 testes Python e cinco JavaScript aprovados. Validação manual completa do portátil pendente. Otimização opcional de prévias adiada.
+
 ## 1.6.0 — 05/10/2026
 
 - Versão atual sempre visível no rodapé da barra lateral.

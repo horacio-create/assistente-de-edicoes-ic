@@ -11,7 +11,7 @@ import sys
 import threading
 import time
 from pathlib import Path
-from urllib.parse import parse_qs
+from urllib.parse import parse_qs, urlsplit
 from waitress import serve
 from version import VERSION
 from modules.images import DEFAULT, SUPPORTED, decode, dominant, encoded, render, settings
@@ -21,6 +21,26 @@ LOCK = threading.RLock()
 PROCESS = threading.Semaphore(2)
 PICKER = threading.Lock()
 MAX_UPLOAD = 100 * 1024 * 1024
+
+def local_hosts():
+    names = {'localhost', '127.0.0.1', '::1', socket.gethostname().lower(), socket.getfqdn().lower()}
+    for name in tuple(names):
+        try: names.update(address[4][0].lower() for address in socket.getaddrinfo(name, None))
+        except socket.gaierror: pass
+    return frozenset(names)
+
+ALLOWED_HOSTS = local_hosts()
+
+def validate_host(host):
+    try:
+        parsed = urlsplit('//' + (host or ''))
+        port = parsed.port
+        if (parsed.hostname not in ALLOWED_HOSTS or parsed.username or parsed.password
+                or parsed.path or parsed.query or parsed.fragment
+                or (port is not None and not 1 <= port <= 65535)):
+            raise ValueError()
+    except ValueError:
+        raise ValueError('Host não autorizado.') from None
 MODULES = [{'id': 'images', 'name': 'Imagens', 'active': True}, {'id': 'video', 'name': 'Vídeo', 'active': False}, {'id': 'offers', 'name': 'Ofertas de supermercados', 'active': False}, {'id': 'eap', 'name': 'Logo EAP', 'active': False}, {'id': 'ms6', 'name': 'Vetorização MS6', 'active': False}]
 
 class Conflict(Exception): pass
@@ -31,6 +51,20 @@ def digest(path):
     with path.open('rb') as f:
         for chunk in iter(lambda: f.read(1024 * 1024), b''): h.update(chunk)
     return h.hexdigest()
+
+def publish_new(temp, dest):
+    """Publish a complete file, atomically and without replacing a late arrival."""
+    try:
+        os.link(temp, dest)
+    except FileExistsError:
+        raise
+    except OSError:
+        # Windows rename refuses an existing destination, including on volumes
+        # without hard links. POSIX rename replaces files, so fail safely there.
+        if os.name != 'nt': raise
+        os.rename(temp, dest)
+    else:
+        temp.unlink()
 
 def clean(value):
     value = re.sub(r'[<>:"/\\|?*\x00-\x1f]', '-', str(value)).strip(' .')
@@ -63,7 +97,7 @@ def logo_path(value, job):
 def api(method, path, query, raw, environ=None):
     value = json.loads(raw) if raw and path not in ('/api/upload', '/api/logo') else {}
     if path == '/api/info':
-        return dict(host=socket.gethostname(), modules=MODULES, defaultFolder=str(Path.home() / 'Pictures'), version=VERSION, nativePicker=os.name == 'nt' and (environ or {}).get('REMOTE_ADDR') in ('127.0.0.1','::1'))
+        return dict(host=socket.gethostname(), modules=MODULES, defaultFolder=str(Path.home() / 'Pictures'), version=VERSION, portable=bool(os.environ.get('INDOOR_PORTABLE')), nativePicker=os.name == 'nt' and (environ or {}).get('REMOTE_ADDR') in ('127.0.0.1','::1'))
     if path == '/api/jobs' and method == 'GET':
         with connect() as db: return [dict(r) for r in db.execute('SELECT id,title,updated,revision,(SELECT count(*) FROM media WHERE job=jobs.id) AS count FROM jobs ORDER BY updated DESC LIMIT 100')]
     if path == '/api/jobs' and method == 'POST':
@@ -76,17 +110,6 @@ def api(method, path, query, raw, environ=None):
     if path == '/api/history':
         with connect() as db:
             return [dict(r) | {'detail': json.loads(r['detail'])} for r in db.execute('SELECT events.*,jobs.title FROM events LEFT JOIN jobs ON events.job=jobs.id WHERE events.hidden=0 ORDER BY events.id DESC LIMIT 500')]
-    if path == '/api/folders':
-        p = query.get('path', [''])[0]
-        if not p: return dict(path='', parent='', folders=[str(Path(f'{chr(d)}:/')) for d in range(65,91) if Path(f'{chr(d)}:/').exists()])
-        folder = Path(p)
-        if not folder.is_absolute() or not folder.is_dir(): raise ValueError('Pasta indisponível. Confira o caminho e as permissões do Windows.')
-        children = []
-        for f in folder.iterdir():
-            try:
-                if f.is_dir() and not f.name.startswith('.') and not f.is_symlink(): children.append(str(f))
-            except OSError: pass
-        return dict(path=str(folder), parent=str(folder.parent), folders=sorted(children, key=str.casefold)[:500])
     if method != 'POST': raise ValueError('Operação não encontrada.')
     if path in ('/api/history-delete', '/api/history-restore'):
         with LOCK, connect() as db:
@@ -228,32 +251,37 @@ def api(method, path, query, raw, environ=None):
             db.execute('DELETE FROM plans WHERE id=?', (value['token'],))
             event(db, row['job'], 'Exportação iniciada', {'arquivos': [f['path'] for f in plan['files']]})
             db.commit()
-            results = []
-            for f in plan['files']:
-                dest = Path(f['path'])
-                temp = dest.parent / ('.indoor-' + uid() + '.tmp')
-                try:
-                    with PROCESS:
-                        im, notes = render(DATA / 'midias' / f"{f['id']}.png", f['settings'], logo_path(f['settings'], row['job']))
-                        data = encoded(im, plan['format'])
-                    if f['existing']:
-                        temp.write_bytes(data)
-                        if digest(dest) != f['existing']: raise Conflict('O arquivo mudou durante o processamento; não foi substituído.')
-                        os.replace(temp, dest)
-                    else:
-                        # Exclusive creation never overwrites a file that appeared after review.
-                        with dest.open('xb') as out: out.write(data)
+        results = []
+        for f in plan['files']:
+            dest = Path(f['path'])
+            temp = dest.parent / ('.indoor-' + uid() + '.tmp')
+            try:
+                with PROCESS:
+                    im, notes = render(DATA / 'midias' / f"{f['id']}.png", f['settings'], logo_path(f['settings'], row['job']))
+                    data = encoded(im, plan['format'])
+                with LOCK, connect() as validation_db:
+                    check_revision(validation_db, row['job'], row['revision'])
+                with temp.open('xb') as out:
+                    out.write(data)
+                    out.flush()
+                    os.fsync(out.fileno())
+                if f['existing']:
+                    if digest(dest) != f['existing']: raise Conflict('O arquivo mudou durante o processamento; não foi substituído.')
+                    os.replace(temp, dest)
+                else:
+                    publish_new(temp, dest)
+                with LOCK, connect() as db:
                     db.execute('INSERT OR REPLACE INTO exports VALUES(?,?,?)', (str(dest).casefold(), hashlib.sha256(data).hexdigest(), f['id']))
                     detail = dict(arquivo=str(dest), bytes=len(data), dimensoes=[im.width, im.height], ajustes=f['settings'], avisos=notes)
                     event(db, row['job'], 'Exportado', detail)
-                    results.append({'name': dest.name, 'ok': True})
-                except Exception as exc:
+                results.append({'name': dest.name, 'ok': True})
+            except Exception as exc:
+                with LOCK, connect() as db:
                     event(db, row['job'], 'Falha na exportação', {'arquivo': str(dest), 'motivo': str(exc)})
-                    results.append({'name': dest.name, 'ok': False, 'error': str(exc)})
-                finally:
-                    temp.unlink(missing_ok=True)
-                    db.commit()
-            return {'results': results}
+                results.append({'name': dest.name, 'ok': False, 'error': str(exc)})
+            finally:
+                temp.unlink(missing_ok=True)
+        return {'results': results}
     raise ValueError('Operação não encontrada.')
 
 def app(environ, start_response):
@@ -261,6 +289,7 @@ def app(environ, start_response):
     try:
         method, path = environ['REQUEST_METHOD'], environ['PATH_INFO']
         origin, host = environ.get('HTTP_ORIGIN'), environ.get('HTTP_HOST')
+        validate_host(host)
         if origin and origin not in (f'http://{host}', f'https://{host}'):
             raise ValueError('Origem não autorizada.')
         if environ.get('HTTP_SEC_FETCH_SITE') == 'cross-site': raise ValueError('Origem não autorizada.')

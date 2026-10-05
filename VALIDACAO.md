@@ -58,3 +58,10 @@ O teste da logo original confirmou cópia RGBA de 1886 × 2048 pixels e hash ori
 24 testes Python e quatro testes JavaScript aprovados. Os testes de desfazer verificam agrupamento de gestos, restauração em lote, refazer, descarte do ramo após nova alteração, cópias independentes, ações sem alteração e limite de histórico. O teste de nomenclatura cobre VT 1/VT 2 e compatibilidade com templates antigos.
 
 No navegador, verificados Ctrl+Z sobre zoom numérico e modo de preenchimento, versão v1.6.0 no rodapé, nomes VT 1/VT 2 no plano e exportação de dois JPGs em pasta de teste. O check verde apareceu após a exportação e desapareceu depois do intervalo configurado de três segundos. Nenhum erro JavaScript foi registrado. Os dados de teste ficaram isolados da aplicação entregue.
+
+
+## Versão atual 1.6.2 — 05/10/2026
+
+35 testes Python e cinco JavaScript aprovados no Windows. Regressões novas: PDF sem fundo, PNG/TIFF cinza de 16 bits, endpoint de pastas removido, salvamento concorrente durante exportação, publicação sem arquivo parcial, Host contra DNS rebinding, chegada tardia de arquivo, alternativa Windows sem hard links, revisão alterada durante render, sinalização portátil, fechamento pelo perfil e aviso de perda da sessão. Os seis bugs obrigatórios foram reproduzidos antes de suas correções.
+
+O build do executável único foi realizado no Windows com MinGW e Python embutido. A janela do Edge apareceu, mas o teste de interface foi interrompido porque a automação não conseguiu identificar sua URL com segurança. Não foram confirmados no executável real: importação dos três formatos, exportação, aviso ao fechar e remoção de IndoorChannel-… do TEMP. A versão web preserva histórico persistente; o portátil foi projetado para usar dados e perfil temporários, descartados ao sair, mantendo apenas exportações. A otimização opcional de prévias não foi incluída.

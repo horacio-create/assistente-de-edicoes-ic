@@ -1,4 +1,4 @@
-# Assistente de Edições — versão web V1.6.1
+# Assistente de Edições — versão web V1.6.2
 
 Aplicação web local de padronização de imagens da Indoor Channel. Esta versão continua a base web V1.5 anterior ao executável portátil.
 
@@ -33,10 +33,10 @@ Imagens importadas, edições e histórico ficam na pasta `dados`, criada ao usa
 
 ```powershell
 .venv/Scripts/python.exe -m unittest discover -s tests -q
-node --test tests/test_undo.cjs
+node tests/test_undo.cjs
 ```
 
-A V1.6.1 tem 24 testes Python e quatro testes JavaScript. Node.js é necessário apenas para executar os testes JavaScript. Veja `LEIA-ME.md` e `VALIDACAO.md` para instruções e verificações.
+A V1.6.2 tem 35 testes Python e cinco testes JavaScript. Node.js é necessário apenas para executar os testes JavaScript. Veja `LEIA-ME.md` e `VALIDACAO.md` para instruções e verificações.
 
 ## Versão
 
@@ -48,3 +48,7 @@ Interface HTML/CSS/JavaScript, servidor Python com Waitress, processamento Pillo
 
 As logos e a identidade visual pertencem à Indoor Channel.
 
+
+## Executável portátil (validação pendente)
+
+O código de empacotamento fica em `packaging/`. Consulte `packaging/LEIA-ME.md`. O executável único usa lançador C/MinGW, Python Windows embutido e Edge/Chrome em modo aplicativo com perfil temporário. Não usa PyInstaller. O fluxo completo e a remoção da pasta temporária ainda precisam ser confirmados em Windows real.

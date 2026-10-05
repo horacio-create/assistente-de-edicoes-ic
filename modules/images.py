@@ -30,6 +30,8 @@ def settings(value):
 
 def rgb(image):
     image = ImageOps.exif_transpose(image)
+    if image.mode in ('I;16', 'I;16L', 'I;16B', 'I'):
+        image = image.convert('I').point(lambda i: i * (1 / 256)).convert('L')
     profile = image.info.get('icc_profile')
     if profile:
         try:
@@ -47,8 +49,8 @@ def decode(data, extension):
                 raise ValueError('Divida PDFs com mais de 100 páginas.')
             for n, page in enumerate(doc):
                 scale = min(2, 3840 / max(page.rect.width, page.rect.height))
-                pix = page.get_pixmap(matrix=pymupdf.Matrix(scale, scale), alpha=True)
-                yield n + 1, Image.frombytes('RGBA', (pix.width, pix.height), pix.samples), []
+                pix = page.get_pixmap(matrix=pymupdf.Matrix(scale, scale), alpha=False)
+                yield n + 1, Image.frombytes('RGB', (pix.width, pix.height), pix.samples).convert('RGBA'), []
     else:
         with Image.open(io.BytesIO(data)) as im:
             notes = ['Arquivo com múltiplos quadros: usando o primeiro.'] if getattr(im, 'n_frames', 1) > 1 else []

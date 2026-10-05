@@ -113,7 +113,7 @@ $('confirm-export').onclick=()=>guard(async()=>{
  toast(`${result.results.filter(r=>r.ok).length} de ${result.results.length} arquivos exportados.`);
 });
 $('preview-prev').onclick=()=>{previewIndex=(previewIndex-1+exportIds.length)%exportIds.length;finalPreview().catch(e=>toast(e.message));};$('preview-next').onclick=()=>{previewIndex=(previewIndex+1)%exportIds.length;finalPreview().catch(e=>toast(e.message));};
-$('refresh-history').onclick=()=>loadHistory().catch(e=>toast(e.message));window.onbeforeunload=e=>{if(dirty||busy){e.preventDefault();e.returnValue='';}};
+$('refresh-history').onclick=()=>loadHistory().catch(e=>toast(e.message));window.onbeforeunload=e=>{if(dirty||busy||(info.portable&&job?.media?.length)){e.preventDefault();e.returnValue='';}};
 request('/api/info').then(value=>{info=value;$('system-version').textContent='v'+value.version;}).catch(e=>toast(e.message));
 updateCounts();syncLocks();
 
