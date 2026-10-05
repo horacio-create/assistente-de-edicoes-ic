@@ -13,6 +13,7 @@ import time
 from pathlib import Path
 from urllib.parse import parse_qs
 from waitress import serve
+from version import VERSION
 from modules.images import DEFAULT, SUPPORTED, decode, dominant, encoded, render, settings
 from storage import DATA, ROOT, connect, event, get_job, init, now, uid
 
@@ -62,7 +63,7 @@ def logo_path(value, job):
 def api(method, path, query, raw, environ=None):
     value = json.loads(raw) if raw and path not in ('/api/upload', '/api/logo') else {}
     if path == '/api/info':
-        return dict(host=socket.gethostname(), modules=MODULES, defaultFolder=str(Path.home() / 'Pictures'), version='1.5.0', nativePicker=os.name == 'nt' and (environ or {}).get('REMOTE_ADDR') in ('127.0.0.1','::1'))
+        return dict(host=socket.gethostname(), modules=MODULES, defaultFolder=str(Path.home() / 'Pictures'), version=VERSION, nativePicker=os.name == 'nt' and (environ or {}).get('REMOTE_ADDR') in ('127.0.0.1','::1'))
     if path == '/api/jobs' and method == 'GET':
         with connect() as db: return [dict(r) for r in db.execute('SELECT id,title,updated,revision,(SELECT count(*) FROM media WHERE job=jobs.id) AS count FROM jobs ORDER BY updated DESC LIMIT 100')]
     if path == '/api/jobs' and method == 'POST':
@@ -197,9 +198,9 @@ def api(method, path, query, raw, environ=None):
         for i, m in enumerate(media):
             if names: name = clean(names[i])
             elif template is not None:
-                base = re.sub(r'^VT\d*\s*-\s*', '', template, flags=re.IGNORECASE)
-                name = clean(f"VT{str(i+1) if len(media)>1 else ''} - {base}")
-            else: name = f"VT{str(i+1) if len(media)>1 else ''} - {client} - {campaign} {date}"
+                base = re.sub(r'^VT\s*\d*\s*-\s*', '', template, flags=re.IGNORECASE)
+                name = clean(f"VT{' '+str(i+1) if len(media)>1 else ''} - {base}")
+            else: name = f"VT{' '+str(i+1) if len(media)>1 else ''} - {client} - {campaign} {date}"
             dest = folder / (name + '.' + fmt)
             existing = digest(dest)
             if dest.exists():
@@ -277,7 +278,7 @@ def app(environ, start_response):
             content_type = 'image/png'
         else:
             name = 'index.html' if path == '/' else path.lstrip('/')
-            if name not in ('index.html','app.js','style.css','favicon.svg','logo-indoor.png'): raise FileNotFoundError()
+            if name not in ('index.html','app.js','undo-history.js','style.css','favicon.svg','logo-indoor.png'): raise FileNotFoundError()
             data = (ROOT / 'static' / name).read_bytes()
             content_type = mimetypes.guess_type(name)[0] or 'application/octet-stream'
     except Conflict as exc:

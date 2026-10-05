@@ -1,6 +1,6 @@
-# Assistente de Edições IC — versão web V1.5
+# Assistente de Edições — versão web V1.6.0
 
-Aplicação web local de padronização de imagens da Indoor Channel. Esta é a última versão web anterior à criação do executável portátil.
+Aplicação web local de padronização de imagens da Indoor Channel. Esta versão continua a base web V1.5 anterior ao executável portátil.
 
 ## Executar no Windows
 
@@ -18,7 +18,9 @@ Colegas na mesma rede acessam http://NOME-DO-PC:8080. O computador que hospeda a
 - Zoom, rotação, reposicionamento com encaixe central, área segura e logo sobreposta.
 - Mostrar tudo, Preencher tela e Criar fundo com cor predominante ou escolhida.
 - JPG/JPEG, PNG, WebP, BMP, TIFF e páginas de PDF.
-- Exportação JPG/PNG, nomes VT1, VT2… seguindo a ordem das miniaturas.
+- Exportação JPG/PNG, nomes VT 1, VT 2… seguindo a ordem das miniaturas.
+- Ctrl+Z para desfazer ajustes e Ctrl+Shift+Z ou Ctrl+Y para refazer.
+- Versão no rodapé esquerdo e check verde por três segundos após exportação completa.
 - Histórico e edições recentes.
 
 Vídeo, ofertas de supermercados, logo EAP e vetorização são módulos futuros.
@@ -31,9 +33,14 @@ Imagens importadas, edições e histórico ficam na pasta `dados`, criada ao usa
 
 ```powershell
 .venv/Scripts/python.exe -m unittest discover -s tests -q
+node --test tests/test_undo.cjs
 ```
 
-A V1.5 tem 23 testes automatizados. Veja `LEIA-ME.md` e `VALIDACAO.md` para instruções e verificações.
+A V1.6.0 tem 24 testes Python e quatro testes JavaScript. Node.js é necessário apenas para executar os testes JavaScript. Veja `LEIA-ME.md` e `VALIDACAO.md` para instruções e verificações.
+
+## Versão
+
+`version.py` é a fonte única da versão exibida pela interface. Incremente `VERSION` a cada lançamento e registre as alterações em `CHANGELOG.md`.
 
 ## Arquitetura
 

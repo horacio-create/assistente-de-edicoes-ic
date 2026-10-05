@@ -52,3 +52,9 @@ O teste da logo original confirmou cópia RGBA de 1886 × 2048 pixels e hash ori
 ## V1.5 — 01/10/2026
 
 23 testes automatizados aprovados. Os novos casos verificam persistência da ordem, sequência e numeração no plano e na exportação, subconjuntos selecionados, acréscimo de mídias e rejeição de listas incompletas ou duplicadas. No navegador: arraste da segunda miniatura para a primeira posição, salvamento e setas de rolagem em faixa estreita.
+
+## V1.6.0 — 05/10/2026
+
+24 testes Python e quatro testes JavaScript aprovados. Os testes de desfazer verificam agrupamento de gestos, restauração em lote, refazer, descarte do ramo após nova alteração, cópias independentes, ações sem alteração e limite de histórico. O teste de nomenclatura cobre VT 1/VT 2 e compatibilidade com templates antigos.
+
+No navegador, verificados Ctrl+Z sobre zoom numérico e modo de preenchimento, versão v1.6.0 no rodapé, nomes VT 1/VT 2 no plano e exportação de dois JPGs em pasta de teste. O check verde apareceu após a exportação e desapareceu depois do intervalo configurado de três segundos. Nenhum erro JavaScript foi registrado. Os dados de teste ficaram isolados da aplicação entregue.

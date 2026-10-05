@@ -64,6 +64,14 @@ class WorkflowTests(unittest.TestCase):
         self.assertEqual(moved.getpixel((350,25)), (30,80,210))
         self.assertEqual(get_job(self.job['id'])['media'][0]['settings']['logoId'], response['logoId'])
 
+    def test_version_and_numbered_template_spacing(self):
+        from version import VERSION
+        self.assertEqual(api('/api/info',method='GET')['version'], VERSION)
+        self.job=api('/api/upload',query={'job':[self.job['id']],'revision':[str(self.job['revision'])],'name':['segunda.png']},raw=sample())['job']
+        for template in ('VT - Cliente - Campanha', 'VT1 - Cliente - Campanha', 'VT 1 - Cliente - Campanha'):
+            result=self.plan(template=template)
+            self.assertEqual([f['name'] for f in result['files']], ['VT 1 - Cliente - Campanha.jpg', 'VT 2 - Cliente - Campanha.jpg'])
+
     def test_logo_limits(self):
         for key, val in [('logoScale', 2), ('logoX', -1), ('logoY', float('nan'))]:
             with self.assertRaises(ValueError): settings({key:val})
@@ -103,7 +111,7 @@ class WorkflowTests(unittest.TestCase):
         self.assertEqual([m['id'] for m in get_job(self.job['id'])['media']], expected)
         plan = self.plan(template='VT - Cliente - Campanha 01.10.2026', ids=original)
         self.assertEqual([f['id'] for f in plan['files']], expected)
-        self.assertEqual([f['name'].split(' - ')[0] for f in plan['files']], ['VT1','VT2','VT3'])
+        self.assertEqual([f['name'].split(' - ')[0] for f in plan['files']], ['VT 1','VT 2','VT 3'])
         result = api('/api/export', {'token':plan['token']})
         self.assertTrue(all(r['ok'] for r in result['results']))
         subset=self.plan(ids=[original[1],original[2]],template='VT - Recorte')
@@ -198,7 +206,7 @@ class WorkflowTests(unittest.TestCase):
 
     def test_batch_names_and_duplicate_names(self):
         self.job=api('/api/upload',query={'job':[self.job['id']],'revision':[str(self.job['revision'])],'name':['segundo.png']},raw=sample())['job']
-        p=self.plan();self.assertTrue(p['files'][0]['name'].startswith('VT1 -'));self.assertTrue(p['files'][1]['name'].startswith('VT2 -'))
+        p=self.plan();self.assertTrue(p['files'][0]['name'].startswith('VT 1 -'));self.assertTrue(p['files'][1]['name'].startswith('VT 2 -'))
         with self.assertRaises(ValueError):self.plan(names=['Igual','igual'])
 
     def test_input_bounds(self):
@@ -210,9 +218,9 @@ class WorkflowTests(unittest.TestCase):
     def test_single_name_template_numbers_batch(self):
         self.job=api('/api/upload',query={'job':[self.job['id']],'revision':[str(self.job['revision'])],'name':['outra.png']},raw=sample())['job']
         p=self.plan(template='VT - Cliente - Campanha 30.09.2026')
-        self.assertEqual([f['name'] for f in p['files']],['VT1 - Cliente - Campanha 30.09.2026.jpg','VT2 - Cliente - Campanha 30.09.2026.jpg'])
+        self.assertEqual([f['name'] for f in p['files']],['VT 1 - Cliente - Campanha 30.09.2026.jpg','VT 2 - Cliente - Campanha 30.09.2026.jpg'])
         edited=self.plan(template='VT - Loja - Natal 25.12.2026',format='png')
-        self.assertEqual(edited['files'][1]['name'],'VT2 - Loja - Natal 25.12.2026.png')
+        self.assertEqual(edited['files'][1]['name'],'VT 2 - Loja - Natal 25.12.2026.png')
 
     def test_original_size_and_center_locks(self):
         src=server.DATA/'midias'/f"{self.job['media'][0]['id']}.png"

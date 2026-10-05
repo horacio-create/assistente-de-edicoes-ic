@@ -88,3 +88,11 @@ A barra lateral usa ícones menores, indicação inferior da seção ativa, logo
 ## Ordem de exportação
 
 Arraste uma miniatura para mudar sua posição. Se ela estiver selecionada junto com outras, o grupo inteiro será movido, mantendo sua ordem interna. Os números nas miniaturas indicam a sequência usada na exportação e nos nomes VT1, VT2… A ordem fica guardada ao salvar a edição. Use as setas nas laterais da faixa para percorrer listas maiores.
+
+## Ajustes e conclusão — V1.6.0
+
+A versão atual aparece no rodapé esquerdo, inclusive com a barra recolhida. Ctrl+Z desfaz os ajustes de enquadramento, zoom, posição, rotação, espelhamento, cor, dimensões, travas e logo. Ctrl+Shift+Z ou Ctrl+Y refaz. Um arraste ou a edição contínua de um campo numérico é uma ação; aplicar ajustes em várias imagens também é uma ação.
+
+O desfazer mantém até 100 ações da edição aberta e reinicia ao criar ou recuperar outra edição ou recarregar a página. Ele não apaga arquivos exportados. Campos de nome mantêm o desfazer normal do navegador.
+
+No lote, os nomes usam VT 1, VT 2… Após exportar todos os arquivos com sucesso, um check verde e “Edição finalizada” aparecem durante três segundos. Falhas parciais continuam detalhadas, sem indicação de conclusão completa.
