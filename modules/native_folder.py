@@ -32,7 +32,12 @@ def choose_folder():
         check(call(dialog, 9, HRESULT, [C.c_ulong], 0x20 | 0x40 | 0x800))
         check(call(dialog, 17, HRESULT, [C.c_wchar_p], 'Indoor Channel — Onde salvar as mídias?'))
         check(call(dialog, 18, HRESULT, [C.c_wchar_p], 'Salvar nesta pasta'))
-        hr = call(dialog, 3, HRESULT, [POINTER], None)
+        # Anchor the modal dialog to the user's foreground window so it does
+        # not silently appear behind the browser.
+        user = C.WinDLL('user32', use_last_error=True)
+        user.GetForegroundWindow.restype = POINTER
+        owner = user.GetForegroundWindow()
+        hr = call(dialog, 3, HRESULT, [POINTER], owner)
         if hr & 0xffffffff == 0x800704C7: return None
         check(hr)
         check(call(dialog, 20, HRESULT, [C.POINTER(POINTER)], C.byref(item)))
