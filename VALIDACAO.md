@@ -52,11 +52,3 @@ O teste da logo original confirmou cópia RGBA de 1886 × 2048 pixels e hash ori
 ## V1.5 — 01/10/2026
 
 23 testes automatizados aprovados. Os novos casos verificam persistência da ordem, sequência e numeração no plano e na exportação, subconjuntos selecionados, acréscimo de mídias e rejeição de listas incompletas ou duplicadas. No navegador: arraste da segunda miniatura para a primeira posição, salvamento e setas de rolagem em faixa estreita.
-
-Executável portátil Windows x64: inicialização em porta isolada, importação PNG e PDF, logo via subprocesso empacotado, prévia e exportação JPG verificadas. 23 testes automatizados aprovados. Ícone IC incorporado ao executável.
-
-02/10/2026: aplicativo Qt em janela própria. Pacote final carregou document.title e confirmou loadFinished=true. Testes HTTP da versão empacotada cobrem PNG, logo isolada, preview, JPG e PDF. Biblioteca ICU incompatível excluída para usar a implementação do Windows. Distribuição portátil em pasta, sem instalação.
-
-02/10/2026: prévias limitadas antes da composição, cópias de exibição até 1600 px, cache de imagens ativas limitado a oito, miniaturas leves e uma requisição de prévia individual por vez. 24 testes aprovados, incluindo comparação de enquadramento e avisos com exportação. Pacote carregou a janela e passou no teste de PNG, logo, prévia, JPG e PDF. Flags de prioridade em segundo plano e reativação ao foco incluídas como mitigação: travamento intermitente relatado pelo usuário ainda não foi reproduzido nem confirmado como resolvido.
-
-02/10/2026: cópia integral em outro caminho local com espaços carregou o editor. Cópia idêntica em Z: (compartilhamento SMB) permaneceu sem carregar a interface; executável com hash idêntico e arquivos de apoio com nomes e tamanhos correspondentes. Execução direta em SMB não validada; usar pasta local e exportar para rede. Não foi determinada a causa interna do bloqueio.

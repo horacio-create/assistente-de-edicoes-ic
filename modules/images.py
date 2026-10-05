@@ -61,7 +61,7 @@ def dominant(im):
     color = max(small.getcolors(4096), key=lambda pair: pair[0])[1]
     return '#%02x%02x%02x' % color
 
-def render(source, value, logo=None, max_edge=None):
+def render(source, value, logo=None):
     s = settings(value)
     with Image.open(source) as original:
         im = original.convert('RGBA')
@@ -72,17 +72,6 @@ def render(source, value, logo=None, max_edge=None):
     factor = 1 if s['lockSize'] else (max if s['mode'] == 'cover' else min)(w / im.width, h / im.height) * s['zoom']
     rw, rh = max(1, round(im.width * factor)), max(1, round(im.height * factor))
     x, y = (w - rw) / 2 + s['x'] * w, (h - rh) / 2 + s['y'] * h
-    notes = []
-    if factor > 1.05: notes.append('Ampliação: a imagem pode perder nitidez.')
-    if x < -.5 or y < -.5 or x + rw > w + .5 or y + rh > h + .5: notes.append('Parte da imagem fica fora da tela. Confira textos e logotipos.')
-    if x > .5 or y > .5 or x + rw < w - .5 or y + rh < h - .5: notes.append('Há áreas de fundo visíveis.')
-    if max_edge:
-        preview_scale = min(1, max_edge / max(w, h))
-        w, h = max(1, round(w * preview_scale)), max(1, round(h * preview_scale))
-        rw, rh = max(1, round(rw * preview_scale)), max(1, round(rh * preview_scale))
-        x, y = x * preview_scale, y * preview_scale
-        im.thumbnail((max_edge * 2, max_edge * 2), Image.Resampling.LANCZOS)
-        factor = rw / im.width
     result = Image.new('RGBA', (w, h), s['color'] if s['mode'] == 'background' else '#000000')
     if rw * rh <= 20_000_000:
         layer = im.resize((rw, rh), Image.Resampling.LANCZOS)
@@ -97,6 +86,10 @@ def render(source, value, logo=None, max_edge=None):
         scale = min(w * s['logoScale'] / mark.width, h * .8 / mark.height)
         mark = mark.resize((max(1, round(mark.width*scale)), max(1, round(mark.height*scale))), Image.Resampling.LANCZOS)
         result.alpha_composite(mark, (round((w-mark.width)*s['logoX']), round((h-mark.height)*s['logoY'])))
+    notes = []
+    if factor > 1.05: notes.append('Ampliação: a imagem pode perder nitidez.')
+    if x < -.5 or y < -.5 or x + rw > w + .5 or y + rh > h + .5: notes.append('Parte da imagem fica fora da tela. Confira textos e logotipos.')
+    if x > .5 or y > .5 or x + rw < w - .5 or y + rh < h - .5: notes.append('Há áreas de fundo visíveis.')
     return result.convert('RGB'), notes
 
 def encoded(im, fmt):

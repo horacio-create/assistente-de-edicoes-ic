@@ -13,7 +13,6 @@ import time
 from pathlib import Path
 from urllib.parse import parse_qs
 from waitress import serve
-from portable_worker import run_worker
 from modules.images import DEFAULT, SUPPORTED, decode, dominant, encoded, render, settings
 from storage import DATA, ROOT, connect, event, get_job, init, now, uid
 
@@ -102,7 +101,7 @@ def api(method, path, query, raw, environ=None):
             raise ValueError('Abra pelo localhost no PC anfitrião para usar a janela nativa. Pela rede, informe uma pasta compartilhada acessível pelo anfitrião.')
         if not PICKER.acquire(blocking=False): raise Conflict('Já existe uma janela de seleção de pasta aberta.')
         try:
-            result = run_worker('native_folder', timeout=180)
+            result = subprocess.run([sys.executable, str(ROOT / 'modules' / 'native_folder.py')], capture_output=True, timeout=180, creationflags=getattr(subprocess, 'CREATE_NO_WINDOW', 0))
             if result.returncode: raise ValueError('Não foi possível abrir o seletor de pastas do Windows.')
             chosen = json.loads(result.stdout.decode('utf-8'))
             if chosen.get('error'): raise ValueError(chosen['error'])
@@ -119,7 +118,7 @@ def api(method, path, query, raw, environ=None):
             with PROCESS:
                 from PIL import Image
                 try:
-                    decoded = run_worker('logo_decode', raw, timeout=90)
+                    decoded = subprocess.run([sys.executable, str(ROOT/'modules'/'logo_decode.py')], input=raw, capture_output=True, timeout=90, creationflags=getattr(subprocess, 'CREATE_NO_WINDOW', 0))
                 except subprocess.TimeoutExpired:
                     raise ValueError('Esta logo levou muito tempo para abrir. Tente uma cópia com menor resolução.')
                 if decoded.returncode: raise ValueError(decoded.stderr.decode('utf-8', errors='replace'))
@@ -176,7 +175,7 @@ def api(method, path, query, raw, environ=None):
     if path == '/api/preview':
         with connect() as db: row = db.execute('SELECT * FROM media WHERE id=?', (value['id'],)).fetchone()
         if not row: raise ValueError('Mídia não encontrada.')
-        with PROCESS: im, notes = render(DATA / 'midias' / f"{row['id']}.png", value['settings'], logo_path(value['settings'], row['job']), max_edge=320 if value.get('thumbnail') else 1280)
+        with PROCESS: im, notes = render(DATA / 'midias' / f"{row['id']}.png", value['settings'], logo_path(value['settings'], row['job']))
         import base64
         im.thumbnail((1280,1280))
         return {'image': 'data:image/jpeg;base64,' + base64.b64encode(encoded(im, 'jpg')).decode(), 'notes': notes}
@@ -271,27 +270,10 @@ def app(environ, start_response):
             body = environ['wsgi.input'].read(length)
             result = api(method, path, parse_qs(environ.get('QUERY_STRING', '')), body, environ)
             data = json.dumps(result, ensure_ascii=False).encode()
-        elif path.startswith('/display/') or path.startswith('/media/') or path.startswith('/logo/'):
+        elif path.startswith('/media/') or path.startswith('/logo/'):
             ident = path.split('/')[-1]
             if not re.fullmatch(r'[0-9a-f]{32}', ident): raise ValueError('Mídia inválida.')
-            source = DATA / ('logos' if path.startswith('/logo/') else 'midias') / (ident + '.png')
-            if path.startswith('/display/'):
-                from PIL import Image
-                cache = DATA / 'previews'
-                cache.mkdir(exist_ok=True)
-                target = cache / (ident + '.png')
-                with PROCESS:
-                    if not target.exists():
-                        with Image.open(source) as im:
-                            im.thumbnail((1600, 1600), Image.Resampling.LANCZOS)
-                            out = io.BytesIO()
-                            im.save(out, 'PNG')
-                            temporary = cache / (ident + '.' + uid() + '.tmp')
-                            temporary.write_bytes(out.getvalue())
-                            os.replace(temporary, target)
-                data = target.read_bytes()
-            else:
-                data = source.read_bytes()
+            data = (DATA / ('logos' if path.startswith('/logo/') else 'midias') / (ident + '.png')).read_bytes()
             content_type = 'image/png'
         else:
             name = 'index.html' if path == '/' else path.lstrip('/')

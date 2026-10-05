@@ -64,20 +64,6 @@ class WorkflowTests(unittest.TestCase):
         self.assertEqual(moved.getpixel((350,25)), (30,80,210))
         self.assertEqual(get_job(self.job['id'])['media'][0]['settings']['logoId'], response['logoId'])
 
-    def test_light_preview_preserves_framing_and_warnings(self):
-        from PIL import ImageChops, ImageStat
-        source = server.DATA/'midias'/f"{self.job['media'][0]['id']}.png"
-        for mode in ('contain', 'cover', 'background'):
-            for rotation in (0, 90):
-                for locked in (False, True):
-                    config = DEFAULT | dict(width=3840, height=2160, mode=mode, rotation=rotation, zoom=1.4, x=.12, y=-.1, lockSize=locked)
-                    full, expected = render(source, config)
-                    small, notes = render(source, config, max_edge=320)
-                    self.assertEqual(notes, expected)
-                    self.assertEqual(small.size, (320, 180))
-                    reference = full.resize(small.size, Image.Resampling.LANCZOS)
-                    self.assertLess(max(ImageStat.Stat(ImageChops.difference(reference, small)).mean), 5)
-
     def test_logo_limits(self):
         for key, val in [('logoScale', 2), ('logoX', -1), ('logoY', float('nan'))]:
             with self.assertRaises(ValueError): settings({key:val})

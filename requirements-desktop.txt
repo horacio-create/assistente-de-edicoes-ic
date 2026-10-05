@@ -1,2 +1,0 @@
-PyInstaller==6.22.3
-PySide6==6.11.2

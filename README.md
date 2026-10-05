@@ -1,31 +1,31 @@
-# Assistente de Edições IC
+# Assistente de Edições IC — versão web V1.5
 
-Aplicação de padronização de imagens da Indoor Channel, com interface web local e janela própria portátil para Windows 64 bits.
+Aplicação web local de padronização de imagens da Indoor Channel. Esta é a última versão web anterior à criação do executável portátil.
 
-## Executar no navegador
+## Executar no Windows
 
-Requer Python 3.12. No Windows, abra `Instalar.bat` e depois `Iniciar.bat`. Acesse http://localhost:8080 no Chrome ou Edge. Colegas na mesma rede podem acessar http://NOME-DO-PC:8080.
+1. Instale Python 3.12 ou superior com o Python Launcher.
+2. Abra `Instalar.bat` para preparar o ambiente.
+3. Abra `Iniciar.bat` e mantenha a janela aberta.
+4. Acesse http://localhost:8080 pelo Chrome ou Edge.
 
-## Executar em janela própria
+Colegas na mesma rede acessam http://NOME-DO-PC:8080. O computador que hospeda a aplicação precisa ficar ligado. A pasta de exportação pode ser local ou compartilhada.
 
-Após preparar o ambiente, instale as dependências adicionais:
+## Recursos
 
-```powershell
-.venv/Scripts/python.exe -m pip install -r requirements-desktop.txt
-.venv/Scripts/python.exe portable.py
-```
+- Formatos horizontal 1280×720, vertical 720×1280, personalizado e tamanho da mídia.
+- Upload múltiplo, miniaturas, seleção por intervalo/retângulo e arraste para ordenar o lote.
+- Zoom, rotação, reposicionamento com encaixe central, área segura e logo sobreposta.
+- Mostrar tudo, Preencher tela e Criar fundo com cor predominante ou escolhida.
+- JPG/JPEG, PNG, WebP, BMP, TIFF e páginas de PDF.
+- Exportação JPG/PNG, nomes VT1, VT2… seguindo a ordem das miniaturas.
+- Histórico e edições recentes.
 
-## Gerar a versão portátil
+Vídeo, ofertas de supermercados, logo EAP e vetorização são módulos futuros.
 
-```powershell
-./Empacotar-Desktop.ps1
-```
+## Dados
 
-O pacote sai em `dist/Assistente de Edicoes`. Conserve toda a pasta, incluindo `_internal`. A execução direta em compartilhamentos de rede não foi validada; use uma pasta local e exporte para a rede.
-
-## Dados e originais
-
-A pasta `dados` é criada ao usar o sistema e contém mídias importadas, edições e histórico. Ela não faz parte do repositório. Os originais não são alterados. Faça backup dessa pasta para transportar as edições.
+Imagens importadas, edições e histórico ficam na pasta `dados`, criada ao usar o sistema e excluída do Git. Os originais não são alterados. Preserve uma cópia dessa pasta para transportar as edições.
 
 ## Testes
 
@@ -33,12 +33,10 @@ A pasta `dados` é criada ao usar o sistema e contém mídias importadas, ediç�
 .venv/Scripts/python.exe -m unittest discover -s tests -q
 ```
 
-## Recursos
+A V1.5 tem 23 testes automatizados. Veja `LEIA-ME.md` e `VALIDACAO.md` para instruções e verificações.
 
-Presets horizontal, vertical, personalizado e tamanho da mídia; lote com miniaturas reordenáveis; zoom e posicionamento; logo sobreposta; importação JPG, PNG, WebP, BMP, TIFF e páginas PDF; JPG/PNG; histórico e edições recentes. Os módulos de vídeo, ofertas, logo EAP e vetorização estão planejados e ainda não implementados.
+## Arquitetura
 
-A versão web usa Python, Pillow, PyMuPDF, Waitress e SQLite. A versão desktop usa PySide6/Qt WebEngine. Este código ainda não foi adaptado nem publicado para hospedagem na nuvem.
+Interface HTML/CSS/JavaScript, servidor Python com Waitress, processamento Pillow/PyMuPDF e histórico SQLite. Esta versão é executada pelo navegador e ainda não foi adaptada para hospedagem em nuvem.
 
-Os testes existentes cobrem processamento e preservação dos arquivos. Há uma mitigação para a retomada da janela em segundo plano; a resolução do travamento intermitente ainda depende de confirmação no uso real.
-
-Veja `LEIA-ME.md` e `VALIDACAO.md` para detalhes de uso e verificação. Logos e identidade visual pertencem à Indoor Channel.
+As logos e a identidade visual pertencem à Indoor Channel.
