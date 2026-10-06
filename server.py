@@ -51,7 +51,7 @@ def validate_host(host):
             raise ValueError()
     except ValueError:
         raise ValueError('Host não autorizado.') from None
-MODULES = [{'id': 'images', 'name': 'Imagens', 'active': True}, {'id': 'video', 'name': 'Vídeo', 'active': False}, {'id': 'offers', 'name': 'Ofertas de supermercados', 'active': True}, {'id': 'eap', 'name': 'Logo EAP', 'active': True}, {'id': 'ms6', 'name': 'Vetorização MS6', 'active': True}]
+MODULES = [{'id': 'images', 'name': 'Imagens', 'active': True}, {'id': 'video', 'name': 'Vídeo', 'active': False}, {'id': 'conteudos', 'name': 'Conteúdos Indoor', 'active': False}, {'id': 'offers', 'name': 'Ofertas de supermercados', 'active': True}, {'id': 'eap', 'name': 'Logo EAP', 'active': True}, {'id': 'ms6', 'name': 'Vetorização MS6', 'active': True}]
 
 class Conflict(Exception): pass
 
