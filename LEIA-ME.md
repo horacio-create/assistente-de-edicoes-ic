@@ -70,7 +70,7 @@ O lote é processado em sequência; a janela deve permanecer aberta até conclui
 
 ## Estrutura e expansão
 
-`server.py`: API local e aplicação WSGI servida por Waitress. `storage.py`: persistência SQLite e eventos. `modules/images.py`: importação, transformação e codificação. `static/`: interface sem dependências externas, utilizável sem internet após a instalação. `modules/vector.py`: vetorização MS6 e geração de DXF. O registro `MODULES` reserva vídeo, ofertas de supermercados e logo EAP, que ainda não são funcionalidades ativas.
+`server.py`: API local e aplicação WSGI servida por Waitress. `storage.py`: persistência SQLite e eventos. `modules/images.py`: importação, transformação e codificação. `static/`: interface sem dependências externas, utilizável sem internet após a instalação. `modules/vector.py`: vetorização MS6 e geração de DXF. `modules/eap.py`: tratamento da Logo EAP. O registro `MODULES` reserva vídeo e ofertas de supermercados, que ainda não são funcionalidades ativas.
 
 Variáveis opcionais: `INDOOR_PORT` (padrão 8080), `INDOOR_HOST` (padrão 0.0.0.0), `INDOOR_DATA` (pasta de dados, padrão `dados` ao lado da aplicação).
 
@@ -106,6 +106,27 @@ O desfazer mantém até 100 ações da edição aberta e reinicia ao criar ou re
 
 No lote, os nomes usam VT 1, VT 2… Após exportar todos os arquivos com sucesso, um check verde e “Edição finalizada” aparecem durante três segundos. Falhas parciais continuam detalhadas, sem indicação de conclusão completa.
 
+
+## Logo EAP — V1.8.0
+
+Prepara a logo do cliente em PNG 1024 × 1024 nas versões **fundo branco**, **fundo preto** e **transparente**. Abra **Logo EAP** na barra lateral e arraste a logo (PNG, JPG, WebP, BMP, TIFF, PDF, AI ou SVG).
+
+O sistema avalia a qualidade e recomenda um tratamento, que pode ser trocado no alto da tela:
+
+- **Remover fundo** — para logos boas ou razoáveis. O fundo, detectado pela cor das bordas, vira transparente com borda suave e sem halo. Logos já transparentes mantêm o recorte original.
+- **Vetorizar** — recomendado quando a logo precisaria ser ampliada mais de 1,6× ou o JPEG está muito comprimido. A logo é reduzida às cores principais e redesenhada com curvas limpas, sem borrão. Ajuste o número de cores se o automático juntar ou separar tons errados. O SVG pode ser exportado junto.
+
+Em **Fundo**, escolha como separar a logo:
+
+- **Liso** — padrão. Remove o fundo de cor única detectado nas bordas.
+- **Manter arte** — para artes quadradas com estampa ou foto que fazem parte da marca. Nada é removido; com **Vetorizar**, o quadrado inteiro é redesenhado nítido em 1024.
+- **Isolar cor** — para tirar a logo de um fundo estampado. Clique na cor da logo na imagem original; cada clique adiciona uma cor e o resto vira fundo. Por padrão a cor é mantida na imagem toda; marque **Só a parte ligada ao clique** para pegar apenas aquele pedaço. Use **Contorno** para desenhar uma borda uniforme em volta do que ficou.
+
+Quando o fundo não é liso, o sistema avisa ao abrir a logo. **Corrigir emendas escuras de JPEG** liga sozinho em JPEG comprimido; desligue se a logo tem contornos finos de propósito.
+
+Ajustes: **Sensibilidade** do fundo; **Preservar áreas internas da cor do fundo**, para partes da cor do fundo dentro da logo, como texto branco num selo; **Margem** em cada lado do quadrado (padrão 10%). Quando preto ou cinza escuro somem no fundo preto, aparece um aviso: marque **Clarear partes escuras no fundo preto** para torná-los brancos só nessa versão. Cores da marca não mudam.
+
+Em **Exportar logos**, escolha a pasta, o nome base e as versões. Os arquivos saem como `EAP - Cliente - fundo branco.png`, `… - fundo preto.png`, `… - transparente.png` e, no modo vetor, `EAP - Cliente.svg`. Arquivos existentes nunca são substituídos.
 
 ## Vetorização MS6 — V1.7.0
 

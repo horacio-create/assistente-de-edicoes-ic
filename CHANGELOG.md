@@ -1,5 +1,18 @@
 # Histórico de versões
 
+## 1.8.0 — 06/10/2026
+
+- Logo EAP ativa: logo em PNG, JPG, WebP, BMP, TIFF, PDF, AI ou SVG sai em PNG 1024 × 1024 com fundo branco, preto e transparente, centralizada com margem ajustável (padrão 10%).
+- Avaliação automática da qualidade (ampliação necessária e qualidade estimada do JPEG) com recomendação entre Remover fundo e Vetorizar; a equipe pode trocar.
+- Remover fundo: borda suave pela distância de cor, sem halo do fundo; opção de preservar áreas internas da cor do fundo (texto branco em selo).
+- Vetorizar: mantém as cores principais (automático ou 1 a 8), corrige emendas escuras de JPEG entre cores e redesenha com curvas limpas; SVG opcional.
+- Fundos difíceis: detecção de fundo não liso (estampa, foto), modos Manter arte inteira e Isolar por cor (clique na cor da logo) e contorno uniforme com espessura e cor.
+- Correção de emendas de JPEG automática só em JPEG comprimido, para não apagar contornos finos de propósito.
+- Vetorização até 4× mais rápida: busca de contornos do potrace em tempo linear, com resultado idêntico, e resolução de trabalho de 1600 px.
+- Fundo preto: aviso quando preto ou cinza escuro some, com opção de clarear só esses tons nessa versão; cores da marca não mudam.
+- Exportação nunca substitui arquivos existentes. Gravação atômica compartilhada com a Vetorização MS6.
+- 63 testes Python e cinco JavaScript aprovados no macOS.
+
 ## 1.7.0 — 06/10/2026
 
 - Vetorização MS6 ativa: logo em PNG, JPG, WebP, BMP, TIFF, PDF, AI ou SVG vira contornos fechados para gravação a laser (Cloudray CRS335-5F).
