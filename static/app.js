@@ -130,7 +130,7 @@ $('logo-handle').onpointermove=e=>{e.stopPropagation();if(!logoDrag)return;chang
 $('logo-handle').onpointerup=$('logo-handle').onpointercancel=e=>{e.stopPropagation();logoDrag=null;};
 function sidebar(collapsed){document.body.classList.toggle('sidebar-collapsed',collapsed);$('toggle-sidebar').setAttribute('aria-expanded',String(!collapsed));$('toggle-sidebar').setAttribute('aria-label',collapsed?'Fixar barra lateral aberta':'Recolher barra lateral');fitStage();}
 $('toggle-sidebar').onclick=()=>sidebar(!document.body.classList.contains('sidebar-collapsed'));
-sidebar(true);
+sidebar(true); document.querySelector('.sidebar').addEventListener('click',e=>{if(e.detail)document.activeElement?.blur();}); // clique do mouse não deixa a barra presa aberta pelo :focus-within; teclado mantém
 function animateImage(direction){if(matchMedia('(prefers-reduced-motion: reduce)').matches)return;const el=$('stage');el.getAnimations().forEach(a=>a.cancel());el.animate([{opacity:.45,transform:`translateX(${direction*22}px)`},{opacity:1,transform:'translateX(0)'}],{duration:260,easing:'cubic-bezier(.2,.7,.2,1)'});}
 
 function snap(value,center=0,tolerance=.025){return Math.abs(value-center)<tolerance?center:value;}
