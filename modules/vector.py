@@ -3,7 +3,6 @@ import io
 import logging
 import math
 import numpy as np
-import potrace
 import ezdxf
 from PIL import Image, ImageFilter
 import pymupdf
@@ -84,6 +83,27 @@ def otsu(values):
     return int(np.clip(np.argmax(between[:-1]) + 1, 8, 247))
 
 
+def trace_bitmap(mask, turdsize=2, alphamax=1.0, opttolerance=.2):
+    """Potrace sobre `mask` (True = arte), equivalente a potrace.Bitmap(~mask).trace().
+
+    O potracer procura cada novo contorno varrendo a imagem inteira (custo contornos × pixels).
+    Os contornos saem da última linha para a primeira e as linhas já tratadas ficam vazias,
+    então um cursor de linha dá o mesmo resultado em tempo linear.
+    """
+    from potrace.potrace import POTRACE_TURNPOLICY_MINORITY, Path, findpath, process_path, xor_path
+    bm = np.pad(np.asarray(mask, bool), [(0, 1), (0, 1)], mode='constant')
+    original, plist, y = bm.copy(), [], bm.shape[0] - 1
+    while True:
+        while y >= 0 and not bm[y].any(): y -= 1
+        if y < 0: break
+        x = int(np.argmax(bm[y]))
+        path = findpath(bm, x, y + 1, original[y][x], POTRACE_TURNPOLICY_MINORITY)
+        xor_path(bm, path)
+        if path.area > turdsize: plist.append(path)
+    process_path(plist, alphamax=alphamax, opticurve=True, opttolerance=opttolerance)
+    return Path(plist)
+
+
 def bezier(p0, p1, p2, p3, tolerance):
     """Achata uma curva cúbica em segmentos com erro máximo próximo de `tolerance`."""
     size = math.dist(p0, p1) + math.dist(p1, p2) + math.dist(p2, p3)
@@ -108,7 +128,7 @@ def trace(im, value):
     mm = s['widthMm'] / (right - left + 1)  # mm por pixel; a largura vale para a arte, sem margens
     turd = int((s['detailMm'] / mm) ** 2)
     # potracer inverte o bitmap recebido: True = fundo.
-    path = potrace.Bitmap(~mask).trace(turdsize=turd, alphamax=s['smooth'], opticurve=True, opttolerance=.2)
+    path = trace_bitmap(mask, turdsize=turd, alphamax=s['smooth'])
     cx, cy = (left + right + 1) / 2, (top + bottom + 1) / 2
     tolerance = .004 / mm  # 4 µm de desvio máximo ao achatar curvas
     contours = []
