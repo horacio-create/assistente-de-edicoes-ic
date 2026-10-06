@@ -373,7 +373,7 @@ class WorkflowTests(unittest.TestCase):
             server.api('POST','/api/pick-folder',{},b'{}',{'REMOTE_ADDR':'192.168.1.42'})
         local=server.api('GET','/api/info',{},b'',{'REMOTE_ADDR':'127.0.0.1'})
         remote=server.api('GET','/api/info',{},b'',{'REMOTE_ADDR':'192.168.1.42'})
-        self.assertEqual(local['nativePicker'],os.name=='nt');self.assertFalse(remote['nativePicker'])
+        self.assertEqual(local['nativePicker'],os.name=='nt' or sys.platform=='darwin');self.assertFalse(remote['nativePicker'])
 
     def test_cross_origin_rejected(self):
         status=[]

@@ -15,6 +15,7 @@ from urllib.parse import parse_qs, urlsplit
 from waitress import serve
 from version import VERSION
 from modules.images import DEFAULT, SUPPORTED, decode, dominant, encoded, render, settings
+from modules import vector
 from storage import DATA, ROOT, connect, event, get_job, init, now, uid
 
 LOCK = threading.RLock()
@@ -27,6 +28,11 @@ def local_hosts():
     for name in tuple(names):
         try: names.update(address[4][0].lower() for address in socket.getaddrinfo(name, None))
         except socket.gaierror: pass
+    if sys.platform == 'darwin':
+        # Colegas acessam o Mac pelo nome Bonjour (NOME.local), que difere do hostname.
+        names.add(socket.gethostname().lower().removesuffix('.local') + '.local')
+        try: names.add(subprocess.run(['scutil', '--get', 'LocalHostName'], capture_output=True, text=True, timeout=5).stdout.strip().lower() + '.local')
+        except (OSError, subprocess.SubprocessError): pass
     return frozenset(names)
 
 ALLOWED_HOSTS = local_hosts()
@@ -41,7 +47,7 @@ def validate_host(host):
             raise ValueError()
     except ValueError:
         raise ValueError('Host não autorizado.') from None
-MODULES = [{'id': 'images', 'name': 'Imagens', 'active': True}, {'id': 'video', 'name': 'Vídeo', 'active': False}, {'id': 'offers', 'name': 'Ofertas de supermercados', 'active': False}, {'id': 'eap', 'name': 'Logo EAP', 'active': False}, {'id': 'ms6', 'name': 'Vetorização MS6', 'active': False}]
+MODULES = [{'id': 'images', 'name': 'Imagens', 'active': True}, {'id': 'video', 'name': 'Vídeo', 'active': False}, {'id': 'offers', 'name': 'Ofertas de supermercados', 'active': False}, {'id': 'eap', 'name': 'Logo EAP', 'active': False}, {'id': 'ms6', 'name': 'Vetorização MS6', 'active': True}]
 
 class Conflict(Exception): pass
 
@@ -95,9 +101,9 @@ def logo_path(value, job):
     return DATA / 'logos' / (ident + '.png')
 
 def api(method, path, query, raw, environ=None):
-    value = json.loads(raw) if raw and path not in ('/api/upload', '/api/logo') else {}
+    value = json.loads(raw) if raw and path not in ('/api/upload', '/api/logo', '/api/vector/upload') else {}
     if path == '/api/info':
-        return dict(host=socket.gethostname(), modules=MODULES, defaultFolder=str(Path.home() / 'Pictures'), version=VERSION, portable=bool(os.environ.get('INDOOR_PORTABLE')), nativePicker=os.name == 'nt' and (environ or {}).get('REMOTE_ADDR') in ('127.0.0.1','::1'))
+        return dict(host=socket.gethostname(), modules=MODULES, defaultFolder=str(Path.home() / 'Pictures'), version=VERSION, portable=bool(os.environ.get('INDOOR_PORTABLE')), nativePicker=(os.name == 'nt' or sys.platform == 'darwin') and (environ or {}).get('REMOTE_ADDR') in ('127.0.0.1','::1'))
     if path == '/api/jobs' and method == 'GET':
         with connect() as db: return [dict(r) for r in db.execute('SELECT id,title,updated,revision,(SELECT count(*) FROM media WHERE job=jobs.id) AS count FROM jobs ORDER BY updated DESC LIMIT 100')]
     if path == '/api/jobs' and method == 'POST':
@@ -126,7 +132,7 @@ def api(method, path, query, raw, environ=None):
         if not PICKER.acquire(blocking=False): raise Conflict('Já existe uma janela de seleção de pasta aberta.')
         try:
             result = subprocess.run([sys.executable, str(ROOT / 'modules' / 'native_folder.py')], capture_output=True, timeout=180, creationflags=getattr(subprocess, 'CREATE_NO_WINDOW', 0))
-            if result.returncode: raise ValueError('Não foi possível abrir o seletor de pastas do Windows.')
+            if result.returncode: raise ValueError('Não foi possível abrir o seletor de pastas do sistema.')
             chosen = json.loads(result.stdout.decode('utf-8'))
             if chosen.get('error'): raise ValueError(chosen['error'])
             return {'path': str(directory(chosen['path'])) if chosen.get('path') else None}
@@ -282,6 +288,54 @@ def api(method, path, query, raw, environ=None):
             finally:
                 temp.unlink(missing_ok=True)
         return {'results': results}
+    if path.startswith('/api/vector/'):
+        return vector_api(path, query, value, raw)
+    raise ValueError('Operação não encontrada.')
+
+def vector_source(ident):
+    if not isinstance(ident, str) or not re.fullmatch(r'[0-9a-f]{32}', ident): raise ValueError('Logo inválida.')
+    source = DATA / 'vetores' / (ident + '.png')
+    if not source.is_file(): raise ValueError('Logo não encontrada. Adicione-a novamente.')
+    from PIL import Image
+    with Image.open(source) as im: return im.convert('RGBA')
+
+def vector_api(path, query, value, raw):
+    if path == '/api/vector/upload':
+        name = query['name'][0].replace('\\', '/').split('/')[-1][:180]
+        ext = Path(name).suffix.lower()
+        if ext not in vector.SUPPORTED: raise ValueError('Formato não suportado. Use PNG, JPG, WebP, BMP, TIFF, PDF, AI ou SVG.')
+        with PROCESS:
+            try: im = vector.load(raw, ext)
+            except ValueError: raise
+            except Exception as exc: raise ValueError(f'Não foi possível abrir {name}.') from exc
+            ident = uid()
+            im.save(DATA / 'vetores' / (ident + '.png'))
+        with connect() as db: event(db, None, 'Logo para vetorização', {'arquivo': name, 'dimensoes': [im.width, im.height]})
+        return {'id': ident, 'name': name, 'width': im.width, 'height': im.height}
+    if path == '/api/vector/trace':
+        with PROCESS: result = vector.trace(vector_source(value.get('id')), value.get('settings'))
+        return {k: result[k] for k in ('width', 'height', 'threshold', 'points', 'notes')} | {'contours': len(result['contours']), 'path': vector.svg_path(result['contours'])}
+    if path == '/api/vector/export':
+        folder, name = directory(value['folder']), clean(value['name'])
+        dest = folder / (name + '.dxf')
+        if dest.exists(): raise Conflict(f'O arquivo {dest.name} já existe. Altere o nome para preservar o arquivo existente.')
+        with PROCESS:
+            result = vector.trace(vector_source(value.get('id')), value.get('settings'))
+            data = vector.dxf(result['contours'])
+        temp = folder / ('.indoor-' + uid() + '.tmp')
+        try:
+            with temp.open('xb') as out:
+                out.write(data); out.flush(); os.fsync(out.fileno())
+            publish_new(temp, dest)
+        except FileExistsError:
+            raise Conflict(f'O arquivo {dest.name} apareceu na pasta durante o processamento. Altere o nome.') from None
+        except Exception as exc:
+            with connect() as db: event(db, None, 'Falha na exportação DXF', {'arquivo': str(dest), 'motivo': str(exc)})
+            raise
+        finally: temp.unlink(missing_ok=True)
+        with connect() as db:
+            event(db, None, 'DXF exportado', {'arquivo': str(dest), 'origem': str(value.get('source', ''))[:180], 'mm': [result['width'], result['height']], 'contornos': len(result['contours']), 'ajustes': vector.settings(value.get('settings'))})
+        return {'name': dest.name, 'path': str(dest), 'width': result['width'], 'height': result['height']}
     raise ValueError('Operação não encontrada.')
 
 def app(environ, start_response):
@@ -300,14 +354,14 @@ def app(environ, start_response):
             body = environ['wsgi.input'].read(length)
             result = api(method, path, parse_qs(environ.get('QUERY_STRING', '')), body, environ)
             data = json.dumps(result, ensure_ascii=False).encode()
-        elif path.startswith('/media/') or path.startswith('/logo/'):
+        elif path.startswith(('/media/', '/logo/', '/vetor/')):
             ident = path.split('/')[-1]
             if not re.fullmatch(r'[0-9a-f]{32}', ident): raise ValueError('Mídia inválida.')
-            data = (DATA / ('logos' if path.startswith('/logo/') else 'midias') / (ident + '.png')).read_bytes()
+            data = (DATA / {'logo': 'logos', 'vetor': 'vetores'}.get(path.split('/')[1], 'midias') / (ident + '.png')).read_bytes()
             content_type = 'image/png'
         else:
             name = 'index.html' if path == '/' else path.lstrip('/')
-            if name not in ('index.html','app.js','undo-history.js','style.css','favicon.svg','logo-indoor.png'): raise FileNotFoundError()
+            if name not in ('index.html','app.js','undo-history.js','vector.js','style.css','favicon.svg','logo-indoor.png'): raise FileNotFoundError()
             data = (ROOT / 'static' / name).read_bytes()
             content_type = mimetypes.guess_type(name)[0] or 'application/octet-stream'
     except Conflict as exc:

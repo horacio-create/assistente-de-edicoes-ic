@@ -1,6 +1,6 @@
 # Indoor Channel — Assistente de Edições V1.4
 
-Aplicação local para Windows, Chrome e Edge. Não envia imagens à internet. Os colegas usam o navegador; apenas o PC que hospeda a aplicação precisa da instalação.
+Aplicação local para Windows e macOS, com Chrome ou Edge. Não envia imagens à internet. Os colegas usam o navegador; apenas o PC que hospeda a aplicação precisa da instalação.
 
 ## Primeira execução
 
@@ -9,6 +9,15 @@ Aplicação local para Windows, Chrome e Edge. Não envia imagens à internet. O
 3. Abra **Instalar.bat**. A primeira instalação precisa de internet para baixar as três bibliotecas de processamento e servidor.
 4. Abra **Iniciar.bat**, mantenha a janela aberta e acesse **http://localhost:8080** no Chrome ou Edge.
 5. Colegas na mesma rede acessam **http://NOME-DO-SEU-PC:8080**. O nome aparece na janela de execução. Se necessário, use o endereço IPv4 do PC.
+
+### No macOS
+
+1. Instale Python 3.12 ou superior pelo [site oficial](https://www.python.org/downloads/macos/) ou com `brew install python@3.12`. O Python 3.9 que acompanha o macOS não serve.
+2. Dê dois cliques em **Instalar.command**. Se o macOS bloquear por ser de desenvolvedor não identificado, clique com o botão direito › **Abrir** (só na primeira vez).
+3. Dê dois cliques em **Iniciar.command**. O navegador abre **http://localhost:8080**; mantenha a janela do Terminal aberta.
+4. Colegas na mesma rede acessam **http://NOME-DO-MAC.local:8080** (o endereço aparece no Terminal). Permita conexões de entrada para o Python quando o macOS perguntar.
+
+Em **Exportar**, o Mac anfitrião abre a janela nativa do Finder para escolher a pasta. Pela rede, informe um caminho acessível pelo Mac, como `/Volumes/Clientes IC/...`. Para não suspender durante o uso, ajuste em Ajustes do Sistema › Bateria/Energia. O executável portátil continua sendo apenas para Windows.
 
 Para acesso pela rede, permita o Python no Firewall do Windows **somente na rede privada da empresa**, quando solicitado. Não encaminhe a porta no roteador. O sistema não possui login: qualquer pessoa com acesso à porta na rede pode acessar as mídias, histórico e pastas visíveis ao usuário do Windows que executa a aplicação. O PC precisa permanecer ligado e sem suspensão durante o uso.
 
@@ -61,7 +70,7 @@ O lote é processado em sequência; a janela deve permanecer aberta até conclui
 
 ## Estrutura e expansão
 
-`server.py`: API local e aplicação WSGI servida por Waitress. `storage.py`: persistência SQLite e eventos. `modules/images.py`: importação, transformação e codificação. `static/`: interface sem dependências externas, utilizável sem internet após a instalação. O registro `MODULES` reserva vídeo, ofertas de supermercados, logo EAP e vetorização MS6. Esses módulos futuros não são funcionalidades ativas da V1.
+`server.py`: API local e aplicação WSGI servida por Waitress. `storage.py`: persistência SQLite e eventos. `modules/images.py`: importação, transformação e codificação. `static/`: interface sem dependências externas, utilizável sem internet após a instalação. `modules/vector.py`: vetorização MS6 e geração de DXF. O registro `MODULES` reserva vídeo, ofertas de supermercados e logo EAP, que ainda não são funcionalidades ativas.
 
 Variáveis opcionais: `INDOOR_PORT` (padrão 8080), `INDOOR_HOST` (padrão 0.0.0.0), `INDOOR_DATA` (pasta de dados, padrão `dados` ao lado da aplicação).
 
@@ -98,7 +107,19 @@ O desfazer mantém até 100 ações da edição aberta e reinicia ao criar ou re
 No lote, os nomes usam VT 1, VT 2… Após exportar todos os arquivos com sucesso, um check verde e “Edição finalizada” aparecem durante três segundos. Falhas parciais continuam detalhadas, sem indicação de conclusão completa.
 
 
-## Versão atual 1.6.2 — 05/10/2026
+## Vetorização MS6 — V1.7.0
+
+Transforma a logo do cliente em um DXF para gravar no microfone MS6 com o laser Cloudray CRS335-5F. Abra **Vetorização MS6** na barra lateral e arraste a logo (PNG, JPG, WebP, BMP, TIFF, PDF, AI ou SVG). Logos vetoriais são rasterizadas em alta resolução e retraçadas, o que dá o mesmo resultado para qualquer origem.
+
+1. Digite a **largura final** em mm. Ela vale para a arte, sem as margens vazias da imagem; a altura acompanha.
+2. Confira a prévia **Gravação** (o que o laser marca, em escuro sobre alumínio). **Contornos** mostra as linhas do DXF e **Original**, a imagem recebida.
+3. Se faltar ou sobrar parte da arte, desmarque **Automática** e ajuste a **Sensibilidade**. Use **Inverter** para gravar o fundo em vez da arte.
+4. **Remover detalhes menores que** elimina pontos e textura. **Suavidade das curvas** em 0 mantém cantos retos e em valores maiores arredonda.
+5. Clique em **Exportar DXF**, escolha a pasta e o nome. Um arquivo existente nunca é substituído.
+
+O DXF é R12 (AC1009), em milímetros, com polilinhas fechadas na camada GRAVACAO e a arte centralizada na origem (0,0), que é o centro do campo no EzCad. Importe no EzCad ou LightBurn em mm e aplique a hachura de preenchimento lá; contornos internos (furos de letras como O e A) ficam vazados. Avisos aparecem quando há traços com menos de 0,1 mm no tamanho escolhido ou contornos demais, sinal de ruído.
+
+## Versão 1.6.2 — 05/10/2026
 
 35 testes Python e cinco JavaScript aprovados no Windows. Regressões novas: PDF sem fundo, PNG/TIFF cinza de 16 bits, endpoint de pastas removido, salvamento concorrente durante exportação, publicação sem arquivo parcial, Host contra DNS rebinding, chegada tardia de arquivo, alternativa Windows sem hard links, revisão alterada durante render, sinalização portátil, fechamento pelo perfil e aviso de perda da sessão. Os seis bugs obrigatórios foram reproduzidos antes de suas correções.
 

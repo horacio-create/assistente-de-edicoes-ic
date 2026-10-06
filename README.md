@@ -1,4 +1,4 @@
-# Assistente de Edições — versão web V1.6.2
+# Assistente de Edições — versão web V1.7.0
 
 Aplicação web local de padronização de imagens da Indoor Channel. Esta versão continua a base web V1.5 anterior ao executável portátil.
 
@@ -36,7 +36,7 @@ Imagens importadas, edições e histórico ficam na pasta `dados`, criada ao usa
 node tests/test_undo.cjs
 ```
 
-A V1.6.2 tem 35 testes Python e cinco testes JavaScript. Node.js é necessário apenas para executar os testes JavaScript. Veja `LEIA-ME.md` e `VALIDACAO.md` para instruções e verificações.
+A V1.7.0 tem 45 testes Python e cinco testes JavaScript. Node.js é necessário apenas para executar os testes JavaScript. Veja `LEIA-ME.md` e `VALIDACAO.md` para instruções e verificações.
 
 ## Versão
 
