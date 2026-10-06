@@ -1,0 +1,15 @@
+# Proxy só deste sistema (independente de outros projetos do servidor), porta 80, HTTP, para qualquer nome
+# que aponte para o servidor (IP, DuckDNS…). Sem login: o acesso é ABERTO a quem souber o endereço.
+# Para exigir senha, acrescente dentro do bloco:  basic_auth { usuario <hash de "caddy hash-password"> }
+{
+	auto_https off
+}
+
+:80 {
+	request_body {
+		max_size 110MB
+	}
+	# comprime HTML/JS/JSON (o runtime do HyperFrames da prévia cai de ~490 KB para ~150 KB)
+	encode zstd gzip
+	reverse_proxy assistente:8080
+}
