@@ -25,6 +25,9 @@ for wheel in sorted((work / 'wheels').glob('*.whl')):
 (stage / 'app').mkdir()
 for file in app.glob('*.py'): shutil.copy2(file, stage / 'app' / file.name)
 for folder in ('modules', 'static'): shutil.copytree(app / folder, stage / 'app' / folder, ignore=ignore)
+if not (app / 'tools' / 'ffmpeg' / 'ffmpeg.exe').is_file() or not (app / 'tools' / 'ffmpeg' / 'ffprobe.exe').is_file():
+    raise RuntimeError('Instale os vídeos com Instalar-video.ps1 antes de empacotar o portátil.')
+shutil.copytree(app / 'tools' / 'ffmpeg', stage / 'app' / 'tools' / 'ffmpeg')
 with zipfile.ZipFile(build / 'payload.zip', 'w', zipfile.ZIP_DEFLATED, compresslevel=9) as z:
     for file in sorted(stage.rglob('*')):
         if file.is_file() and not any(p in excluded for p in file.relative_to(stage).parts):

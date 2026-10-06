@@ -12,3 +12,4 @@ dist/
 *.exe
 *.zip
 erro-inicializacao.txt
+tools/ffmpeg/

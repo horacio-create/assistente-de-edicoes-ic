@@ -63,7 +63,7 @@ def dominant(im):
     color = max(small.getcolors(4096), key=lambda pair: pair[0])[1]
     return '#%02x%02x%02x' % color
 
-def render(source, value, logo=None):
+def render(source, value, logo=None, transparent=False):
     s = settings(value)
     with Image.open(source) as original:
         im = original.convert('RGBA')
@@ -74,7 +74,7 @@ def render(source, value, logo=None):
     factor = 1 if s['lockSize'] else (max if s['mode'] == 'cover' else min)(w / im.width, h / im.height) * s['zoom']
     rw, rh = max(1, round(im.width * factor)), max(1, round(im.height * factor))
     x, y = (w - rw) / 2 + s['x'] * w, (h - rh) / 2 + s['y'] * h
-    result = Image.new('RGBA', (w, h), s['color'] if s['mode'] == 'background' else '#000000')
+    result = Image.new('RGBA', (w, h), (0, 0, 0, 0) if transparent else s['color'] if s['mode'] == 'background' else '#000000')
     if rw * rh <= 20_000_000:
         layer = im.resize((rw, rh), Image.Resampling.LANCZOS)
         result.alpha_composite(layer, (round(x), round(y)))
@@ -92,7 +92,7 @@ def render(source, value, logo=None):
     if factor > 1.05: notes.append('Ampliação: a imagem pode perder nitidez.')
     if x < -.5 or y < -.5 or x + rw > w + .5 or y + rh > h + .5: notes.append('Parte da imagem fica fora da tela. Confira textos e logotipos.')
     if x > .5 or y > .5 or x + rw < w - .5 or y + rh < h - .5: notes.append('Há áreas de fundo visíveis.')
-    return result.convert('RGB'), notes
+    return result if transparent else result.convert('RGB'), notes
 
 def encoded(im, fmt):
     out = io.BytesIO()

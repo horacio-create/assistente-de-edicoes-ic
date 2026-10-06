@@ -14,6 +14,8 @@ if errorlevel 1 goto :falha
 .venv\Scripts\python.exe -m pip install -r requirements.txt
 if errorlevel 1 goto :falha
 echo.
+powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0Instalar-video.ps1"
+if errorlevel 1 goto :falha
 echo Instalacao concluida. Abra Iniciar.bat para usar a aplicacao.
 pause
 exit /b 0
