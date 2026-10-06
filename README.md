@@ -1,4 +1,4 @@
-# Assistente de Edições — versão web V1.6.2
+# Assistente de Edições — versão web V1.7.0
 
 Aplicação web local de padronização de imagens da Indoor Channel. Esta versão continua a base web V1.5 anterior ao executável portátil.
 
@@ -39,7 +39,7 @@ node tests/test_undo.cjs
 cd ofertas/motor && npm test   # contrato de templates de Ofertas
 ```
 
-A V1.6.2 tem 35 testes Python e cinco testes JavaScript; o módulo Ofertas acrescenta 18 testes Python (os que dependem do motor são pulados sem Node.js) e oito testes do contrato em `ofertas/motor`. Node.js é necessário para os testes JavaScript e para o módulo Ofertas. Veja `LEIA-ME.md` e `VALIDACAO.md` para instruções e verificações.
+A V1.7.0 tem 45 testes Python e cinco testes JavaScript; o módulo Ofertas acrescenta 18 testes Python (os que dependem do motor são pulados sem Node.js) e oito testes do contrato em `ofertas/motor`. Node.js é necessário para os testes JavaScript e para o módulo Ofertas. Veja `LEIA-ME.md` e `VALIDACAO.md` para instruções e verificações.
 
 ## Versão
 

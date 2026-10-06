@@ -1,5 +1,15 @@
 # Histórico de versões
 
+## 1.7.0 — 06/10/2026
+
+- Vetorização MS6 ativa: logo em PNG, JPG, WebP, BMP, TIFF, PDF, AI ou SVG vira contornos fechados para gravação a laser (Cloudray CRS335-5F).
+- Separação automática do fundo pela cor das bordas (Otsu), com sensibilidade manual, inversão, redução de ruído de JPG, suavidade das curvas e remoção de detalhes em mm.
+- Largura final em mm medida na arte, sem margens; altura proporcional. Prévia de gravação, contornos e original.
+- DXF R12 com POLYLINE fechadas em mm, camada GRAVACAO, centralizado na origem e com extensões corretas. Um arquivo existente nunca é substituído.
+- Aviso de traços com menos de 0,1 mm e de excesso de contornos.
+- Suporte ao macOS: Instalar.command, Iniciar.command, seletor de pastas do Finder e acesso por NOME.local.
+- Novas dependências: numpy, potracer e ezdxf. 45 testes Python e cinco JavaScript aprovados no macOS.
+
 ## 1.6.2 — 05/10/2026
 
 - PDFs rasterizados com fundo branco opaco.

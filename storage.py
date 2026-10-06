@@ -25,6 +25,7 @@ def connect():
 def init():
     (DATA / 'logos').mkdir(parents=True, exist_ok=True)
     (DATA / 'midias').mkdir(parents=True, exist_ok=True)
+    (DATA / 'vetores').mkdir(parents=True, exist_ok=True)
     with connect() as db:
         db.executescript('''
         PRAGMA journal_mode=WAL;
