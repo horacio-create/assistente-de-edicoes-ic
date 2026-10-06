@@ -15,7 +15,8 @@ from urllib.parse import parse_qs, urlsplit
 from waitress import serve
 from version import VERSION
 from modules.images import DEFAULT, SUPPORTED, decode, dominant, encoded, render, settings
-from modules import vector
+from modules import eap, vector
+from PIL import Image
 from storage import DATA, ROOT, connect, event, get_job, init, now, uid
 
 LOCK = threading.RLock()
@@ -47,7 +48,7 @@ def validate_host(host):
             raise ValueError()
     except ValueError:
         raise ValueError('Host não autorizado.') from None
-MODULES = [{'id': 'images', 'name': 'Imagens', 'active': True}, {'id': 'video', 'name': 'Vídeo', 'active': False}, {'id': 'offers', 'name': 'Ofertas de supermercados', 'active': False}, {'id': 'eap', 'name': 'Logo EAP', 'active': False}, {'id': 'ms6', 'name': 'Vetorização MS6', 'active': True}]
+MODULES = [{'id': 'images', 'name': 'Imagens', 'active': True}, {'id': 'video', 'name': 'Vídeo', 'active': False}, {'id': 'offers', 'name': 'Ofertas de supermercados', 'active': False}, {'id': 'eap', 'name': 'Logo EAP', 'active': True}, {'id': 'ms6', 'name': 'Vetorização MS6', 'active': True}]
 
 class Conflict(Exception): pass
 
@@ -101,7 +102,7 @@ def logo_path(value, job):
     return DATA / 'logos' / (ident + '.png')
 
 def api(method, path, query, raw, environ=None):
-    value = json.loads(raw) if raw and path not in ('/api/upload', '/api/logo', '/api/vector/upload') else {}
+    value = json.loads(raw) if raw and path not in ('/api/upload', '/api/logo', '/api/vector/upload', '/api/eap/upload') else {}
     if path == '/api/info':
         return dict(host=socket.gethostname(), modules=MODULES, defaultFolder=str(Path.home() / 'Pictures'), version=VERSION, portable=bool(os.environ.get('INDOOR_PORTABLE')), nativePicker=(os.name == 'nt' or sys.platform == 'darwin') and (environ or {}).get('REMOTE_ADDR') in ('127.0.0.1','::1'))
     if path == '/api/jobs' and method == 'GET':
@@ -290,52 +291,112 @@ def api(method, path, query, raw, environ=None):
         return {'results': results}
     if path.startswith('/api/vector/'):
         return vector_api(path, query, value, raw)
+    if path.startswith('/api/eap/'):
+        return eap_api(path, query, value, raw)
     raise ValueError('Operação não encontrada.')
 
-def vector_source(ident):
+def stored(folder, ident):
     if not isinstance(ident, str) or not re.fullmatch(r'[0-9a-f]{32}', ident): raise ValueError('Logo inválida.')
-    source = DATA / 'vetores' / (ident + '.png')
+    source = DATA / folder / (ident + '.png')
     if not source.is_file(): raise ValueError('Logo não encontrada. Adicione-a novamente.')
-    from PIL import Image
     with Image.open(source) as im: return im.convert('RGBA')
+
+def receive_logo(folder, query, raw, supported, action):
+    """Normaliza a logo enviada em PNG na pasta interna do módulo."""
+    name = query['name'][0].replace('\\', '/').split('/')[-1][:180]
+    ext = Path(name).suffix.lower()
+    if ext not in supported: raise ValueError('Formato não suportado. Use PNG, JPG, WebP, BMP, TIFF, PDF, AI ou SVG.')
+    with PROCESS:
+        try: im = vector.load(raw, ext)
+        except ValueError: raise
+        except Exception as exc: raise ValueError(f'Não foi possível abrir {name}.') from exc
+        ident = uid()
+        im.save(DATA / folder / (ident + '.png'))
+    with connect() as db: event(db, None, action, {'arquivo': name, 'dimensoes': [im.width, im.height]})
+    return ident, name, im
+
+def write_new(dest, data):
+    """Grava um arquivo novo completo, sem nunca substituir um existente."""
+    temp = dest.parent / ('.indoor-' + uid() + '.tmp')
+    try:
+        with temp.open('xb') as out:
+            out.write(data); out.flush(); os.fsync(out.fileno())
+        publish_new(temp, dest)
+    except FileExistsError:
+        raise Conflict(f'O arquivo {dest.name} apareceu na pasta durante o processamento. Altere o nome.') from None
+    finally: temp.unlink(missing_ok=True)
+
+def refuse_existing(paths):
+    taken = [p.name for p in paths if p.exists()]
+    if taken: raise Conflict(f'Já existe{"m" if len(taken) > 1 else ""} na pasta: {", ".join(taken)}. Altere o nome para preservar os arquivos existentes.')
 
 def vector_api(path, query, value, raw):
     if path == '/api/vector/upload':
-        name = query['name'][0].replace('\\', '/').split('/')[-1][:180]
-        ext = Path(name).suffix.lower()
-        if ext not in vector.SUPPORTED: raise ValueError('Formato não suportado. Use PNG, JPG, WebP, BMP, TIFF, PDF, AI ou SVG.')
-        with PROCESS:
-            try: im = vector.load(raw, ext)
-            except ValueError: raise
-            except Exception as exc: raise ValueError(f'Não foi possível abrir {name}.') from exc
-            ident = uid()
-            im.save(DATA / 'vetores' / (ident + '.png'))
-        with connect() as db: event(db, None, 'Logo para vetorização', {'arquivo': name, 'dimensoes': [im.width, im.height]})
+        ident, name, im = receive_logo('vetores', query, raw, vector.SUPPORTED, 'Logo para vetorização')
         return {'id': ident, 'name': name, 'width': im.width, 'height': im.height}
     if path == '/api/vector/trace':
-        with PROCESS: result = vector.trace(vector_source(value.get('id')), value.get('settings'))
+        with PROCESS: result = vector.trace(stored('vetores', value.get('id')), value.get('settings'))
         return {k: result[k] for k in ('width', 'height', 'threshold', 'points', 'notes')} | {'contours': len(result['contours']), 'path': vector.svg_path(result['contours'])}
     if path == '/api/vector/export':
         folder, name = directory(value['folder']), clean(value['name'])
         dest = folder / (name + '.dxf')
-        if dest.exists(): raise Conflict(f'O arquivo {dest.name} já existe. Altere o nome para preservar o arquivo existente.')
+        refuse_existing([dest])
         with PROCESS:
-            result = vector.trace(vector_source(value.get('id')), value.get('settings'))
+            result = vector.trace(stored('vetores', value.get('id')), value.get('settings'))
             data = vector.dxf(result['contours'])
-        temp = folder / ('.indoor-' + uid() + '.tmp')
-        try:
-            with temp.open('xb') as out:
-                out.write(data); out.flush(); os.fsync(out.fileno())
-            publish_new(temp, dest)
-        except FileExistsError:
-            raise Conflict(f'O arquivo {dest.name} apareceu na pasta durante o processamento. Altere o nome.') from None
+        try: write_new(dest, data)
         except Exception as exc:
             with connect() as db: event(db, None, 'Falha na exportação DXF', {'arquivo': str(dest), 'motivo': str(exc)})
             raise
-        finally: temp.unlink(missing_ok=True)
         with connect() as db:
             event(db, None, 'DXF exportado', {'arquivo': str(dest), 'origem': str(value.get('source', ''))[:180], 'mm': [result['width'], result['height']], 'contornos': len(result['contours']), 'ajustes': vector.settings(value.get('settings'))})
         return {'name': dest.name, 'path': str(dest), 'width': result['width'], 'height': result['height']}
+    raise ValueError('Operação não encontrada.')
+
+def eap_quality(ident):
+    meta = DATA / 'eap' / (ident + '.json')
+    return json.loads(meta.read_text()).get('quality') if meta.is_file() else None
+
+def eap_api(path, query, value, raw):
+    if path == '/api/eap/upload':
+        ident, name, im = receive_logo('eap', query, raw, eap.SUPPORTED, 'Logo EAP recebida')
+        quality = eap.jpeg_quality(raw)
+        (DATA / 'eap' / (ident + '.json')).write_text(json.dumps({'name': name, 'quality': quality}))
+        with PROCESS:
+            cut, info = eap.matte(im, eap.settings({}))
+            try: assessment = eap.assess(eap.crop_art(cut), quality, eap.DEFAULT['margin'])
+            except ValueError: assessment = eap.assess(im, quality, eap.DEFAULT['margin'])
+        return {'id': ident, 'name': name, 'width': im.width, 'height': im.height, 'assessment': assessment, 'flatBackground': info['flatBackground']}
+    if path == '/api/eap/preview':
+        import base64
+        with PROCESS:
+            result = eap.compose(stored('eap', value.get('id')), value.get('settings'), eap_quality(value['id']))
+            previews = {}
+            for key, im in result['images'].items():
+                small = im.copy(); small.thumbnail((512, 512), Image.Resampling.LANCZOS)
+                previews[key] = 'data:image/png;base64,' + base64.b64encode(eap.png(small)).decode()
+        return {k: result[k] for k in ('assessment', 'notes', 'threshold', 'colors', 'darkShare', 'flatBackground', 'outlineColor', 'fixSeams')} | {'previews': previews, 'vector': result['svg'] is not None}
+    if path == '/api/eap/export':
+        folder, name = directory(value['folder']), clean(value['name'])
+        versions = [v for v in eap.VERSIONS if v in value.get('versions', [])]
+        s = eap.settings(value.get('settings'))
+        files = [(folder / f'{name} - {eap.VERSIONS[v]}.png', v) for v in versions]
+        if value.get('svg') and s['mode'] == 'vector': files.append((folder / f'{name}.svg', 'svg'))
+        if not files: raise ValueError('Escolha ao menos uma versão para exportar.')
+        refuse_existing([f for f, _ in files])
+        with PROCESS:
+            result = eap.compose(stored('eap', value.get('id')), s, eap_quality(value['id']))
+            payload = [(dest, result['svg'].encode() if kind == 'svg' else eap.png(result['images'][kind])) for dest, kind in files]
+        saved = []
+        try:
+            for dest, data in payload:
+                write_new(dest, data); saved.append(dest.name)
+        except Exception as exc:
+            with connect() as db: event(db, None, 'Falha na exportação da logo EAP', {'arquivo': str(dest), 'salvos': saved, 'motivo': str(exc)})
+            raise
+        with connect() as db:
+            event(db, None, 'Logo EAP exportada', {'arquivo': str(files[0][0]), 'arquivos': [str(f) for f, _ in files], 'origem': str(value.get('source', ''))[:180], 'ajustes': s})
+        return {'files': saved, 'folder': str(folder)}
     raise ValueError('Operação não encontrada.')
 
 def app(environ, start_response):
@@ -354,14 +415,14 @@ def app(environ, start_response):
             body = environ['wsgi.input'].read(length)
             result = api(method, path, parse_qs(environ.get('QUERY_STRING', '')), body, environ)
             data = json.dumps(result, ensure_ascii=False).encode()
-        elif path.startswith(('/media/', '/logo/', '/vetor/')):
+        elif path.startswith(('/media/', '/logo/', '/vetor/', '/eap/')):
             ident = path.split('/')[-1]
             if not re.fullmatch(r'[0-9a-f]{32}', ident): raise ValueError('Mídia inválida.')
-            data = (DATA / {'logo': 'logos', 'vetor': 'vetores'}.get(path.split('/')[1], 'midias') / (ident + '.png')).read_bytes()
+            data = (DATA / {'logo': 'logos', 'vetor': 'vetores', 'eap': 'eap'}.get(path.split('/')[1], 'midias') / (ident + '.png')).read_bytes()
             content_type = 'image/png'
         else:
             name = 'index.html' if path == '/' else path.lstrip('/')
-            if name not in ('index.html','app.js','undo-history.js','vector.js','style.css','favicon.svg','logo-indoor.png'): raise FileNotFoundError()
+            if name not in ('index.html','app.js','undo-history.js','vector.js','eap.js','style.css','favicon.svg','logo-indoor.png'): raise FileNotFoundError()
             data = (ROOT / 'static' / name).read_bytes()
             content_type = mimetypes.guess_type(name)[0] or 'application/octet-stream'
     except Conflict as exc:
