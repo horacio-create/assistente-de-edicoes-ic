@@ -1,0 +1,68 @@
+{
+  "contrato": 1,
+  "id": "uniforca-hora-da-carne",
+  "nome": "Hora da Carne — 3 painéis × 2 produtos",
+  "cliente": "Rede Uniforça",
+  "descricao": "VT de ofertas de carnes: 6 produtos em 3 painéis de 5s, preço normal com seta e selo Clube de Desconto.",
+  "capaEm": 2.6,
+  "campos": [
+    {
+      "id": "validade",
+      "tipo": "texto",
+      "rotulo": "Datas da oferta",
+      "ajuda": "Aparece no cabeçalho, abaixo de \"Ofertas válidas para os dias\".",
+      "max": 40
+    },
+    {
+      "id": "produtos",
+      "tipo": "lista",
+      "rotulo": "Produtos",
+      "rotuloItem": "Produto",
+      "itens": 6,
+      "grupo": {
+        "tamanho": 2,
+        "rotulo": "Painel"
+      },
+      "campos": [
+        {
+          "id": "nome",
+          "tipo": "texto",
+          "rotulo": "Nome",
+          "max": 60
+        },
+        {
+          "id": "imagem",
+          "tipo": "imagem",
+          "rotulo": "Imagem",
+          "ajuda": "PNG com fundo transparente."
+        },
+        {
+          "id": "de",
+          "tipo": "preco",
+          "rotulo": "Preço normal",
+          "opcional": true,
+          "ajuda": "Vazio = mostra só o selo."
+        },
+        {
+          "id": "por",
+          "tipo": "preco",
+          "rotulo": "Preço Clube de Desconto"
+        },
+        {
+          "id": "unidade",
+          "tipo": "opcoes",
+          "rotulo": "Unidade"
+        },
+        {
+          "id": "tamanho",
+          "tipo": "numero",
+          "rotulo": "Tamanho da imagem",
+          "min": 0.3,
+          "max": 1,
+          "passo": 0.05,
+          "ajuda": "1 = carne na tábua; ~0,8 = embalagens."
+        }
+      ]
+    }
+  ]
+}

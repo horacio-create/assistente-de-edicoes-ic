@@ -23,7 +23,9 @@ Colegas na mesma rede acessam http://NOME-DO-PC:8080. O computador que hospeda a
 - Versão no rodapé esquerdo e check verde por três segundos após exportação completa.
 - Histórico e edições recentes.
 
-Vídeo, ofertas de supermercados, logo EAP e vetorização são módulos futuros.
+- **Ofertas de supermercados:** VTs de oferta em MP4 a partir de templates, com formulário, prévia ao vivo, importação de encarte em PDF, biblioteca de imagens com remoção de fundo e fila de geração. Requer Node.js 20+; veja `ofertas/README.md`.
+
+Vídeo, logo EAP e vetorização são módulos futuros.
 
 ## Dados
 
@@ -34,9 +36,10 @@ Imagens importadas, edições e histórico ficam na pasta `dados`, criada ao usa
 ```powershell
 .venv/Scripts/python.exe -m unittest discover -s tests -q
 node tests/test_undo.cjs
+cd ofertas/motor && npm test   # contrato de templates de Ofertas
 ```
 
-A V1.6.2 tem 35 testes Python e cinco testes JavaScript. Node.js é necessário apenas para executar os testes JavaScript. Veja `LEIA-ME.md` e `VALIDACAO.md` para instruções e verificações.
+A V1.6.2 tem 35 testes Python e cinco testes JavaScript; o módulo Ofertas acrescenta 18 testes Python (os que dependem do motor são pulados sem Node.js) e oito testes do contrato em `ofertas/motor`. Node.js é necessário para os testes JavaScript e para o módulo Ofertas. Veja `LEIA-ME.md` e `VALIDACAO.md` para instruções e verificações.
 
 ## Versão
 
