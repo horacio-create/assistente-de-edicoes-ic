@@ -1,0 +1,112 @@
+// Run against an isolated server; sample must be at least five seconds long.
+const {chromium}=require(process.env.INDOOR_PLAYWRIGHT || 'playwright');
+const assert=require('node:assert/strict');
+const fs=require('node:fs');
+const path=require('node:path');
+const [url,sample,output]=process.argv.slice(2);
+(async()=>{
+ const browser=await chromium.launch({channel:'msedge',headless:true});
+ const page=await browser.newPage({viewport:{width:1440,height:1080}});
+ const errors=[];page.on('pageerror',e=>errors.push(e.message));
+ try{
+  await page.goto(url,{waitUntil:'networkidle'});
+  await page.getByRole('button',{name:'Vídeos',exact:true}).click();
+  await page.locator('#files').setInputFiles(sample);
+  await page.waitForFunction(()=>!busy&&current()?.kind==='video'&&videoPlayer.readyState>=2);
+  const settings=()=>page.evaluate(()=>structuredClone(current().settings));
+  const focusTimeline=()=>page.locator('#montage-playhead').focus();
+  const seek=async time=>{await page.locator('#montage-scrub').fill(String(time));await page.waitForFunction(t=>Math.abs(segmentNow(current(),selectedSegment,videoPlayer.currentTime)-t)<.05,time);};
+  await seek(1);await focusTimeline();await page.keyboard.press('c');
+  assert.equal((await settings()).segments.length,2);
+  await page.keyboard.press('Control+z');assert.equal((await settings()).segments,undefined);
+  await page.keyboard.press('Control+Shift+z');assert.equal((await settings()).segments.length,2);
+  await seek(3);await focusTimeline();await page.keyboard.press('c');
+  assert.deepEqual((await settings()).segments,[{start:0,end:1},{start:1,end:3},{start:3,end:5}]);
+  await page.locator('.montage-block').nth(1).click();
+  await page.keyboard.press('Delete');assert.deepEqual((await settings()).segments,[{start:0,end:1},{start:3,end:5}]);
+  await page.keyboard.press('Control+z');assert.equal((await settings()).segments.length,3);
+  await page.keyboard.press('Control+Shift+z');assert.equal((await settings()).segments.length,2);
+  // Drag the second block before the first; the insertion line is visible.
+  await page.locator('#montage-track').scrollIntoViewIfNeeded();
+  const from=await page.locator('.montage-block').nth(1).boundingBox(),to=await page.locator('.montage-block').nth(0).boundingBox();
+  await page.mouse.move(from.x+from.width*.6,from.y+from.height*.6);await page.mouse.down();
+  await page.mouse.move(to.x+to.width*.25,to.y+to.height*.6,{steps:14});
+  await page.waitForFunction(()=>document.querySelector('.snap-before'));
+  await page.screenshot({path:path.join(output,'encaixe-durante-arraste.png')});
+  const drop=await page.locator('.montage-block').nth(0).boundingBox();await page.mouse.move(drop.x+drop.width*.25,drop.y+drop.height*.6);
+  await page.mouse.up();
+  await page.waitForFunction(()=>current().settings.segments[0].start===3);
+  assert.deepEqual((await settings()).segments,[{start:3,end:5},{start:0,end:1}]);
+  const edges=await page.locator('.montage-block').evaluateAll(blocks=>blocks.map(b=>({left:b.getBoundingClientRect().left,right:b.getBoundingClientRect().right})));
+  assert.ok(Math.abs(edges[0].right-edges[1].left)<.1,JSON.stringify(edges));
+  await page.keyboard.press('Control+z');assert.equal((await settings()).segments[0].start,0);
+  await page.keyboard.press('Control+Shift+z');assert.equal((await settings()).segments[0].start,3);
+  // Add a disjoint interval, then adjust only that selected interval.
+  await page.locator('#video-scrub').fill('1');await page.locator('#video-scrub').blur();await focusTimeline();await page.keyboard.press('a');
+  await page.locator('#trim-end').fill('2');await page.locator('#trim-end').blur();
+  assert.deepEqual((await settings()).segments,[{start:3,end:5},{start:0,end:1},{start:1,end:2}]);
+  await focusTimeline();await page.keyboard.press('Control+ArrowLeft');
+  assert.deepEqual((await settings()).segments,[{start:3,end:5},{start:1,end:2},{start:0,end:1}]);
+  await page.keyboard.press('Control+z');
+  // Playhead handle seeks on the assembled track, rather than original time.
+  await page.locator('#montage-playhead').scrollIntoViewIfNeeded();
+  const head=await page.locator('#montage-playhead').boundingBox(),track=await page.locator('#montage-track').boundingBox();
+  await page.mouse.move(head.x+head.width/2,head.y+6);await page.mouse.down();
+  await page.mouse.move(track.x+track.width*.6,head.y+6,{steps:5});await page.mouse.up();
+  assert.equal(await page.evaluate(()=>selectedSegment),1);
+  assert.ok(await page.evaluate(()=>Math.abs(videoPlayer.currentTime-.4)<.1));
+  assert.ok(Number(await page.locator('#montage-playhead').getAttribute('aria-valuenow'))>2.3);
+  const unlocked=(await settings()).segments;
+  await focusTimeline();await page.keyboard.press('l');
+  assert.equal((await settings()).segments[1].locked,true);
+  assert.equal(await page.locator('#trim-start').isDisabled(),true);
+  assert.equal(await page.locator('#duration-final').isDisabled(),true);
+  assert.equal(await page.locator('.montage-block').nth(1).getAttribute('draggable'),'false');
+  await page.keyboard.press('c');await page.keyboard.press('Delete');await page.keyboard.press('Control+ArrowLeft');
+  assert.equal((await settings()).segments.length,3);assert.equal((await settings()).segments[1].start,0);
+  await page.keyboard.press('Control+z');assert.deepEqual((await settings()).segments,unlocked);
+  assert.equal(await page.locator('#trim-start').isDisabled(),false);
+  assert.equal(await page.locator('#duration-final').isDisabled(),false);
+  await focusTimeline();await page.keyboard.press('e');assert.equal((await settings()).previewVisible,false);
+  assert.equal(await page.locator('body.video-preview-hidden').count(),1);
+  await page.keyboard.press('Control+z');assert.equal((await settings()).previewVisible,undefined);
+  // Typing in fields never fires editing shortcuts.
+  const before=(await settings()).rotation;
+  await page.locator('#duration-final').focus();await page.keyboard.press('r');assert.equal((await settings()).rotation,before);
+  await page.locator('#duration-final').blur();await focusTimeline();await page.keyboard.press('r');assert.equal((await settings()).rotation,90);
+  await page.keyboard.press('Control+z');assert.equal((await settings()).rotation,0);
+  await page.keyboard.press('s');assert.equal(await page.evaluate(()=>document.activeElement.classList.contains('montage-block')),true);
+  await page.keyboard.press('m');assert.equal((await settings()).mute,true);
+  await page.keyboard.press('Control+z');assert.equal((await settings()).mute,false);
+  await page.keyboard.press('m');
+  await page.locator('#duration-final').fill('4');await page.locator('#duration-final').blur();
+  await page.locator('#video-size').fill('.5');await page.locator('#video-size').blur();
+  assert.equal((await settings()).speed,1);
+  await seek(1.8);await focusTimeline();await page.keyboard.press('Space');
+  await page.waitForFunction(()=>selectedSegment===1&&videoPlayer.currentTime<1&& !videoPlayer.paused,{},{timeout:5000});
+  await page.keyboard.press('Space');
+  await page.screenshot({path:path.join(output,'timeline-montagem.png'),fullPage:true});
+  await focusTimeline();await page.keyboard.press('Control+s');await page.waitForFunction(()=>!busy&&!dirty);
+  const expected=(await settings()).segments;
+  await focusTimeline();await page.keyboard.press('e');assert.equal((await settings()).previewVisible,false);
+  await page.evaluate(()=>{info.nativePicker=false;});
+  await focusTimeline();await page.keyboard.press('Control+e');
+  await page.locator('#remote-path').fill(output);await page.locator('#use-remote-folder').click();
+  await page.waitForFunction(()=>!busy&&plan!==null&&finalPlayer.readyState>=2);
+  await page.locator('#final-video-scrub').fill('1.8');await page.locator('#final-video-play').click();
+  await page.waitForFunction(()=>finalSegment===1&&finalPlayer.currentTime<1&&!finalPlayer.paused,{},{timeout:5000});
+  await page.locator('#final-video-play').click();
+  // Editing shortcuts must not act in the export modal.
+  await page.keyboard.press('c');assert.deepEqual((await settings()).segments,expected);
+  await page.locator('#confirm-export').click();
+  await page.waitForFunction(()=>!busy&&$('export-result').textContent.startsWith('✓'),{},{timeout:60000});
+  const exported=fs.readdirSync(output).find(n=>n.endsWith('.mp4'));assert.ok(exported);assert.ok(fs.statSync(path.join(output,exported)).size<=500000);
+  await page.locator('[data-close="export-dialog"]').click();
+  await page.getByRole('button',{name:'Edições recentes',exact:true}).click();await page.locator('.recent-card').first().click();
+  await page.waitForFunction(()=>!busy&&current()?.kind==='video');assert.deepEqual((await settings()).segments,expected);
+  await page.setViewportSize({width:800,height:900});await page.screenshot({path:path.join(output,'timeline-montagem-800.png'),fullPage:true});
+  assert.equal((await settings()).previewVisible,false);
+  assert.deepEqual(errors,[]);console.log(JSON.stringify({montage:'passed',shortcuts:'passed',snap:'passed',playhead:'passed',lock:'passed',eye:'passed',errors,exported}));
+ }catch(e){console.error(JSON.stringify({errors,state:await page.evaluate(()=>({busy,settings:current()?.settings,selectedSegment,time:videoPlayer.currentTime,finalSegment,finalTime:finalPlayer.currentTime,finalPaused:finalPlayer.paused,focus:document.activeElement?.id}))}));await page.screenshot({path:path.join(output,'erro-montagem.png'),fullPage:true});throw e;}
+ finally{await browser.close();}
+})().catch(e=>{console.error(e);process.exitCode=1;});

@@ -15,3 +15,4 @@ erro-inicializacao.txt
 node_modules/
 snapshots/
 deploy/.env
+tools/ffmpeg/

@@ -1,0 +1,91 @@
+// Run against an isolated local server: node tests/test_video_browser.cjs URL SAMPLE OUTPUT_FOLDER
+const {chromium}=require(process.env.INDOOR_PLAYWRIGHT || 'playwright');
+const assert=require('node:assert/strict');
+const fs=require('node:fs');
+const path=require('node:path');
+const [url,sample,output]=process.argv.slice(2);
+(async()=>{
+  const browser=await chromium.launch({channel:'msedge',headless:true});
+  const page=await browser.newPage({viewport:{width:1440,height:1050}});
+  const errors=[];page.on('pageerror',e=>errors.push(e.message));
+  try{
+    await page.goto(url,{waitUntil:'networkidle'});
+    await page.getByRole('button',{name:'Vídeos',exact:true}).click();
+    assert.equal(await page.locator('#category-badge').textContent(),'Vídeos');
+    await page.locator('#files').setInputFiles(sample);
+    await page.locator('#video-timeline').waitFor({state:'visible',timeout:60000});
+    await page.waitForFunction(()=>!busy&&current()?.kind==='video');
+    assert.match(await page.locator('#audio-status').textContent(),/Com áudio/);
+    assert.equal(await page.evaluate(()=>current().settings.mute),false);
+    await page.locator('#audio-action').click();
+    assert.match(await page.locator('#audio-status').textContent(),/Sem áudio/);
+    assert.equal(await page.locator('#audio-status .audio-cross').count(),1);
+    await page.keyboard.press('Control+z');
+    assert.equal(await page.evaluate(()=>current().settings.mute),false);
+    await page.keyboard.press('Control+Shift+z');
+    assert.equal(await page.evaluate(()=>current().settings.mute),true);
+    await page.locator('.trim-track').scrollIntoViewIfNeeded();
+    const track=await page.locator('.trim-track').boundingBox();
+    await page.mouse.move(track.x+6,track.y+track.height/2);
+    await page.mouse.down();await page.mouse.move(track.x+track.width*.1,track.y+track.height/2,{steps:5});await page.mouse.up();
+    assert.ok(await page.evaluate(()=>current().settings.trimStart>.2));
+    await page.keyboard.press('Control+z');
+    assert.equal(await page.evaluate(()=>current().settings.trimStart),0);
+    await page.locator('#trim-start').fill('1');await page.locator('#trim-start').blur();
+    await page.locator('#trim-end').fill('4');await page.locator('#trim-end').blur();
+    await page.locator('#duration-final').fill('2');await page.locator('#duration-final').blur();
+    assert.equal(await page.evaluate(()=>current().settings.speed),1.5);
+    await page.locator('#video-play').click();
+    await page.waitForFunction(()=>!videoPlayer.paused&&videoPlayer.currentTime>1.1);
+    await page.locator('#video-play').click();
+    await page.locator('#video-size').fill('0.5');await page.locator('#video-size').blur();
+    await page.screenshot({path:path.join(output,'editor-video.png'),fullPage:true});
+    await page.locator('#save').click();await page.waitForFunction(()=>!busy&&!dirty);
+    await page.getByRole('button',{name:'Imagens',exact:true}).click();
+    await page.waitForFunction(()=>!busy&&editorKind==='image');
+    assert.equal(await page.locator('#category-badge').textContent(),'Imagens');
+    assert.equal(await page.locator('#audio-action').isVisible(),false);
+    const imageSample=path.join(path.dirname(sample),'ui-image.png');
+    if(fs.existsSync(imageSample)){
+      await page.locator('#files').setInputFiles(imageSample);
+      await page.waitForFunction(()=>!busy&&current()?.kind==='image');
+      await page.locator('#number-zoom').fill('150');await page.locator('#number-zoom').blur();
+      assert.equal(await page.evaluate(()=>current().settings.zoom),1.5);
+      await page.keyboard.press('Control+z');
+      assert.equal(await page.evaluate(()=>current().settings.zoom),1);
+      await page.keyboard.press('Control+Shift+z');
+      assert.equal(await page.evaluate(()=>current().settings.zoom),1.5);
+    }
+    await page.getByRole('button',{name:'Vídeos',exact:true}).click();
+    await page.waitForFunction(()=>!busy&&editorKind==='video'&&current()?.kind==='video');
+    assert.equal(await page.evaluate(()=>current().settings.speed),1.5);
+    // Browser test uses the app's network folder dialog to avoid native Windows UI.
+    await page.evaluate(()=>{info.nativePicker=false;});
+    await page.locator('#open-export').click();
+    await page.locator('#remote-path').fill(output);await page.locator('#use-remote-folder').click();
+    await page.waitForFunction(()=>!busy&&plan!==null);
+    assert.match(await page.locator('#export-audio-status').textContent(),/Sem áudio/);
+    await page.locator('#final-video-play').click();
+    await page.waitForFunction(()=>!finalPlayer.paused&&finalPlayer.currentTime>1.1);
+    await page.locator('#final-video-play').click();
+    await page.screenshot({path:path.join(output,'exportar-video.png'),fullPage:true});
+    await page.locator('#confirm-export').click();
+    await page.waitForFunction(()=>!busy&&document.getElementById('export-result').textContent.startsWith('✓'),{},{timeout:60000});
+    assert.equal(fs.readdirSync(output).filter(n=>n.endsWith('.mp4')).length,1);
+    const exported=fs.readdirSync(output).find(n=>n.endsWith('.mp4'));
+    assert.ok(fs.statSync(path.join(output,exported)).size<=500000);
+    assert.deepEqual(errors,[]);
+    await page.locator('[data-close="export-dialog"]').click();
+    await page.setViewportSize({width:800,height:900});
+    await page.screenshot({path:path.join(output,'editor-video-800.png'),fullPage:true});
+    await page.getByRole('button',{name:'Edições recentes',exact:true}).click();
+    await page.locator('.recent-card').first().click();
+    await page.waitForFunction(()=>!busy&&current()?.kind==='video');
+    assert.equal(await page.evaluate(()=>current().settings.speed),1.5);
+    assert.equal(await page.evaluate(()=>current().settings.mute),true);
+    console.log(JSON.stringify({ui:'passed',errors,exported,screenshots:3}));
+  }catch(e){
+    console.error(JSON.stringify({errors,state:await page.evaluate(()=>({busy,historyJob,job:job?.id,undo:editHistory.undoStack,redo:editHistory.redoStack,studioHidden:$('studio').hidden,dialogs:!!document.querySelector('dialog[open]'),focus:document.activeElement?.id}))}));
+    await page.screenshot({path:path.join(output,'erro-interface.png'),fullPage:true});throw e;
+  }finally{await browser.close();}
+})().catch(e=>{console.error(e);process.exitCode=1;});

@@ -26,6 +26,8 @@ if errorlevel 1 (
   popd
 )
 echo.
+powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0Instalar-video.ps1"
+if errorlevel 1 goto :falha
 echo Instalacao concluida. Abra Iniciar.bat para usar a aplicacao.
 pause
 exit /b 0

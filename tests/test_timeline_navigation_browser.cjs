@@ -1,0 +1,51 @@
+const {chromium}=require(process.env.INDOOR_PLAYWRIGHT||'playwright');
+const assert=require('node:assert/strict'),path=require('node:path'),fs=require('node:fs');
+const [url,image,logo,output]=process.argv.slice(2);fs.mkdirSync(output,{recursive:true});
+(async()=>{
+ const browser=await chromium.launch({channel:'msedge',headless:true}),page=await browser.newPage({viewport:{width:1366,height:768}}),errors=[];page.setDefaultTimeout(20000);page.on('pageerror',e=>errors.push(e.message));
+ const read=()=>page.evaluate(()=>({cursor:compositionCursor,zoom:timelineZoom,scale:timelineScale(),playing:compositionPlaying}));
+ try{
+  await page.goto(url,{waitUntil:'networkidle'});await page.getByRole('button',{name:'Vídeos',exact:true}).click();await page.locator('#files').setInputFiles(image);await page.waitForFunction(()=>!busy&&project()?.clips.length===1);
+  const field=page.locator('#montage-current-time');await field.fill('14,22');await field.press('Enter');assert.ok(Math.abs((await read()).cursor-14.22)<.000001);assert.equal(await field.inputValue(),'14,22');
+  await field.fill('3.45');await field.press('Enter');assert.ok(Math.abs((await read()).cursor-3.45)<.000001);
+  await field.fill('8,80');await field.press('Escape');assert.ok(Math.abs((await read()).cursor-3.45)<.000001);
+  await field.fill('99');await field.press('Enter');assert.equal((await read()).cursor,15);
+  await field.fill('-1');await field.press('Enter');assert.equal((await read()).cursor,15);assert.match(await page.locator('#toast').textContent(),/Digite o tempo/);
+  await field.fill('5,00');await field.press('Enter');await page.locator('#video-play').click();await page.waitForFunction(()=>compositionPlaying&&compositionCursor>5.1);
+  await field.focus();assert.equal((await read()).playing,false);await field.fill('14,22');await field.press('Enter');
+  assert.match(await page.locator('#playhead-time').textContent(),/14,22/);
+  const label=await page.locator('.ruler-label').first().evaluate(el=>({size:parseFloat(getComputedStyle(el).fontSize),weight:parseFloat(getComputedStyle(el).fontWeight)}));assert.ok(label.size>=12&&label.weight>=700);
+  const host=page.locator('#layered-timeline');await host.hover();await page.waitForTimeout(350);
+  const box=await host.boundingBox(),x=box.x+box.width*.6,y=box.y+70;
+  const anchor=()=>page.evaluate(x=>{const h=$('layered-timeline');return (h.scrollLeft+x-h.getBoundingClientRect().left-126)/timelineScale();},x);
+  const before=await anchor(),base=(await read()).scale;await page.mouse.move(x,y);await page.keyboard.down('Alt');await page.mouse.wheel(0,-240);await page.keyboard.up('Alt');await page.waitForFunction(()=>timelineZoom>1);
+  assert.ok(Math.abs((await anchor())-before)<.03,JSON.stringify({before,after:await anchor(),x,box,view:await page.evaluate(()=>({scroll:$('layered-timeline').scrollLeft,width:$('layered-timeline').clientWidth,left:$('layered-timeline').getBoundingClientRect().left,zoom:timelineZoom,base:timelineBaseScale(),inner:$('layered-inner').style.width}))}));assert.ok((await read()).scale>base);
+  await page.keyboard.down('Alt');for(let i=0;i<15;i++)await page.mouse.wheel(0,-1000);await page.keyboard.up('Alt');await page.waitForFunction(()=>timelineScale()>=1199);
+  assert.ok(Math.abs((await read()).scale/30-40)<.001);const upper=(await read()).zoom;
+  await page.keyboard.down('Alt');await page.mouse.wheel(0,-1000);await page.keyboard.up('Alt');await page.waitForTimeout(80);assert.equal((await read()).zoom,upper);
+  await page.screenshot({path:path.join(output,'timeline-quadro-a-quadro.png')});
+  // An hour remains responsive: ruler marks are created only around the viewport.
+  await page.evaluate(()=>editProject(()=>resizeClip(projectClip(),3600)));await page.keyboard.down('Alt');for(let i=0;i<6;i++)await page.mouse.wheel(0,-1000);await page.keyboard.up('Alt');await page.waitForFunction(()=>timelineScale()>=1199);
+  await host.evaluate(el=>el.scrollLeft=1800*1200);await page.waitForFunction(()=>[...document.querySelectorAll('.ruler-label')].some(el=>parseFloat(el.textContent.replace(',','.'))>1700));
+  assert.ok(await page.locator('.ruler-label').count()<30);assert.ok(await page.locator('.ruler-tick').count()<150);
+  await page.keyboard.down('Alt');for(let i=0;i<20;i++)await page.mouse.wheel(0,1000);await page.keyboard.up('Alt');await page.waitForFunction(()=>timelineZoom===1);const lower=(await read()).scale;
+  await page.keyboard.down('Alt');await page.mouse.wheel(0,1000);await page.keyboard.up('Alt');await page.waitForTimeout(80);assert.equal((await read()).scale,lower);assert.equal(await page.locator('#timeline-reset-zoom').textContent(),'100%');
+  await page.evaluate(()=>editProject(()=>{resizeClip(projectClip(),15);for(let i=0;i<6;i++)project().tracks.push({id:freshId(),locked:false,previewVisible:true});}));await host.evaluate(el=>el.scrollTop=0);await page.mouse.move(x,y);await page.mouse.wheel(0,400);await page.waitForFunction(()=>$('layered-timeline').scrollTop>0);assert.equal((await read()).zoom,1);
+  await page.evaluate(()=>editProject(()=>{project().tracks=project().tracks.slice(0,1);}));
+  await page.locator('#logo-file').setInputFiles(logo);await page.waitForFunction(()=>!busy&&job.media.some(m=>m.role==='logo')&&project().clips.length===2);
+  const state=await page.evaluate(()=>({media:job.media.find(m=>m.role==='logo'),clip:projectClip(),tracks:project().tracks.length,baseLogo:project().clips.find(c=>projectMedia(c).role!=='logo').settings.logoId}));
+  assert.equal(state.tracks,2);assert.equal(state.clip.at,0);assert.equal(state.clip.duration,15);assert.equal(state.clip.mediaId,state.media.id);assert.equal(state.baseLogo,null);
+  assert.equal(await page.locator(`.library-card[data-media-id="${state.media.id}"]`).count(),1);assert.equal(await page.locator(`.layer-clip[data-media-id="${state.media.id}"]`).count(),1);
+  await page.evaluate(()=>change({x:0,y:0,zoom:.2}));
+  await page.waitForFunction(()=>{const c=$('live-preview'),p=c.getContext('2d').getImageData(c.width/2,c.height/2,1,1).data;return p[0]>240&&p[1]>240&&p[2]>240;});
+  const corner=await page.evaluate(()=>Array.from($('live-preview').getContext('2d').getImageData(20,20,1,1).data));assert.ok(corner[1]>100&&corner[0]<100,JSON.stringify(corner));
+  await page.locator('#clip-duration').fill('5');await page.locator('#clip-duration').press('Tab');assert.equal(await page.evaluate(()=>projectClip().duration),5);
+  await field.fill('6');await field.press('Enter');await page.waitForFunction(()=>{const c=$('live-preview'),p=c.getContext('2d').getImageData(c.width/2,c.height/2,1,1).data;return p[1]>100&&p[0]<100;});
+  await page.locator('#save-composition').click();await page.waitForFunction(()=>!busy&&!dirty);const id=await page.evaluate(()=>job.id);
+  await page.getByRole('button',{name:'Edições recentes',exact:true}).click();await page.locator(`.recent-card[data-job-id="${id}"]`).click();await page.waitForFunction(()=>!busy&&!$('studio').hidden);
+  assert.equal(await page.evaluate(()=>job.media.find(m=>m.role==='logo').id),state.media.id);assert.equal(await page.evaluate(()=>project().clips.find(c=>c.mediaId===job.media.find(m=>m.role==='logo').id).duration),5);
+  await page.waitForFunction(()=>!busy&&$('montage-current-time').disabled===false);await field.fill('1');await field.press('Enter');await host.hover();await page.waitForTimeout(350);
+  await page.screenshot({path:path.join(output,'logo-na-biblioteca-e-faixa.png'),animations:'disabled'});assert.deepEqual(errors,[]);
+  console.log(JSON.stringify({editableTime:'comma, dot, Enter, Escape, range, playback',ruler:label,zoomLimits:'100% to 40px/frame',mouseAnchor:true,virtualRuler:true,ordinaryScroll:true,logo:'library, upper track, alpha, duration, persistence',errors}));
+ }catch(error){await page.screenshot({path:path.join(output,'erro.png')});console.error(JSON.stringify({errors,state:await page.evaluate(()=>({busy,kind:editorKind,job:job?.id,cursor:compositionCursor,zoom:timelineZoom,scale:timelineScale(),toast:$('toast').textContent}))}));throw error;}finally{await browser.close();}
+})().catch(e=>{console.error(e);process.exitCode=1;});
