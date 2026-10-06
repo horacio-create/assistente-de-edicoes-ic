@@ -1,14 +1,28 @@
-"""Modern Windows Explorer folder dialog, isolated in a short-lived STA process."""
+"""Native folder dialog (Windows Explorer or macOS Finder), isolated in a short-lived process."""
 import ctypes as C
 import json
 import os
+import subprocess
 import sys
 import uuid
 
 
+def choose_folder_mac():
+    script = ('activate\n'
+              'POSIX path of (choose folder with prompt "Indoor Channel — Onde salvar as mídias?" '
+              'default location (path to pictures folder))')
+    result = subprocess.run(['osascript', '-e', script], capture_output=True, text=True)
+    if result.returncode:
+        if '-128' in result.stderr: return None  # Cancelado pelo usuário.
+        raise OSError('O macOS não conseguiu abrir a seleção de pasta.')
+    return result.stdout.strip().rstrip('/') or '/'
+
+
 def choose_folder():
+    if sys.platform == 'darwin':
+        return choose_folder_mac()
     if os.name != 'nt':
-        raise RuntimeError('O seletor nativo requer Windows.')
+        raise RuntimeError('O seletor nativo requer Windows ou macOS.')
     HRESULT = C.c_long
     POINTER = C.c_void_p
     ole = C.OleDLL('ole32')
