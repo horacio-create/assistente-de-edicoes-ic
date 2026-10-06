@@ -293,7 +293,6 @@ def ler_encarte(ident):
         with connect() as db: nome = db.execute('SELECT nome FROM ofertas_encartes WHERE id=?', (ident,)).fetchone()['nome']
         try:
             itens = extrair((PASTA / 'encartes' / f'{ident}.pdf').read_bytes())
-            if not itens: raise ValueError('nenhum produto encontrado. O PDF precisa ter texto selecionável e recortes com fundo transparente.')
             result = [item | {'imagem': salvar_imagem(item.pop('png'), item['nome'], f'encarte: {nome}')['id']} for item in itens]
             with connect() as db:
                 db.execute("UPDATE ofertas_encartes SET status='pronto', terminado=?, itens=? WHERE id=?", (now(), json.dumps(result, ensure_ascii=False), ident))
@@ -301,6 +300,154 @@ def ler_encarte(ident):
         except Exception as exc:
             with connect() as db:
                 db.execute("UPDATE ofertas_encartes SET status='falhou', terminado=?, erro=? WHERE id=?", (now(), f'Não foi possível ler {nome}: {exc}', ident))
+
+def arquivo_encarte(ident):
+    """-> (caminho, 'pdf' | 'imagem'). Encartes em PNG/JPG são guardados como PNG."""
+    if not ID.fullmatch(ident): raise FileNotFoundError()
+    for ext, tipo in (('pdf', 'pdf'), ('png', 'imagem')):
+        f = PASTA / 'encartes' / f'{ident}.{ext}'
+        if f.is_file(): return f, tipo
+    raise FileNotFoundError()
+
+def paginas_encarte(ident):
+    """Tamanho de cada página nas unidades das áreas (pontos do PDF; pixels numa imagem)."""
+    from modules.ofertas.encarte import paginas
+    f, tipo = arquivo_encarte(ident)
+    if tipo == 'pdf': return paginas(f.read_bytes())
+    from PIL import Image
+    with Image.open(f) as im: return [[im.width, im.height]]
+
+def pagina_encarte(ident, numero):
+    from modules.ofertas.encarte import imagem_pagina
+    f, tipo = arquivo_encarte(ident)
+    if tipo == 'imagem':
+        if numero != 1: raise FileNotFoundError()
+        return f.read_bytes()
+    cache = PASTA / 'encartes' / f'{ident}-p{numero}.png'
+    if not cache.is_file():
+        try: dados = imagem_pagina(f.read_bytes(), numero)
+        except IndexError: raise FileNotFoundError() from None
+        temp = cache.with_suffix(f'.{uid()}.tmp')
+        temp.write_bytes(dados)
+        os.replace(temp, cache)
+    return cache.read_bytes()
+
+PRECO = re.compile(r'\d{1,4},\d{2}')
+
+def alterar_itens(ident, mudar):
+    """Lê, altera e grava a lista de produtos de um encarte pronto (sob LOCK)."""
+    with LOCK, connect() as db:
+        row = db.execute('SELECT nome, status, itens FROM ofertas_encartes WHERE id=?', (ident,)).fetchone()
+        if not row: raise ValueError('Encarte não encontrado.')
+        if row['status'] != 'pronto': raise ValueError('Espere a leitura do encarte terminar.')
+        itens = json.loads(row['itens'] or '[]')
+        resultado = mudar(itens, row['nome'])
+        db.execute('UPDATE ofertas_encartes SET itens=? WHERE id=?', (json.dumps(itens, ensure_ascii=False), ident))
+    return resultado
+
+def indice(itens, k):
+    if not isinstance(k, int) or not 0 <= k < len(itens): raise ValueError('Produto não encontrado neste encarte.')
+    return k
+
+def conferir_item(value):
+    """O usuário revisou o produto: os dados digitados valem e os avisos somem."""
+    nome = str(value.get('nome') or '').strip()[:120]
+    por, de = str(value.get('por') or '').strip(), str(value.get('de') or '').strip()
+    if not nome: raise ValueError('Informe o nome do produto.')
+    if not PRECO.fullmatch(por): raise ValueError('Preço em destaque no formato 14,99.')
+    if de and not PRECO.fullmatch(de): raise ValueError('Preço normal no formato 21,99 (ou vazio).')
+    def mudar(itens, _):
+        it = itens[indice(itens, value.get('k'))]
+        it.update(nome=nome, por=por, de=de, unidade=str(value.get('unidade') or '').strip()[:12], avisos=[], conferido=True)
+        return it
+    return alterar_itens(str(value.get('id', '')), mudar)
+
+def excluir_item(value):
+    def mudar(itens, _): return itens.pop(indice(itens, value.get('k')))
+    alterar_itens(str(value.get('id', '')), mudar)
+    return {'ok': True}
+
+def recortar_encarte(value):
+    """Oferta marcada à mão na página. area = [x0, y0, x1, y1] em frações da página (0 a 1)."""
+    from modules.ofertas.encarte import ler_area, avisos
+    ident = str(value.get('id', ''))
+    f, tipo = arquivo_encarte(ident)
+    numero, area = value.get('pagina'), value.get('area')
+    tamanhos = paginas_encarte(ident)
+    if not isinstance(numero, int) or not 1 <= numero <= len(tamanhos): raise ValueError('Página inválida.')
+    if not (isinstance(area, list) and len(area) == 4 and all(isinstance(v, (int, float)) and 0 <= v <= 1 for v in area)):
+        raise ValueError('Área inválida.')
+    w, h = tamanhos[numero - 1]
+    caixa = [area[0] * w, area[1] * h, area[2] * w, area[3] * h]
+    if tipo == 'pdf':
+        lido = ler_area(f.read_bytes(), numero, caixa)
+    else:
+        from PIL import Image
+        if caixa[2] - caixa[0] < 10 or caixa[3] - caixa[1] < 10: raise ValueError('Marque uma área maior.')
+        with Image.open(f) as im:
+            saida = io.BytesIO(); im.crop(tuple(round(v) for v in caixa)).save(saida, 'PNG')
+        lido = {'nome': '', 'por': '', 'de': '', 'unidade': '', 'png': saida.getvalue()}
+    with connect() as db: nome_enc = db.execute('SELECT nome FROM ofertas_encartes WHERE id=?', (ident,)).fetchone()['nome']
+    img = salvar_imagem(lido['png'], lido['nome'] or f'{Path(nome_enc).stem} · recorte', f'encarte: {nome_enc}')
+    item = {k: lido[k] for k in ('nome', 'por', 'de', 'unidade')} | {
+        'imagem': img['id'], 'pagina': numero, 'area': [round(v, 1) for v in caixa], 'manual': True,
+        'avisos': ['Marcado à mão: confira os dados'] + avisos(lido['nome'], lido['por'], lido['de'], lido['unidade'])}
+    def mudar(itens, _):
+        itens.append(item)
+        return {'k': len(itens) - 1, 'item': item}
+    return alterar_itens(ident, mudar)
+
+def preencher_lista(lista, destino, itens):
+    """Produtos do encarte -> itens da lista do template (mesma regra do "Preencher" do editor)."""
+    subs = {c['id']: c for c in lista['campos']}
+    for it, alvo in zip(itens, destino):
+        if 'nome' in subs: alvo['nome'] = it['nome']
+        if 'imagem' in subs: alvo['imagem'] = 'biblioteca:' + it['imagem']
+        if 'por' in subs: alvo['por'] = it['por']
+        if 'de' in subs: alvo['de'] = it['de']
+        if 'unidade' in subs and it.get('unidade') in (subs['unidade'].get('opcoes') or []): alvo['unidade'] = it['unidade']
+
+def enfileirar(pedido):
+    """Foto dos dados no momento do pedido: editar depois não muda o vídeo que está na fila."""
+    ident = uid()
+    pasta = PASTA / 'renders' / ident
+    pasta.mkdir(parents=True)
+    (pasta / 'dados.json').write_text(json.dumps(resolver_imagens(pedido['dados']), ensure_ascii=False), 'utf-8')
+    with connect() as db:
+        db.execute("INSERT INTO ofertas_renders VALUES(?,?,?,?,?,'na_fila',?,NULL,NULL,NULL)",
+                   (ident, pedido['id'], pedido['template'], pedido['titulo'], pedido['revision'], now()))
+    FILA.set()
+    return ident
+
+def gerar_todos(value):
+    """Todos os produtos do encarte, em vídeos com a quantidade do template (ex.: 21 produtos / 6 = 4 vídeos).
+    O último vídeo é completado com os primeiros produtos, para não sair com espaços vazios."""
+    ident, template = str(value.get('encarte', '')), value.get('template')
+    schema = esquema(template)
+    lista = next((c for c in schema['campos'] if c['tipo'] == 'lista'), None)
+    if not lista: raise ValueError('Este template não tem lista de produtos.')
+    with connect() as db: row = db.execute('SELECT nome, status, itens FROM ofertas_encartes WHERE id=?', (ident,)).fetchone()
+    if not row or row['status'] != 'pronto': raise ValueError('Encarte não encontrado ou ainda em leitura.')
+    itens = json.loads(row['itens'] or '[]')
+    if not itens: raise ValueError('Este encarte não tem produtos. Marque as ofertas na página.')
+    sem_preco = [it['nome'] or f'produto {k + 1}' for k, it in enumerate(itens) if not PRECO.fullmatch(it.get('por') or '')]
+    if sem_preco: raise ValueError(f'Confira antes de gerar: {", ".join(sem_preco[:4])} sem preço em destaque.')
+    n = lista['itens']
+    total = -(-len(itens) // n)
+    base = Path(row['nome']).stem
+    videos = []
+    for g in range(total):
+        dados = json.loads(json.dumps(schema['padrao']))
+        preencher_lista(lista, dados[lista['id']], [itens[(g * n + i) % len(itens)] for i in range(n)])
+        # revision 1: não é um rascunho intocado (o "Novo vídeo" reaproveita/apaga os de revision 0)
+        pedido = {'id': uid(), 'template': schema['id'], 'titulo': f'{base} · vídeo {g + 1} de {total}', 'dados': dados, 'revision': 1}
+        with connect() as db:
+            db.execute('INSERT INTO ofertas_pedidos VALUES(?,?,?,?,?,?,?)', (pedido['id'], pedido['template'], pedido['titulo'],
+                       json.dumps(dados, ensure_ascii=False), 1, now(), now()))
+        erros = preparar(schema['id'], dados)['erros']
+        videos.append({'pedido': pedido['id'], 'titulo': pedido['titulo'], 'render': None if erros else enfileirar(pedido), 'erros': erros[:3]})
+    with connect() as db: registrar(db, 'Vídeos do encarte enviados para a fila', row['nome'], videos=total)
+    return {'videos': videos, 'completados': total * n - len(itens)}
 
 def apagar_encarte(ident):
     """Apaga o encarte do card: o PDF e a lista de produtos. As imagens extraídas continuam na biblioteca."""
@@ -311,7 +458,8 @@ def apagar_encarte(ident):
         if row['status'] == 'lendo': raise ValueError('Espere a leitura do encarte terminar para apagá-lo.')
         db.execute('DELETE FROM ofertas_encartes WHERE id=?', (ident,))
         registrar(db, 'Encarte apagado', row['nome'])
-    (PASTA / 'encartes' / f'{ident}.pdf').unlink(missing_ok=True)
+    for f in [PASTA / 'encartes' / f'{ident}.pdf', PASTA / 'encartes' / f'{ident}.png', *(PASTA / 'encartes').glob(f'{ident}-p*.png')]:
+        f.unlink(missing_ok=True)
     return {'ok': True}
 
 def apagar_imagem(ident):
@@ -427,12 +575,21 @@ def api(method, path, query, raw):
             if q('ids'):
                 ids = [i for i in q('ids').split(',') if ID.fullmatch(i)][:100]
                 return [dict(r) for r in db.execute(f"SELECT * FROM ofertas_imagens WHERE id IN ({','.join('?' * len(ids))})", ids)]
-            return [dict(r) for r in db.execute('SELECT * FROM ofertas_imagens WHERE nome LIKE ? ORDER BY criado DESC LIMIT 300', (f"%{q('busca').strip()}%",))]
+            # paginado no servidor: a biblioteca cresce a cada encarte importado
+            filtro = (f"%{q('busca').strip()}%",)
+            total = db.execute('SELECT COUNT(*) FROM ofertas_imagens WHERE nome LIKE ?', filtro).fetchone()[0]
+            por = min(max(int(q('por') or 48), 1), 100)
+            paginas = max(1, -(-total // por))
+            pagina = min(max(int(q('pagina') or 1), 1), paginas)
+            itens = [dict(r) for r in db.execute('SELECT * FROM ofertas_imagens WHERE nome LIKE ? ORDER BY criado DESC, id LIMIT ? OFFSET ?',
+                                                 (*filtro, por, (pagina - 1) * por))]
+            return {'itens': itens, 'total': total, 'pagina': pagina, 'paginas': paginas}
     if path == '/encartes':
         with connect() as db:
             rows = [dict(r) for r in db.execute('SELECT * FROM ofertas_encartes ORDER BY criado DESC LIMIT 50')]
         for r in rows: r['itens'] = json.loads(r['itens'] or '[]')
         return rows
+    if path == '/encarte-paginas': return paginas_encarte(q('id'))
     if path == '/renders':
         with connect() as db:
             rows = [dict(r) for r in db.execute('SELECT * FROM ofertas_renders ORDER BY criado DESC LIMIT 60')]
@@ -475,16 +632,7 @@ def api(method, path, query, raw):
         if pedido['revision'] != value['revision']: raise Conflict('Salve o pedido antes de gerar.')
         prep = preparar(pedido['template'], pedido['dados'])
         if prep['erros']: return {'ok': False, 'validacao': prep['detalhes'], 'erros': prep['erros']}
-        ident = uid()
-        pasta = PASTA / 'renders' / ident
-        pasta.mkdir(parents=True)
-        # foto dos dados no momento do pedido: editar depois não muda o vídeo que está na fila
-        (pasta / 'dados.json').write_text(json.dumps(resolver_imagens(pedido['dados']), ensure_ascii=False), 'utf-8')
-        with connect() as db:
-            db.execute("INSERT INTO ofertas_renders VALUES(?,?,?,?,?,'na_fila',?,NULL,NULL,NULL)",
-                       (ident, pedido['id'], pedido['template'], pedido['titulo'], pedido['revision'], now()))
-        FILA.set()
-        return {'ok': True, 'render': ident}
+        return {'ok': True, 'render': enfileirar(pedido)}
     if path == '/render-cancelar':
         with LOCK, connect() as db:
             row = db.execute('SELECT status FROM ofertas_renders WHERE id=?', (value['id'],)).fetchone()
@@ -496,14 +644,30 @@ def api(method, path, query, raw):
     if path == '/imagem-remover-fundo': return remover_fundo(value['id'])
     if path == '/encarte':
         nome = Path(q('nome') or 'encarte.pdf').name[:160]
-        if not raw.startswith(b'%PDF'): raise ValueError(f'{nome} não é um PDF.')
         ident = uid()
+        if not raw.startswith(b'%PDF'):
+            # PNG/JPG: sem camada de texto para ler; as ofertas são marcadas à mão na página
+            from PIL import Image, ImageOps
+            try:
+                im = Image.open(io.BytesIO(raw))
+                if im.width * im.height > 40_000_000: raise ValueError(f'{nome} é grande demais (limite: 40 megapixels).')
+                ImageOps.exif_transpose(im).convert('RGB').save(PASTA / 'encartes' / f'{ident}.png')
+            except ValueError: raise
+            except Exception: raise ValueError(f'{nome} não é um PDF, PNG ou JPG.') from None
+            with connect() as db:
+                db.execute("INSERT INTO ofertas_encartes(id,nome,status,criado,terminado) VALUES(?,?,'pronto',?,?)", (ident, nome, now(), now()))
+                registrar(db, 'Encarte importado', nome, produtos=0)
+            return {'id': ident, 'nome': nome, 'status': 'pronto'}
         (PASTA / 'encartes' / f'{ident}.pdf').write_bytes(raw)
         with connect() as db: db.execute("INSERT INTO ofertas_encartes(id,nome,status,criado) VALUES(?,?,'lendo',?)", (ident, nome, now()))
         threading.Thread(target=ler_encarte, args=(ident,), daemon=True).start()
         return {'id': ident, 'nome': nome, 'status': 'lendo'}
     if path == '/imagem-excluir': return apagar_imagem(str(value.get('id', '')))
     if path == '/template-remover': return remover_template(str(value.get('id', '')))
+    if path == '/encarte-item-salvar': return conferir_item(value)
+    if path == '/encarte-item-excluir': return excluir_item(value)
+    if path == '/encarte-recortar': return recortar_encarte(value)
+    if path == '/encarte-gerar-todos': return gerar_todos(value)
     if path == '/encarte-excluir':
         return apagar_encarte(str(value.get('id', '')))
     if path == '/templates-publicar': return publicar(raw)
@@ -572,6 +736,8 @@ def arquivo(environ, path):
         if not ID.fullmatch(ident): raise FileNotFoundError()
         pasta = 'imagens' if path.startswith('/ofertas/imagem/') else 'miniaturas'
         return '200 OK', 'image/png', (PASTA / pasta / f'{ident}.png').read_bytes(), [('Cache-Control', 'private, max-age=31536000, immutable')], CSP_APP, 'DENY'
+    m = re.fullmatch(r'/ofertas/encarte/([0-9a-f]{32})/(\d{1,3})\.png', path)
+    if m: return '200 OK', 'image/png', pagina_encarte(m[1], int(m[2])), [], CSP_APP, 'DENY'
     if path.startswith('/ofertas/capa/'):
         return '200 OK', 'image/png', (template_dir(path.split('/')[-1].removesuffix('.png')) / 'capa.png').read_bytes(), [], CSP_APP, 'DENY'
     if path.startswith('/ofertas/hf/') and path[12:] in HF:

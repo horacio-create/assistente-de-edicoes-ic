@@ -289,11 +289,15 @@ async function abrirImagens(caminho, rotulo) {
   el('usar-imagem').disabled = el('remover-fundo').disabled = true;
   el('busca-dialog').value = '';
   el('imagem-dialog').showModal();
-  await gradeImagens(el('grade-dialog'), '', true);
+  await gradeImagens(el('grade-dialog'), '', true, 1);
 }
-async function gradeImagens(alvo, busca, escolha) {
-  const imagens = await api('/imagens?busca=' + encodeURIComponent(busca));
+// grade paginada no servidor; a página atual fica em alvo.dataset.pagina (recarregar mantém a página)
+async function gradeImagens(alvo, busca, escolha, pagina = Number(alvo.dataset.pagina) || 1) {
+  const r = await api(`/imagens?por=${escolha ? 30 : 48}&pagina=${pagina}&busca=${encodeURIComponent(busca)}`);
+  const imagens = r.itens;
+  alvo.dataset.pagina = r.pagina;
   imagens.forEach((i) => (state.imagens[i.id] = i));
+  paginacao(alvo, r, (n) => gradeImagens(alvo, busca, escolha, n));
   alvo.innerHTML = imagens.length ? imagens.map((i) => `
     <button class="card ${escolha && state.selecionada === i.id ? 'selected' : ''}" data-id="${i.id}" title="${esc(i.nome)}">
       <img class="thumb" src="/ofertas/miniatura/${i.id}.png" alt="" loading="lazy">
@@ -310,6 +314,15 @@ async function gradeImagens(alvo, busca, escolha) {
     el('usar-imagem').disabled = el('remover-fundo').disabled = false;
   }));
   alvo.querySelectorAll('.card').forEach((c) => c.addEventListener('dblclick', () => escolha && el('usar-imagem').click()));
+}
+function paginacao(alvo, { pagina, paginas, total }, ir) {
+  const nav = document.getElementById(alvo.id.replace('grade', 'paginas'));
+  nav.hidden = paginas < 2;
+  if (nav.hidden) return;
+  nav.innerHTML = `<button type="button" class="secondary" data-ir="${pagina - 1}" ${pagina > 1 ? '' : 'disabled'}>‹ Anterior</button>
+    <span>Página ${pagina} de ${paginas} · ${total} imagens</span>
+    <button type="button" class="secondary" data-ir="${pagina + 1}" ${pagina < paginas ? '' : 'disabled'}>Próxima ›</button>`;
+  nav.querySelectorAll('button').forEach((b) => (b.onclick = async () => { await ir(Number(b.dataset.ir)); alvo.scrollTop = 0; alvo.scrollIntoView({ block: 'nearest' }); }));
 }
 async function enviarImagens(arquivos) {
   let ultima = null;
@@ -337,10 +350,10 @@ async function apagarImagem(id) {
 }
 async function aposEnvioNoDialog(img) {
   if (img) state.selecionada = img.id;
-  await gradeImagens(el('grade-dialog'), '', true);
+  await gradeImagens(el('grade-dialog'), el('busca-dialog').value, true, 1);
   el('usar-imagem').disabled = el('remover-fundo').disabled = !state.selecionada;
 }
-el('busca-dialog').addEventListener('input', (e) => gradeImagens(el('grade-dialog'), e.target.value, true));
+el('busca-dialog').addEventListener('input', (e) => gradeImagens(el('grade-dialog'), e.target.value, true, 1));
 el('enviar-dialog').addEventListener('click', () => { el('arquivo-imagem').dataset.destino = 'dialog'; el('arquivo-imagem').click(); });
 soltar(el('grade-dialog'), async (fs) => aposEnvioNoDialog(await enviarImagens(fs)));
 el('usar-imagem').addEventListener('click', () => {
@@ -352,13 +365,13 @@ el('remover-fundo').addEventListener('click', async () => {
   el('remover-fundo').disabled = true;
   const img = await removerFundoBiblioteca(state.selecionada);
   if (img) state.selecionada = img.id;
-  await gradeImagens(el('grade-dialog'), el('busca-dialog').value, true);
+  await gradeImagens(el('grade-dialog'), el('busca-dialog').value, true, 1);
   el('remover-fundo').disabled = false;
 });
 el('arquivo-imagem').addEventListener('change', async (e) => {
   const fs = [...e.target.files]; e.target.value = '';
   const img = await enviarImagens(fs);
-  if (e.target.dataset.destino === 'dialog') aposEnvioNoDialog(img); else carregarBiblioteca();
+  if (e.target.dataset.destino === 'dialog') aposEnvioNoDialog(img); else carregarBiblioteca(1);
 });
 
 // ---------- encartes (card no editor) ----------
@@ -399,7 +412,7 @@ async function enviarEncarte(arquivo) {
 }
 el('arquivo-pdf').addEventListener('change', (e) => { const f = e.target.files[0]; e.target.value = ''; enviarEncarte(f); });
 el('encarte-enviar').addEventListener('click', () => el('arquivo-pdf').click());
-soltar(el('encarte-card'), (fs) => enviarEncarte(fs.find((f) => /\.pdf$/i.test(f.name)) || fs[0]));
+soltar(el('encarte-card'), (fs) => enviarEncarte(fs.find((f) => /\.(pdf|png|jpe?g)$/i.test(f.name)) || fs[0]));
 
 el('encarte-apagar').addEventListener('click', async () => {
   const enc = state.encartes.find((e) => e.id === state.encarteSel);
@@ -414,9 +427,10 @@ el('encarte-apagar').addEventListener('click', async () => {
 });
 
 function itemEncarte(it) {
-  return `<span class="card-body"><strong title="${esc(it.nome)}">${esc(it.nome)}</strong>
-    <small class="preco-sugerido">R$ ${esc(it.por)}${it.unidade ? ' ' + esc(it.unidade) : ''}</small><small>${it.de ? 'de R$ ' + esc(it.de) : 'sem preço normal'}</small></span>`;
+  return `<span class="card-body"><strong title="${esc(it.nome)}">${esc(it.nome || 'Sem nome')}</strong>
+    <small class="preco-sugerido">${it.por ? `R$ ${esc(it.por)}${it.unidade ? ' ' + esc(it.unidade) : ''}` : 'Sem preço'}</small><small>${it.de ? 'de R$ ' + esc(it.de) : 'sem preço normal'}</small></span>`;
 }
+const avisosDe = (it) => it.avisos || [];
 function desenharCardEncarte() {
   const card = el('encarte-card');
   card.hidden = !listaPrincipal();
@@ -433,7 +447,14 @@ function desenharCardEncarte() {
   if (enc?.status === 'lendo') st.textContent = `Lendo ${enc.nome}… o progresso aparece no painel de tarefas, no canto da tela.`;
   if (enc?.status === 'falhou') st.textContent = enc.erro || 'Não foi possível ler este PDF.';
   const pronto = enc?.status === 'pronto';
-  el('encarte-itens').hidden = el('encarte-dica').hidden = !pronto;
+  if (pronto && !enc.itens.length) {
+    st.hidden = false;
+    st.textContent = /\.(png|jpe?g)$/i.test(enc.nome) ? 'Encarte em imagem: use “Marcar oferta na página” para recortar cada oferta.'
+      : 'Nenhum produto reconhecido automaticamente neste PDF. Use “Marcar oferta na página” para recortar as ofertas.';
+  }
+  el('encarte-acoes').hidden = !pronto;
+  el('encarte-todos').hidden = !pronto || !enc.itens.length;
+  el('encarte-itens').hidden = !pronto || !enc.itens.length;
   if (!pronto) el('usar-encarte').hidden = true;
   if (pronto && state.encarte !== enc.itens) { state.encarte = enc.itens; state.ordem = state.ordem.filter((k) => k < enc.itens.length); }
   if (pronto) desenharEncarte();
@@ -441,18 +462,23 @@ function desenharCardEncarte() {
 function desenharEncarte() {
   const max = listaPrincipal().itens;
   el('encarte-itens').innerHTML = state.encarte.map((it, k) => {
-    const pos = state.ordem.indexOf(k);
-    return `<button class="card ${pos >= 0 ? 'selected' : ''}" data-k="${k}">${pos >= 0 ? `<span class="ordem">${pos + 1}</span>` : ''}
+    const pos = state.ordem.indexOf(k), av = avisosDe(it);
+    return `<button class="card ${pos >= 0 ? 'selected' : ''} ${av.length ? 'com-aviso' : ''}" data-k="${k}">${pos >= 0 ? `<span class="ordem">${pos + 1}</span>` : ''}
+      <span class="edit-card secondary conferir">${av.length ? 'Conferir' : 'Editar'}</span>
+      ${av.length ? `<span class="alerta" title="${esc(av.join('\n'))}">${av.length === 1 ? 'Conferir' : av.length + ' avisos'}</span>` : it.conferido ? '<span class="conferido" title="Conferido">✓ conferido</span>' : ''}
       <img class="thumb" src="/ofertas/miniatura/${it.imagem}.png" alt="" loading="lazy">${itemEncarte(it)}</button>`;
   }).join('');
-  el('encarte-itens').querySelectorAll('.card').forEach((c) => c.addEventListener('click', () => {
+  el('encarte-itens').querySelectorAll('.card').forEach((c) => c.addEventListener('click', (e) => {
+    if (e.target.classList.contains('conferir')) return abrirConferir(Number(c.dataset.k));
     const k = Number(c.dataset.k), i = state.ordem.indexOf(k);
     if (i >= 0) state.ordem.splice(i, 1); else if (state.ordem.length < max) state.ordem.push(k); else return aviso(`Este template usa ${max} produtos.`);
     desenharEncarte();
   }));
   el('usar-encarte').hidden = !state.ordem.length;
   el('usar-encarte').textContent = `Preencher ${state.ordem.length} de ${max} produtos`;
-  el('encarte-dica').textContent = state.ordem.length ? `${state.ordem.length}/${max} escolhidos · clique de novo para desmarcar` : `Clique em até ${max} produtos, na ordem do vídeo.`;
+  const conferir = state.encarte.filter((it) => avisosDe(it).length).length;
+  el('encarte-dica').textContent = (state.ordem.length ? `${state.ordem.length}/${max} escolhidos · clique de novo para desmarcar` : `Clique em até ${max} produtos, na ordem do vídeo.`)
+    + (conferir ? ` · ${conferir} ${conferir === 1 ? 'produto para conferir' : 'produtos para conferir'}` : '');
 }
 el('usar-encarte').addEventListener('click', () => {
   const lista = listaPrincipal();
@@ -472,6 +498,140 @@ el('usar-encarte').addEventListener('click', () => {
   agendarSalvar();
   aviso(`${n} produtos preenchidos a partir do encarte. Confira antes de gerar.`);
   el('formulario').scrollTo({ top: 0, behavior: 'smooth' });
+});
+
+// ---------- conferir / marcar na página (diálogo) ----------
+// Áreas vêm do servidor nas unidades do encarte (pontos do PDF ou pixels da imagem); a tela trabalha em frações.
+const conf = { k: null, pagina: 1, paginas: [], selecao: null, arrasto: null };
+const encAtual = () => state.encartes.find((e) => e.id === state.encarteSel);
+async function prepararPaginas(enc) {
+  state.paginasEnc ??= {};
+  state.paginasEnc[enc.id] ??= await api('/encarte-paginas?id=' + enc.id);
+  conf.paginas = state.paginasEnc[enc.id];
+}
+function mostrarPagina(n, area) {
+  const enc = encAtual();
+  conf.pagina = n; conf.selecao = null;
+  el('pagina-selecao').hidden = true;
+  el('recortar').disabled = true;
+  el('pagina-img').src = `/ofertas/encarte/${enc.id}/${n}.png`;
+  el('pagina-nav').hidden = conf.paginas.length < 2 || conf.k !== null;
+  el('pagina-num').textContent = `Página ${n} de ${conf.paginas.length}`;
+  el('pagina-ant').disabled = n <= 1; el('pagina-prox').disabled = n >= conf.paginas.length;
+  const d = el('pagina-destaque');
+  d.hidden = !area;
+  if (area) {
+    const [w, h] = conf.paginas[n - 1];
+    Object.assign(d.style, { left: area[0] / w * 100 + '%', top: area[1] / h * 100 + '%', width: (area[2] - area[0]) / w * 100 + '%', height: (area[3] - area[1]) / h * 100 + '%' });
+    el('pagina-img').addEventListener('load', () => d.scrollIntoView({ block: 'center', inline: 'center' }), { once: true });
+  }
+}
+function modoDialogo(marcar) {
+  el('conferir-form').hidden = el('conferir-excluir').hidden = el('conferir-salvar').hidden = marcar;
+  el('recortar').hidden = el('marcar-dica').hidden = !marcar;
+  el('pagina').classList.toggle('marcando', marcar);
+  el('conferir-dialog').classList.toggle('marcando', marcar);
+}
+async function abrirConferir(k) {
+  const enc = encAtual(), it = enc.itens[k];
+  try { await prepararPaginas(enc); } catch (e) { return falha(e); }
+  conf.k = k;
+  modoDialogo(false);
+  el('conferir-eyebrow').textContent = 'CONFERIR PRODUTO';
+  el('conferir-titulo').textContent = it.nome || 'Produto sem nome';
+  el('conferir-sub').textContent = it.area ? `${enc.nome} · página ${it.pagina}. O destaque mostra de onde o produto foi lido.` : enc.nome;
+  el('conferir-foto').src = `/ofertas/miniatura/${it.imagem}.png`;
+  el('conferir-avisos').innerHTML = avisosDe(it).map((a) => `<li>${esc(a)}</li>`).join('');
+  el('cf-nome').value = it.nome; el('cf-de').value = it.de; el('cf-por').value = it.por; el('cf-unidade').value = it.unidade;
+  el('cf-unidades').innerHTML = (listaPrincipal()?.campos.find((c) => c.id === 'unidade')?.opcoes || []).map((o) => `<option value="${esc(o)}">`).join('');
+  mostrarPagina(it.pagina || 1, it.area);
+  el('conferir-dialog').showModal();
+  el('cf-nome').focus();
+}
+async function abrirMarcar() {
+  const enc = encAtual();
+  try { await prepararPaginas(enc); } catch (e) { return falha(e); }
+  conf.k = null;
+  modoDialogo(true);
+  el('conferir-eyebrow').textContent = 'MARCAR OFERTA';
+  el('conferir-titulo').textContent = enc.nome;
+  el('conferir-sub').textContent = 'Envolva a foto, o nome e os preços da oferta. Num PDF, o texto da área é lido; numa imagem, você digita os dados depois.';
+  mostrarPagina(conf.pagina <= conf.paginas.length ? conf.pagina : 1);
+  el('conferir-dialog').showModal();
+}
+el('encarte-marcar').addEventListener('click', abrirMarcar);
+el('pagina-ant').addEventListener('click', () => mostrarPagina(conf.pagina - 1));
+el('pagina-prox').addEventListener('click', () => mostrarPagina(conf.pagina + 1));
+// arrastar para marcar (mouse, toque e caneta)
+const fracao = (e) => { const r = el('pagina-img').getBoundingClientRect(); return [Math.min(1, Math.max(0, (e.clientX - r.left) / r.width)), Math.min(1, Math.max(0, (e.clientY - r.top) / r.height))]; };
+el('pagina').addEventListener('pointerdown', (e) => {
+  if (!el('pagina').classList.contains('marcando')) return;
+  e.preventDefault(); el('pagina').setPointerCapture(e.pointerId);
+  conf.arrasto = fracao(e);
+});
+el('pagina').addEventListener('pointermove', (e) => {
+  if (!conf.arrasto) return;
+  const [x, y] = fracao(e), [x0, y0] = conf.arrasto;
+  conf.selecao = [Math.min(x, x0), Math.min(y, y0), Math.max(x, x0), Math.max(y, y0)];
+  const [a, b, c, d] = conf.selecao, s = el('pagina-selecao');
+  Object.assign(s.style, { left: a * 100 + '%', top: b * 100 + '%', width: (c - a) * 100 + '%', height: (d - b) * 100 + '%' });
+  s.hidden = false;
+});
+el('pagina').addEventListener('pointerup', () => {
+  conf.arrasto = null;
+  const s = conf.selecao;
+  el('recortar').disabled = !s || (s[2] - s[0]) * (s[3] - s[1]) < 0.0004;
+});
+el('recortar').addEventListener('click', async () => {
+  const enc = encAtual();
+  el('recortar').disabled = true;
+  const t = IndoorTarefas.criar(`Recorte · ${enc.nome}`, 'Lendo a área marcada…');
+  try {
+    const r = await api('/encarte-recortar', { body: { id: enc.id, pagina: conf.pagina, area: conf.selecao } });
+    t.concluir(r.item.nome ? `${r.item.nome} · confira os dados` : 'Recorte salvo · preencha os dados');
+    await carregarEncartes();
+    abrirConferir(r.k);
+  } catch (e) { t.falhar(e.message); el('recortar').disabled = false; }
+});
+el('conferir-salvar').addEventListener('click', async () => {
+  const enc = encAtual();
+  try {
+    const it = await api('/encarte-item-salvar', { body: { id: enc.id, k: conf.k, nome: el('cf-nome').value, de: el('cf-de').value, por: el('cf-por').value, unidade: el('cf-unidade').value } });
+    enc.itens[conf.k] = it;
+    state.encarte = null;  // força redesenhar com os dados novos
+    el('conferir-dialog').close();
+    desenharCardEncarte();
+    aviso(`${it.nome} conferido.`);
+  } catch (e) { falha(e); }
+});
+el('conferir-form').addEventListener('submit', (e) => { e.preventDefault(); el('conferir-salvar').click(); });
+el('conferir-excluir').addEventListener('click', async () => {
+  const enc = encAtual(), it = enc.itens[conf.k];
+  if (!(await confirmar(`Excluir ${it.nome || 'este produto'}?`, 'Sai da lista deste encarte. A imagem continua na Biblioteca.', 'Excluir'))) return;
+  try {
+    await api('/encarte-item-excluir', { body: { id: enc.id, k: conf.k } });
+    state.ordem = [];
+    el('conferir-dialog').close();
+    await carregarEncartes();
+  } catch (e) { falha(e); }
+});
+
+// ---------- gerar todos os vídeos do encarte ----------
+el('encarte-todos').addEventListener('click', async () => {
+  const enc = encAtual(), max = listaPrincipal().itens, n = enc.itens.length;
+  const total = Math.ceil(n / max), resto = total * max - n;
+  const pendentes = enc.itens.filter((it) => avisosDe(it).length).length;
+  const texto = `Cada vídeo usa ${max} produtos, na ordem do encarte.${resto ? ` O último é completado com os ${resto} primeiros produtos.` : ''}`
+    + `${pendentes ? ` Atenção: ${pendentes} ${pendentes === 1 ? 'produto ainda tem aviso' : 'produtos ainda têm avisos'} para conferir.` : ''} Os vídeos entram na fila de geração.`;
+  if (!(await confirmar(`Gerar ${total} ${total === 1 ? 'vídeo' : 'vídeos'} com os ${n} produtos?`, texto, `Gerar ${total} ${total === 1 ? 'vídeo' : 'vídeos'}`))) return;
+  try {
+    const r = await api('/encarte-gerar-todos', { body: { encarte: enc.id, template: state.pedido.template } });
+    const falhos = r.videos.filter((v) => !v.render);
+    aviso(falhos.length ? `${r.videos.length - falhos.length} na fila. ${falhos.length} não ${falhos.length === 1 ? 'pôde' : 'puderam'} ser gerado(s): abra em Pedidos recentes para corrigir.`
+      : `${r.videos.length} ${r.videos.length === 1 ? 'vídeo enviado' : 'vídeos enviados'} para a fila de geração.`, 7000);
+    carregarFila();
+    mostrar(falhos.length ? 'pedidos' : 'fila');
+  } catch (e) { falha(e); }
 });
 
 // ---------- pedidos ----------
@@ -618,10 +778,10 @@ el('atualizar-fila').addEventListener('click', carregarFila);
 
 // ---------- biblioteca ----------
 let buscaTimer;
-async function carregarBiblioteca() { try { await gradeImagens(el('grade-biblioteca'), el('busca-biblioteca').value, false); } catch (e) { falha(e); } }
-el('busca-biblioteca').addEventListener('input', () => { clearTimeout(buscaTimer); buscaTimer = setTimeout(carregarBiblioteca, 250); });
+async function carregarBiblioteca(pagina) { try { await gradeImagens(el('grade-biblioteca'), el('busca-biblioteca').value, false, pagina); } catch (e) { falha(e); } }
+el('busca-biblioteca').addEventListener('input', () => { clearTimeout(buscaTimer); buscaTimer = setTimeout(() => carregarBiblioteca(1), 250); });
 el('enviar-biblioteca').addEventListener('click', () => { el('arquivo-imagem').dataset.destino = 'biblioteca'; el('arquivo-imagem').click(); });
-soltar(el('grade-biblioteca'), async (fs) => { await enviarImagens(fs); carregarBiblioteca(); });
+soltar(el('grade-biblioteca'), async (fs) => { await enviarImagens(fs); carregarBiblioteca(1); });
 
 // ---------- templates ----------
 async function carregarTemplatesAdmin() {

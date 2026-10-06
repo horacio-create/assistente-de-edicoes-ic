@@ -170,6 +170,16 @@ class FluxoTests(unittest.TestCase):
         status, data, _ = chamar('GET', caminho, headers={'HTTP_IF_NONE_MATCH': h['ETag']})
         self.assertEqual((status, data), (304, b''))
 
+    def test_biblioteca_paginada_no_servidor(self):
+        for n in range(5): json_de('POST', f'/api/ofertas/imagem?nome=pagina-{n}.png', raw=png() + f'pagina{n}'.encode())
+        _, p1 = json_de('GET', '/api/ofertas/imagens?busca=pagina-&por=2&pagina=1')
+        _, p3 = json_de('GET', '/api/ofertas/imagens?busca=pagina-&por=2&pagina=3')
+        self.assertEqual((p1['total'], p1['paginas'], len(p1['itens'])), (5, 3, 2))
+        self.assertEqual(len(p3['itens']), 1)
+        self.assertEqual(json_de('GET', '/api/ofertas/imagens?busca=pagina-&por=2&pagina=99')[1]['pagina'], 3)  # além do fim: última
+        _, todas = json_de('GET', '/api/ofertas/imagens?busca=pagina-&por=10')
+        self.assertEqual(len({i['id'] for i in todas['itens']}), 5)
+
     def test_imagem_invalida(self):
         status, r = json_de('POST', '/api/ofertas/imagem?nome=x.png', raw=b'nao e imagem')
         self.assertEqual(status, 400)
@@ -214,7 +224,7 @@ class FluxoTests(unittest.TestCase):
             time.sleep(0.05)
         self.fail('leitura do encarte não terminou')
 
-    def test_encarte_lido_em_segundo_plano_e_guardado(self):
+    def pdf_picanha(self):
         import pymupdf
         doc = pymupdf.open()
         page = doc.new_page(width=600, height=400)
@@ -224,31 +234,83 @@ class FluxoTests(unittest.TestCase):
         page.insert_text((128, 255), ',90', fontsize=20)
         page.insert_text((175, 270), 'KG', fontsize=8)
         page.insert_text((60, 300), '59,99', fontsize=16)
-        status, r = json_de('POST', '/api/ofertas/encarte?nome=teste.pdf', raw=doc.tobytes())
+        return doc.tobytes()
+
+    def test_encarte_lido_em_segundo_plano_e_guardado(self):
+        status, r = json_de('POST', '/api/ofertas/encarte?nome=teste.pdf', raw=self.pdf_picanha())
         self.assertEqual(status, 200, r)
         self.assertEqual(r['status'], 'lendo')  # responde na hora; quem enviou pode fechar a janela
         e = self.esperar_encarte(r['id'])
         self.assertEqual(e['status'], 'pronto', e)
         item = e['itens'][0]
         self.assertEqual((item['nome'], item['por'], item['de'], item['unidade']), ('Picanha Bovina Kg', '49,90', '59,99', 'KG'))
+        self.assertEqual((item['pagina'], item['avisos']), (1, []))  # página e área para o "ver no encarte"
         self.assertEqual(chamar('GET', f"/ofertas/miniatura/{item['imagem']}.png")[0], 200)
+        self.assertEqual(chamar('GET', f"/ofertas/encarte/{r['id']}/1.png")[0], 200)
+        self.assertEqual(json_de('GET', f"/api/ofertas/encarte-paginas?id={r['id']}")[1], [[600, 400]])
         self.assertEqual(json_de('POST', '/api/ofertas/encarte-excluir', {'id': r['id']})[0], 200)
         self.assertNotIn(r['id'], [x['id'] for x in json_de('GET', '/api/ofertas/encartes')[1]])
         self.assertEqual(chamar('GET', f"/ofertas/miniatura/{item['imagem']}.png")[0], 200)  # a imagem fica na biblioteca
+        self.assertEqual(chamar('GET', f"/ofertas/encarte/{r['id']}/1.png")[0], 404)
 
-    def test_encarte_sem_produtos_falha_com_mensagem(self):
+    def test_conferir_e_excluir_produto_do_encarte(self):
+        _, r = json_de('POST', '/api/ofertas/encarte?nome=conferir.pdf', raw=self.pdf_picanha())
+        self.esperar_encarte(r['id'])
+        status, erro = json_de('POST', '/api/ofertas/encarte-item-salvar', {'id': r['id'], 'k': 0, 'nome': 'Picanha', 'por': '49'})
+        self.assertEqual(status, 400)
+        self.assertIn('14,99', erro['error'])
+        _, it = json_de('POST', '/api/ofertas/encarte-item-salvar', {'id': r['id'], 'k': 0, 'nome': 'Picanha Maturada Kg', 'por': '47,90', 'de': '', 'unidade': 'KG'})
+        self.assertEqual((it['nome'], it['por'], it['conferido'], it['avisos']), ('Picanha Maturada Kg', '47,90', True, []))
+        self.assertEqual(json_de('POST', '/api/ofertas/encarte-item-excluir', {'id': r['id'], 'k': 0})[0], 200)
+        self.assertEqual(next(x for x in json_de('GET', '/api/ofertas/encartes')[1] if x['id'] == r['id'])['itens'], [])
+        self.assertEqual(json_de('POST', '/api/ofertas/encarte-item-excluir', {'id': r['id'], 'k': 0})[0], 400)
+
+    def test_encarte_sem_produtos_reconhecidos_permite_marcar_a_mao(self):
         import pymupdf
         doc = pymupdf.open(); doc.new_page().insert_text((50, 50), 'Só texto')
         _, r = json_de('POST', '/api/ofertas/encarte?nome=vazio.pdf', raw=doc.tobytes())
         e = self.esperar_encarte(r['id'])
-        self.assertEqual(e['status'], 'falhou')
-        self.assertIn('nenhum produto', e['erro'])
+        self.assertEqual((e['status'], e['itens']), ('pronto', []))
+        # marcação na página do encarte da picanha: lê nome e preços dentro da área
+        _, r = json_de('POST', '/api/ofertas/encarte?nome=marcar.pdf', raw=self.pdf_picanha())
+        self.esperar_encarte(r['id'])
+        _, m = json_de('POST', '/api/ofertas/encarte-recortar', {'id': r['id'], 'pagina': 1, 'area': [0.05, 0.1, 0.5, 0.8]})
+        self.assertEqual((m['k'], m['item']['nome'], m['item']['por'], m['item']['manual']), (1, 'Picanha Bovina Kg', '49,90', True))
+        self.assertIn('Marcado à mão: confira os dados', m['item']['avisos'])
+        self.assertEqual(json_de('POST', '/api/ofertas/encarte-recortar', {'id': r['id'], 'pagina': 2, 'area': [0, 0, 1, 1]})[0], 400)
 
-    def test_encarte_recusa_o_que_nao_e_pdf(self):
+    def test_encarte_em_imagem_e_marcado_a_mao(self):
+        foto = io.BytesIO(); Image.new('RGB', (800, 600), 'white').save(foto, 'JPEG')
+        _, r = json_de('POST', '/api/ofertas/encarte?nome=encarte.jpg', raw=foto.getvalue())
+        self.assertEqual(r['status'], 'pronto')  # imagem não tem texto para ler: vai direto para a marcação
+        self.assertEqual(json_de('GET', f"/api/ofertas/encarte-paginas?id={r['id']}")[1], [[800, 600]])
+        _, m = json_de('POST', '/api/ofertas/encarte-recortar', {'id': r['id'], 'pagina': 1, 'area': [0.1, 0.1, 0.4, 0.5]})
+        self.assertEqual((m['item']['area'], m['item']['nome']), ([80, 60, 320, 300], ''))
+        self.assertIn('Preço em destaque não identificado', m['item']['avisos'])
+        status, erro = json_de('POST', '/api/ofertas/encarte-gerar-todos', {'encarte': r['id'], 'template': MODELO.name})
+        self.assertEqual(status, 400)  # sem preço: precisa conferir antes de gerar
+        self.assertIn('sem preço em destaque', erro['error'])
+
+    def test_gerar_todos_os_videos_do_encarte(self):
+        _, r = json_de('POST', '/api/ofertas/encarte?nome=Semana 12.pdf', raw=self.pdf_picanha())
+        self.esperar_encarte(r['id'])
+        _, g = json_de('POST', '/api/ofertas/encarte-gerar-todos', {'encarte': r['id'], 'template': MODELO.name})
+        for v in g['videos']:  # não renderiza de verdade no teste
+            if v['render']: json_de('POST', '/api/ofertas/render-cancelar', {'id': v['render']})
+        self.assertEqual((len(g['videos']), g['completados']), (1, 5))  # 1 produto; template de 6: completa com ele mesmo
+        v = g['videos'][0]
+        self.assertEqual((v['titulo'], v['erros']), ('Semana 12 · vídeo 1 de 1', []))
+        pedido = json_de('GET', f"/api/ofertas/pedido?id={v['pedido']}")[1]
+        self.assertTrue(all(p['nome'] == 'Picanha Bovina Kg' and p['por'] == '49,90' for p in pedido['dados']['produtos']))
+        # o pedido do lote não é "rascunho intocado": o Novo vídeo não o reaproveita nem apaga
+        _, novo = json_de('POST', '/api/ofertas/pedidos', {'template': MODELO.name})
+        self.assertNotEqual(novo['id'], v['pedido'])
+        self.assertEqual(json_de('GET', f"/api/ofertas/pedido?id={v['pedido']}")[0], 200)
+
+    def test_encarte_recusa_o_que_nao_e_pdf_nem_imagem(self):
         status, r = json_de('POST', '/api/ofertas/encarte?nome=x.pdf', raw=b'nao e pdf')
         self.assertEqual(status, 400)
-        self.assertIn('não é um PDF', r['error'])
-
+        self.assertIn('não é um PDF, PNG ou JPG', r['error'])
 
 if __name__ == '__main__':
     unittest.main()
