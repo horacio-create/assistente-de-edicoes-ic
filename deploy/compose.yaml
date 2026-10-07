@@ -1,5 +1,5 @@
 # Uso no servidor:  docker compose -f deploy/compose.yaml up -d --build
-# Acesso: http://IP-OU-DOMINIO (porta 80), aberto, pelo proxy "acesso" — ou túnel SSH para 127.0.0.1:8080.
+# Acesso: https://assistente-edicao.indoorchannel.com.br, aberto, pelo proxy "acesso" — ou túnel SSH para 127.0.0.1:8080.
 # O sistema não tem login: qualquer pessoa com o endereço usa tudo. Para exigir senha, veja deploy/Caddyfile.
 # A porta 8080 fica só na máquina (127.0.0.1); o proxy na frente é o único ponto de entrada.
 name: assistente-edicoes
@@ -29,6 +29,7 @@ services:
     depends_on: [assistente]
     ports:
       - "80:80"
+      - "443:443"
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy:/data
