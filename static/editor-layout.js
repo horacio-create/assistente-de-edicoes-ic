@@ -42,7 +42,7 @@ compactWorkspace();
 // Explanations stay available without occupying the editing surface.
 function helpFor(target,source){
  if(!target||!source)return;
- if(!source.id)source.id='help-'+crypto.randomUUID();
+ if(!source.id)source.id='help-'+Math.random().toString(36).slice(2);
  source.classList.add('context-help');
  target.dataset.helpSource=[...new Set((target.dataset.helpSource||'').split(' ').filter(Boolean).concat(source.id))].join(' ');
  const described=(target.getAttribute('aria-describedby')||'').split(' ').filter(Boolean);

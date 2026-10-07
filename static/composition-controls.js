@@ -8,7 +8,8 @@ let compositionDrag=null,compositionSnap=null,sourceMediaId=null;
 let timelineZoom=1;
 const timelineZoomByJob=new Map();
 const sourceSelections=new Map(),compositionPlayers=new Map(),compositionFinalPlayers=new Map();
-const freshId=()=>crypto.randomUUID().replaceAll('-','');
+// crypto.randomUUID só existe em página segura (HTTPS/localhost); getRandomValues funciona também em HTTP. Mesmo formato: 32 hex.
+const freshId=()=>Array.from(crypto.getRandomValues(new Uint8Array(16)),b=>b.toString(16).padStart(2,'0')).join('');
 const snapFrame=t=>Math.round(Math.max(0,t)*30)/30;
 function project(){return job?.meta?.composition;}
 function projectDuration(p=project()){return Math.max(0,...(p?.clips||[]).map(c=>c.at+c.duration));}
