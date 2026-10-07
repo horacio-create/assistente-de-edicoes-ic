@@ -2,6 +2,17 @@
 
 ## 1.8.0 — versão oficial — 06/10/2026
 
+### Reutilização de timelines de 07/10/2026
+
+- Em todas utiliza a timeline aberta como modelo completo: saída, rotação, escala,
+  posição, cortes, duração e camadas. Cada destino mantém seu arquivo principal.
+- Com uma única timeline, cria uma por arquivo do mesmo tipo, até dez por edição.
+  Lista os arquivos excedentes e orienta a continuar em outra edição.
+- Cortes são adaptados à duração disponível, com aviso por arquivo quando a montagem
+  é encurtada ou alongada; logos e áudio acompanham o tempo adaptado.
+- Mantém nomes, números e identificadores da fila, atualizando os modelos das timelines
+  afetadas. Timelines bloqueadas são preservadas. Ctrl+Z desfaz a operação inteira.
+
 ### Correção de exportação de 07/10/2026
 
 - Exportação individual e em fila detecta a opção de leitura de filtros disponível no

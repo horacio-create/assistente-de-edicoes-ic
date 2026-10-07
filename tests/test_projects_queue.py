@@ -48,6 +48,31 @@ class ProjectQueueTests(unittest.TestCase):
             job=copy.deepcopy(original);mutate(job['meta'])
             with self.assertRaises(ValueError):api('/api/save',job)
 
+    def test_ten_timelines_allowed_and_eleventh_rejected_without_changing_saved_job(self):
+        job=self.create()
+        while len(job['meta']['timelines'])<10:
+            timeline=copy.deepcopy(job['meta']['timelines'][0])
+            timeline.update(id=uid(),name=f"Timeline {len(job['meta']['timelines'])+1:02}")
+            job['meta']['timelines'].append(timeline)
+        job=api('/api/save',job)
+        self.assertEqual(len(job['meta']['timelines']),10)
+        extra=copy.deepcopy(job['meta']['timelines'][0]);extra.update(id=uid(),name='Timeline 11')
+        job['meta']['timelines'].append(extra)
+        with self.assertRaisesRegex(ValueError,'dez timelines'):api('/api/save',job)
+        saved=api('/api/job',method='GET',query={'id':[job['id']]})
+        self.assertEqual(len(saved['meta']['timelines']),10)
+
+    def test_reuse_endpoint_builds_model_without_saving_and_rejects_stale_revision(self):
+        job=self.create();job['meta']['timelines']=job['meta']['timelines'][:1]
+        job=api('/api/save',job)
+        result=api('/api/reuse-timelines',dict(job=job['id'],revision=job['revision'],meta=job['meta']))
+        self.assertEqual(len(result['meta']['timelines']),2)
+        saved=api('/api/job',method='GET',query={'id':[job['id']]})
+        self.assertEqual(len(saved['meta']['timelines']),1)
+        job['meta']=result['meta'];api('/api/save',job)
+        with self.assertRaises(server.Conflict):
+            api('/api/reuse-timelines',dict(job=job['id'],revision=job['revision'],meta=job['meta']))
+
     def test_snapshots_preserve_settings_after_edit_and_timeline_delete(self):
         job=self.queued();snapshot=copy.deepcopy(job['meta']['exportQueue'][0]['composition'])
         job['meta']['composition']['clips'][0]['duration']=2;job['meta']['composition']['clips'][0]['out']=2

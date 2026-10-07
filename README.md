@@ -165,3 +165,17 @@ As logos e a identidade visual pertencem à Indoor Channel.
 Código de empacotamento em `packaging/`; consulte `packaging/LEIA-ME.md`. Arquivo único com lançador C/MinGW, Python Windows embutido, FFmpeg/FFprobe e janela Edge/Chrome em modo aplicativo. Sem PyInstaller.
 
 Build Windows de 07/10/2026: 117 testes Python aprovados, 19 pulados, cinco testes JavaScript de desfazer e oito de contrato aprovados. O teste automatizado do executável confirmou imagens, vídeo com áudio, DXF, EAP e limpeza dos temporários. A janela do navegador, o seletor nativo e o fechamento pelo lockfile ainda precisam de validação manual. Ofertas mantém a dependência externa de Node.js e do motor instalado.
+
+### Reutilizar a timeline em lote
+
+Em **Reutilizar estes ajustes → Em todas**, a timeline aberta fornece o modelo completo
+(saída, enquadramento, cortes, duração, logos e áudio). Nas demais timelines, o arquivo
+principal é substituído pelo arquivo de cada destino; as outras camadas acompanham o modelo.
+Com uma única timeline, o sistema prepara uma por arquivo do mesmo tipo da biblioteca,
+até **10 timelines por edição**. A operação não adiciona itens à fila automaticamente.
+
+Vídeos mais curtos têm seus cortes ajustados ao material disponível. Um resumo informa
+as durações encurtadas/alongadas e os arquivos não processados. Para os excedentes,
+importe-os em uma nova edição ou exclua as outras nove timelines e repita a operação.
+Timelines bloqueadas são preservadas. Itens já enfileirados das timelines afetadas são
+atualizados, mantendo seus nomes e números. **Ctrl+Z** desfaz a operação completa.

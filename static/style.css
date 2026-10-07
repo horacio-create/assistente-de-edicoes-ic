@@ -376,3 +376,7 @@ body.video-workspace{height:100dvh;overflow:hidden}
 .transform-visibility-toggle[aria-pressed=false]{background:#fff;border-color:#d8d8e5}
 
 #remote-folder-dialog .folder-actions{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-top:14px}#remote-folder-dialog .folder-actions .primary{margin-top:0}
+
+#reuse-timelines-dialog{width:min(620px,90vw)}
+#reuse-timelines-details{max-height:45vh;overflow:auto;overflow-wrap:anywhere}
+#reuse-timelines-details p{padding:8px 0;border-bottom:1px solid var(--line,#ddd)}

@@ -1,6 +1,8 @@
 'use strict';
 
 // The active composition stays compatible with earlier jobs and editor controls.
+const TIMELINE_LIMIT=10;
+const timelineLimitMessage='Limite de 10 timelines nesta edição. Importe os arquivos restantes em uma nova edição ou exclua as outras 9 timelines e repita a operação.';
 function ensureTimelines(){
  if(!job?.meta?.composition)return;
  if(!job.meta.timelines?.length){const id=freshId();job.meta.timelines=[{id,name:'Timeline 01',composition:job.meta.composition}];job.meta.activeTimeline=id;markDirty();}
@@ -54,7 +56,7 @@ function resetTimelineView(){
 function focusTimeline(){const c=projectClip();active=c?.mediaId??job.media[0]?.id??null;selected=new Set(c?[c.mediaId]:[]);if(active)activate(active);else syncVideo();updateCounts();requestAnimationFrame(fitStage);}
 function switchTimeline(id){if(busy||id===job?.meta?.activeTimeline)return;const t=timelines().find(t=>t.id===id);if(!t)return;rememberTimelineView();job.meta.activeTimeline=id;job.meta.composition=t.composition;markDirty();focusTimeline();}
 function createTimeline(){
- if(busy||!ensureProject())return;if(timelines().length>=20){toast('A edição aceita até vinte timelines.');return;}
+ if(busy||!ensureProject())return;if(timelines().length>=TIMELINE_LIMIT){toast(timelineLimitMessage);return;}
  rememberTimelineView();mutateEdition(()=>{const t={id:freshId(),name:nextTimelineName(),composition:emptyComposition()};job.meta.timelines.push(t);job.meta.activeTimeline=t.id;job.meta.composition=t.composition;});focusTimeline();
 }
 function deleteTimeline(id){
@@ -69,7 +71,7 @@ function renderProjectPanels(){
  if(signature===timelinePanelSignature){
   for(const row of $('timeline-list').children)row.querySelector('.timeline-item').setAttribute('aria-pressed',String(row.dataset.timelineId===job.meta.activeTimeline));
   for(const tab of timelineTabs.querySelectorAll('[data-timeline-id]'))tab.setAttribute('aria-selected',String(tab.dataset.timelineId===job.meta.activeTimeline));
-  $('new-timeline').disabled=busy||timelines().length>=20;syncQueueControls();return;
+  $('new-timeline').disabled=busy||timelines().length>=TIMELINE_LIMIT;syncQueueControls();return;
  }
  timelinePanelSignature=signature;
  const list=$('timeline-list');list.replaceChildren();timelineTabs.replaceChildren();
@@ -80,7 +82,7 @@ function renderProjectPanels(){
   const tab=document.createElement('button');tab.type='button';tab.className='timeline-tab';tab.setAttribute('role','tab');tab.setAttribute('aria-selected',String(t.id===job.meta.activeTimeline));tab.dataset.timelineId=t.id;tab.innerHTML=timelineIcon;const text=document.createElement('span');text.textContent=t.name;tab.append(text);tab.dataset.help='Abrir '+t.name+'. Dois cliques para renomear.';tab.onclick=()=>switchTimeline(t.id);tab.ondblclick=()=>renameTimeline(t.id);timelineTabs.append(tab);
  }
  const add=document.createElement('button');add.type='button';add.id='timeline-tab-add';add.textContent='+';add.setAttribute('aria-label','Criar timeline');add.dataset.help='Criar uma timeline vazia.';add.onclick=createTimeline;timelineTabs.append(add);
- $('new-timeline').disabled=busy||timelines().length>=20;syncQueueControls();
+ $('new-timeline').disabled=busy||timelines().length>=TIMELINE_LIMIT;syncQueueControls();
 }
 
 // File drops import into the shared library; internal clip drags keep their behavior.
@@ -155,3 +157,24 @@ save=async function(){if(editorKind==='video'&&job?.meta?.composition)ensureTime
 const projectSetBusy=setBusy;
 setBusy=function(value){projectSetBusy(value);queueActions.inert=value;syncQueueControls();};
 syncQueueControls();
+
+
+const reuseReportDialog=document.createElement('dialog');reuseReportDialog.id='reuse-timelines-dialog';
+reuseReportDialog.innerHTML='<div class="dialog-head"><h2>Ajustes reutilizados</h2><button type="button" class="close" aria-label="Fechar resumo">×</button></div><p id="reuse-timelines-summary"></p><div id="reuse-timelines-details"></div><p class="help">Ctrl + Z desfaz esta operação. Para os arquivos que ultrapassam o limite de 10 timelines, importe-os em uma nova edição ou exclua as outras 9 timelines e repita a operação.</p>';
+document.body.append(reuseReportDialog);reuseReportDialog.querySelector('.close').onclick=()=>reuseReportDialog.close();
+$('apply-all').dataset.help='Usar a timeline aberta como modelo nas demais: enquadramento, cortes, duração e camadas. Com uma única timeline, preparar uma por arquivo, até 10. Os itens correspondentes da fila também são atualizados.';
+const timelineApplyAll=$('apply-all').onclick;
+$('apply-all').onclick=()=>{
+ if(editorKind!=='video')return timelineApplyAll();
+ guard(async()=>{
+  if(!activeTimeline())throw new Error('Abra uma timeline para usar como modelo.');
+  stopComposition();
+  const result=await request('/api/reuse-timelines',{job:job.id,revision:job.revision,meta:job.meta});
+  mutateEdition(()=>job.meta=result.meta);syncVideo();renderLibrary();drawSoon();await save();renderProjectPanels();
+  const r=result.report;$('reuse-timelines-summary').textContent=`Modelo: ${activeTimeline().name}. Aplicado a ${r.applied.length} arquivo(s); ${r.created.length} timeline(s) criada(s). ${r.queueUpdated} item(ns) da fila atualizado(s).`;
+  const details=$('reuse-timelines-details');details.replaceChildren();
+  for(const a of r.adjusted){const p=document.createElement('p');p.textContent=`${a.name}: ${a.direction} — ${seconds(a.before)} → ${seconds(a.after)} (modelo: ${seconds(a.model)}).`;details.append(p);}
+  for(const a of r.skipped){const p=document.createElement('p');p.textContent=`Não aplicado: ${a.name}. ${a.reason}`;details.append(p);}
+  reuseReportDialog.showModal();
+ });
+};
