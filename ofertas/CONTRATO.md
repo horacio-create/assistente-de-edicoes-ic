@@ -144,6 +144,11 @@ sempre em grupos completos (`grupo.tamanho`). Ex.: 2 ou 3 painéis de 2 produtos
   tl = principal;
   ```
   Os templates da Uniforça (Hora da Carne, Hora da Feira, Momento do Bebê) seguem esse modelo.
+- **Produto sozinho na última cartela** — `"grupo": { "tamanho": 2, "rotulo": "Cartela", "incompleto": true }`:
+  a quantidade passa a ir de 1 em 1 (5 produtos = 3 cartelas, a última com 1). O template calcula
+  `N = Math.ceil(total / 2)`, só monta os produtos até `total` e centraliza o que ficou sozinho
+  (ex.: `.produto:only-child { left: … }`). No "Gerar todos", a opção "Mostrar o último produto sozinho"
+  aparece e vem marcada, no lugar de repetir o 1º produto ou descartar o último.
 - No "Gerar todos" do encarte, os produtos são divididos em vídeos com tamanhos entre `min` e `itens`,
   repetindo o mínimo possível (10 produtos, 4 a 6: um vídeo de 6 e um de 4).
 

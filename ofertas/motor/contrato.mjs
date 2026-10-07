@@ -66,10 +66,11 @@ export function lerTemplate(dir) {
   return { dir: resolve(dir), meta, html, declaracoes: lerDeclaracoes(html) };
 }
 
-// Lista com quantidade variável: "min" (opcional) até "itens", sempre em grupos completos.
+// Lista com quantidade variável: "min" (opcional) até "itens", sempre em grupos completos — ou de 1 em 1
+// com "grupo.incompleto": o último grupo pode ficar incompleto (ex.: produto sozinho na última cartela).
 // Sem "min" a quantidade é fixa (min = itens), como sempre foi.
 export const minimoLista = (c) => c.min ?? c.itens;
-export const passoLista = (c) => c.grupo?.tamanho || 1;
+export const passoLista = (c) => (c.grupo?.incompleto ? 1 : c.grupo?.tamanho || 1);
 export const listaVariavel = (c) => c.min !== undefined && c.min !== c.itens;
 
 // campo do contrato -> ids das variáveis HyperFrames que ele ocupa
@@ -164,7 +165,7 @@ export function validarTemplate(dir) {
       if (c.grupo && c.itens % c.grupo.tamanho) erros.push(`${onde}: "itens" (${c.itens}) não é múltiplo de grupo.tamanho (${c.grupo.tamanho}).`);
       if (c.min !== undefined) {
         if (!Number.isInteger(c.min) || c.min < 1 || c.min > c.itens) erros.push(`${onde}: "min" deve ser um inteiro entre 1 e "itens" (${c.itens}).`);
-        else if (c.min % passoLista(c)) erros.push(`${onde}: "min" (${c.min}) não é múltiplo de grupo.tamanho (${passoLista(c)}).`);
+        else if (c.min % passoLista(c)) erros.push(`${onde}: "min" (${c.min}) não é múltiplo do passo (${passoLista(c)}).`);
       }
       if (!Array.isArray(c.campos) || !c.campos.length) erros.push(`${onde}: lista sem "campos".`);
       for (const sub of c.campos || []) {
@@ -196,7 +197,7 @@ export function validarTemplate(dir) {
   }
   for (const c of meta.campos.filter(listaVariavel)) {
     const total = decl.get(`${c.id}_total`)?.default;
-    if (total !== undefined && total % passoLista(c)) erros.push(`variável "${c.id}_total": valor padrão ${total} não é múltiplo de grupo.tamanho (${passoLista(c)}).`);
+    if (total !== undefined && total % passoLista(c)) erros.push(`variável "${c.id}_total": valor padrão ${total} não é múltiplo do passo (${passoLista(c)}).`);
   }
   const esperadosIds = new Set(esperadas.map((e) => e.id));
   for (const d of declaracoes)

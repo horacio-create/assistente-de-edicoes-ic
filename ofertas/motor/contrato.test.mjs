@@ -115,8 +115,8 @@ function variavel(min = 4, total = 6) {
 
 test("lista variável: template válido exige produtos_total e min coerente", () => {
   assert.deepEqual(validarTemplate(variavel()).erros, []);
-  assert.match(validarTemplate(variavel(3)).erros.join(), /"min" \(3\) não é múltiplo de grupo.tamanho \(2\)/);
-  assert.match(validarTemplate(variavel(4, 5)).erros.join(), /"produtos_total": valor padrão 5 não é múltiplo/);
+  assert.match(validarTemplate(variavel(3)).erros.join(), /"min" \(3\) não é múltiplo do passo \(2\)/);
+  assert.match(validarTemplate(variavel(4, 5)).erros.join(), /"produtos_total": valor padrão 5 não é múltiplo do passo/);
   const semTotal = copia((d) => editar(d, "template.json", (j) => j.replace('"itens": 6,', '"itens": 6,\n      "min": 4,')));
   assert.match(validarTemplate(semTotal).erros.join(), /"produtos_total".*não está declarada/);
 });
@@ -145,4 +145,16 @@ test("lista variável: aceita 4 ou 6, recusa 5 e 2; total vai para o template", 
 test("lista variável: quantidade padrão vem do default de produtos_total", () => {
   const t = lerTemplate(variavel(4, 4));
   assert.equal(dadosPadrao(t).produtos.length, 4);
+});
+
+test("lista variável com grupo.incompleto: aceita quantidade ímpar (produto sozinho no último grupo)", () => {
+  const dir = variavel(1, 6);
+  editar(dir, "template.json", (j) => j.replace('"tamanho": 2,', '"tamanho": 2,\n        "incompleto": true,'));
+  const t = lerTemplate(dir);
+  assert.deepEqual(validarTemplate(dir).erros, []);
+  const dados = dadosPadrao(t);
+  dados.produtos.splice(5);
+  const r = prepararDados(t, dados, t.dir);
+  assert.deepEqual(r.erros, []);
+  assert.equal(r.variaveis.produtos_total, 5);
 });
