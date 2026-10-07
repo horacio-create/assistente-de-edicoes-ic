@@ -8,6 +8,7 @@ let compositionDrag=null,compositionSnap=null,sourceMediaId=null;
 let timelineZoom=1;
 const timelineZoomByJob=new Map();
 const sourceSelections=new Map(),compositionPlayers=new Map(),compositionFinalPlayers=new Map();
+// getRandomValues também funciona em conexões HTTP da rede local.
 const freshId=()=>Array.from(crypto.getRandomValues(new Uint8Array(16)),b=>b.toString(16).padStart(2,'0')).join('');
 const timedMedia=m=>m?.kind==='video'||m?.kind==='audio';
 const mediaTrackKind=m=>m?.kind==='audio'?'audio':'video';

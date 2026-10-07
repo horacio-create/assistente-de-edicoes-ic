@@ -16,6 +16,10 @@
   botão para ocultar os controles e arraste restrito ao objeto selecionado.
 - Home restaura posição, rotação e escala sem alterar o corte; propriedades da logo usam Escala.
 - Validação: 112 testes Python, cinco JavaScript e testes de navegador com exportação real.
+- Integração com o módulo Ofertas já enviado à main, preservando suas rotas, templates e interface.
+  Suite integrada: 135 testes Python executados, 116 aprovados e 19 pulados por ausência
+  do motor de Ofertas/encartes de referência; 13 testes JavaScript aprovados. Caminho do
+  template nos testes de contrato corrigido para Windows e URLs com caracteres escapados.
 
 - Editor de vídeos, composição com imagens, múltiplas timelines, fila de exportação,
   navegação precisa e ajustes de experiência reunidos na versão oficial 1.8.0.

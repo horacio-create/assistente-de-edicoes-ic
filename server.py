@@ -16,6 +16,7 @@ from urllib.parse import parse_qs, urlsplit
 from waitress import serve
 from version import VERSION
 from modules.images import DEFAULT, SUPPORTED, decode, dominant, encoded, render, settings
+from modules import ofertas
 from modules import videos, audio, composition, naming, export_progress, projects
 from modules import eap, vector
 from PIL import Image
@@ -38,19 +39,21 @@ def local_hosts():
         except (OSError, subprocess.SubprocessError): pass
     return frozenset(names)
 
-ALLOWED_HOSTS = local_hosts()
+# INDOOR_ALLOWED_HOSTS: nomes/IPs extras aceitos, separados por vírgula. "*" aceita qualquer nome — só para
+# quando o sistema está atrás de um proxy e a porta do servidor não é exposta diretamente (ver deploy/).
+ALLOWED_HOSTS = local_hosts() | {h.strip().lower() for h in os.environ.get('INDOOR_ALLOWED_HOSTS', '').split(',') if h.strip()}
 
 def validate_host(host):
     try:
         parsed = urlsplit('//' + (host or ''))
         port = parsed.port
-        if (parsed.hostname not in ALLOWED_HOSTS or parsed.username or parsed.password
+        if ((parsed.hostname not in ALLOWED_HOSTS and '*' not in ALLOWED_HOSTS) or not parsed.hostname or parsed.username or parsed.password
                 or parsed.path or parsed.query or parsed.fragment
                 or (port is not None and not 1 <= port <= 65535)):
             raise ValueError()
     except ValueError:
         raise ValueError('Host não autorizado.') from None
-MODULES = [{'id': 'images', 'name': 'Imagens', 'active': True}, {'id': 'video', 'name': 'Vídeos', 'active': True}, {'id': 'offers', 'name': 'Ofertas de supermercados', 'active': False}, {'id': 'eap', 'name': 'Logo EAP', 'active': True}, {'id': 'ms6', 'name': 'Vetorização MS6', 'active': True}]
+MODULES = [{'id': 'images', 'name': 'Imagens', 'active': True}, {'id': 'video', 'name': 'Vídeos', 'active': True}, {'id': 'conteudos', 'name': 'Conteúdos Indoor', 'active': False}, {'id': 'offers', 'name': 'Ofertas de supermercados', 'active': True}, {'id': 'eap', 'name': 'Logo EAP', 'active': True}, {'id': 'ms6', 'name': 'Vetorização MS6', 'active': True}]
 
 class Conflict(Exception): pass
 
@@ -603,6 +606,10 @@ def app(environ, start_response):
         if origin and origin not in (f'http://{host}', f'https://{host}'):
             raise ValueError('Origem não autorizada.')
         if environ.get('HTTP_SEC_FETCH_SITE') == 'cross-site': raise ValueError('Origem não autorizada.')
+        resposta = ofertas.handle(environ)  # /api/ofertas/* e /ofertas/*; o módulo trata os próprios erros
+        if resposta:
+            start_response(resposta[0], resposta[1])
+            return [resposta[2]]
         if path.startswith('/api/'):
             if method == 'POST' and environ.get('HTTP_X_INDOOR') != '1': raise ValueError('Requisição inválida.')
             length = int(environ.get('CONTENT_LENGTH') or 0)
@@ -651,7 +658,7 @@ def app(environ, start_response):
             content_type = 'image/png'
         else:
             name = 'index.html' if path == '/' else path.lstrip('/')
-            if name not in ('index.html','app.js','video-controls.js','composition-controls.js','project-controls.js','editor-layout.js','audio-panels.js','transform-controls.js', 'edition-names.js','export-progress.js','undo-history.js','vector.js','eap.js','style.css','favicon.svg','logo-indoor.png'): raise FileNotFoundError()
+            if name not in ('index.html','app.js','video-controls.js','composition-controls.js','project-controls.js','editor-layout.js','audio-panels.js','transform-controls.js', 'edition-names.js','export-progress.js','undo-history.js','vector.js','eap.js','style.css','favicon.svg','logo-indoor.png','ofertas.js','ofertas.css','tarefas.js','tarefas.css'): raise FileNotFoundError()
             data = (ROOT / 'static' / name).read_bytes()
             content_type = mimetypes.guess_type(name)[0] or 'application/octet-stream'
     except Conflict as exc:

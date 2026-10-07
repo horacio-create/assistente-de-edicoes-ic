@@ -24,7 +24,7 @@ Colegas na mesma rede acessam http://NOME-DO-PC:8080. O computador que hospeda a
 - Histórico e edições recentes.
 
 Logo EAP e Vetorização MS6 também estão disponíveis na barra lateral.
-O módulo Ofertas de supermercados foi desenvolvido separadamente e aguarda envio ao repositório.
+- **Ofertas de supermercados:** VTs de oferta em MP4 a partir de templates, com formulário, prévia ao vivo, importação de encarte em PDF, biblioteca de imagens com remoção de fundo e fila de geração. Requer Node.js 20+; veja `ofertas/README.md`.
 
 ## Vídeos
 A seção Vídeos fica abaixo de Imagens na barra lateral. Importa MP4, AVI, MOV, MKV e WebM,
@@ -116,9 +116,10 @@ Imagens importadas, edições e histórico ficam na pasta `dados`, criada ao usa
 ```powershell
 .venv/Scripts/python.exe -m unittest discover -s tests -q
 node tests/test_undo.cjs
+cd ofertas/motor && npm test   # contrato de templates de Ofertas
 ```
 
-A V1.8.0 tem 101 testes Python e cinco testes JavaScript. Os testes de vídeo usam
+A V1.8.0 tem 101 testes Python e cinco testes JavaScript; o módulo Ofertas acrescenta 22 testes Python (os que dependem do motor são pulados sem Node.js), um teste do extrator com encartes reais conferidos (pulado sem `OFERTAS_ENCARTES`) e oito testes do contrato em `ofertas/motor`. Os testes de vídeo usam
 FFmpeg e arquivos sintéticos temporários. Node.js é necessário apenas para os testes JavaScript.
 O teste de navegador em `tests/test_composition_browser.cjs` usa Playwright, uma instância
 isolada, um vídeo sintético de cinco segundos e imagens verdes/amarelas ao lado dele.
