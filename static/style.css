@@ -406,3 +406,20 @@ body.video-workspace{height:100dvh;overflow:hidden}
 .clip-time-dialog .clip-trim-track input::-moz-range-thumb{box-sizing:border-box;height:26px}
 
 .composition-editor .timeline-model-action{display:block!important}
+
+/* Compact queue actions and readable navigation icons. */
+.video-workspace .queue-actions{gap:6px}
+.video-workspace .queue-actions #queue-add,.video-workspace .queue-actions #queue-open{border-radius:8px;border:1px solid #e0e1ec;background:#fff;gap:4px}
+.video-workspace .queue-actions #queue-count{display:inline-flex;align-items:center;justify-content:center;min-width:22px;height:18px;padding:0 6px;border-radius:999px;background:#81D680;color:#2d3144;font-weight:700}
+.video-workspace .queue-actions #queue-count[hidden]{display:none}
+.video-workspace .queue-actions svg{width:19px;height:19px}
+.video-workspace .audio-action{gap:2px}
+.video-workspace #open-export{display:inline-flex;align-items:center;gap:2px}
+#open-export>span{display:inline-flex;margin:0}
+#open-export>span svg{display:block;width:19px;height:19px}
+.video-workspace .composition-position #montage-scrub{accent-color:#4d9561}
+.video-workspace .composition-position #montage-current-time{border:0;border-radius:0;background:transparent;color:#4d9561;box-shadow:none}
+.video-workspace .composition-position #montage-current-time:focus{border:0;outline:none;box-shadow:none}
+.video-workspace .composition-position #montage-current-time:focus-visible{text-decoration:underline;text-underline-offset:3px}
+
+#open-export>span svg{color:#2d3144}

@@ -34,7 +34,7 @@ const timelineTabs=document.createElement('div');timelineTabs.id='timeline-tabs'
 timelineToolbar.prepend(timelineTabs);
 const timelineBody=document.createElement('div');timelineBody.className='timeline-body';
 const timelineRail=document.createElement('div');timelineRail.className='timeline-rail';timelineRail.setAttribute('aria-label','Ferramentas da timeline');
-for(const [id,icon,label] of [['split-segment',scissorsIcon,'Dividir aqui'],['remove-segment',trashIcon,'Remover trecho'],['segment-left','←','Mover trecho para antes'],['segment-right','→','Mover trecho para depois']]){const button=$(id);button.innerHTML=icon;button.setAttribute('aria-label',label);timelineRail.append(button);}
+for(const [id,icon,label] of [['split-segment',scissorsIcon,'Dividir aqui'],['remove-segment',trashIcon,'Remover trecho'],['segment-left','<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M2 12 12 5v5h10v4H12v5Z"/></svg>','Mover trecho para antes'],['segment-right','<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M22 12 12 5v5H2v4h10v5Z"/></svg>','Mover trecho para depois']]){const button=$(id);button.innerHTML=icon;button.setAttribute('aria-label',label);timelineRail.append(button);}
 $('add-segment').hidden=true;$('add-segment').setAttribute('aria-hidden','true');
 $('add-segment').onclick=()=>{selectLibraryTab('media');$('library-add').focus();};
 $('layered-timeline').before(timelineBody);timelineBody.append(timelineRail,$('layered-timeline'));
@@ -104,11 +104,14 @@ window.addEventListener('keydown',e=>{
 },true);
 
 const queueActions=document.createElement('div');queueActions.className='queue-actions';queueActions.hidden=true;
-queueActions.innerHTML='<button id="queue-add" type="button" class="secondary" data-help="Guardar uma cópia da timeline atual na fila. Você pode continuar editando antes de exportar.">'+timelineIcon+'<span>Fila</span></button><button id="queue-open" type="button" aria-label="Ver fila de exportação" data-help="Conferir ou remover os vídeos que esperam na fila."><span id="queue-count">00</span></button>';
+const queueStackIcon='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 15H1V1h17v2M6 18H4V4h17v2"/><rect x="7" y="7" width="16" height="16" rx="2"/><path d="m9 19 4-5 3 3 3-4 2 3"/><circle cx="12" cy="11" r="1"/></svg>';
+const queueAddIcon=queueStackIcon.replace('</svg>','<circle cx="18" cy="18" r="5" fill="white"/><path d="M18 15v6m-3-3h6"/></svg>');
+queueActions.innerHTML='<button id="queue-add" type="button" class="secondary" data-help="Guardar uma cópia da timeline atual na fila. Você pode continuar editando antes de exportar.">'+queueAddIcon+'<span>Adicionar à fila</span></button><button id="queue-open" type="button" aria-label="Ver fila de exportação" data-help="Conferir ou remover os vídeos que esperam na fila.">'+queueStackIcon+'<span>Fila</span><span id="queue-count" hidden></span></button>';
+$('open-export').querySelector('span').innerHTML='<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M22 12 12 5v5H2v4h10v5Z" transform="rotate(-45 12 12)"/></svg>';
 $('open-export').before(queueActions);
 const queueDialog=document.createElement('dialog');queueDialog.id='queue-dialog';queueDialog.innerHTML='<div class="dialog-head"><h2>Fila de exportação</h2><button id="queue-close" type="button" class="close" aria-label="Fechar fila">×</button></div><div id="queue-list"></div><div class="dialog-footer"><button id="queue-export" type="button" class="primary">Exportar fila</button></div>';
 document.body.append(queueDialog);
-function syncQueueControls(){const video=editorKind==='video';queueActions.hidden=!video;$('queue-count').textContent=String(exportQueue().length).padStart(2,'0');$('queue-add').disabled=busy||!project()?.clips.length||exportQueue().length>=50;$('queue-open').disabled=busy;$('queue-export').disabled=busy||!exportQueue().length;if(video){$('open-export').disabled=busy||(!project()?.clips.length&&!exportQueue().length);$('open-export').dataset.help=exportQueue().length?'Revisar e exportar os '+exportQueue().length+' vídeos da fila em sequência (Ctrl + E).':'Revisar e exportar a timeline atual (Ctrl + E).';}}
+function syncQueueControls(){const video=editorKind==='video';queueActions.hidden=!video;$('queue-count').textContent=String(exportQueue().length);$('queue-count').hidden=!exportQueue().length;$('queue-add').disabled=busy||!project()?.clips.length||exportQueue().length>=50;$('queue-open').disabled=busy;$('queue-export').disabled=busy||!exportQueue().length;if(video){$('open-export').disabled=busy||(!project()?.clips.length&&!exportQueue().length);$('open-export').dataset.help=exportQueue().length?'Revisar e exportar os '+exportQueue().length+' vídeos da fila em sequência (Ctrl + E).':'Revisar e exportar a timeline atual (Ctrl + E).';}}
 function renderQueue(){
  const list=$('queue-list');list.replaceChildren();
  for(const item of exportQueue()){

@@ -2,6 +2,14 @@
 
 ## 1.8.0 — versão oficial — 06/10/2026
 
+### Refinamentos visuais da fila de 07/10/2026
+
+- Adicionar à fila e Fila recebem rótulos separados e ícones de mídias empilhadas.
+  Contagem oculta quando vazia; quantidade em elipse verde quando houver itens.
+- Tempo atual mantém edição sem caixa e usa o verde da barra de reprodução.
+- Ícone de áudio mais próximo do texto; setas da timeline ampliadas e preenchidas em SVG,
+  com as mesmas dimensões dos demais ícones; seta de Exportar maior e próxima do nome.
+
 ### Controles de tempo e medidas de 07/10/2026
 
 - Relógio ao lado do olho/mudo abre velocidade e duração do trecho, com porcentagem
