@@ -59,7 +59,7 @@ const [url,sample,output]=process.argv.slice(2);
   await screenshot('editor-faixas-biblioteca');
   await seek(0);await focus();await page.keyboard.press('Space');await page.waitForFunction(()=>compositionPlaying&&compositionCursor>.4);await page.keyboard.press('Space');
   await focus();await page.keyboard.press('Control+s');await page.waitForFunction(()=>!busy&&!dirty);const expected=await state();
-  await page.evaluate(()=>{info.nativePicker=false;});await focus();await page.keyboard.press('Control+e');await page.locator('#remote-path').fill(output);await page.locator('#use-remote-folder').click();await page.waitForFunction(()=>!busy&&plan!==null);
+  await page.evaluate(()=>{info.nativePicker=false;});await focus();await page.keyboard.press('Control+e');await page.locator('#remote-folder-dialog summary').click();await page.locator('#remote-path').fill(output);await page.locator('#use-remote-folder').click();await page.waitForFunction(()=>!busy&&plan!==null);
   await page.locator('#final-video-play').click();await page.waitForFunction(()=>compositionFinalPlaying&&compositionFinalTime>.4);await page.locator('#final-video-play').click();
   if(await page.locator('#overwrite-label').isVisible())await page.locator('#overwrite').check();await page.locator('#confirm-export').click();await page.waitForFunction(()=>!busy&&$('export-result').textContent.startsWith('✓'),{},{timeout:60000});
   const exported=fs.readdirSync(output).find(n=>n.endsWith('.mp4'));assert.ok(exported);assert.ok(fs.statSync(path.join(output,exported)).size<=500000);

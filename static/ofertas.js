@@ -189,15 +189,41 @@ async function montarFormulario() {
   form.innerHTML = '<h3>Conteúdo</h3>';
   for (const def of state.esquema.campos) {
     if (def.tipo !== 'lista') { form.append(campo(def, [def.id], def.id)); continue; }
+    const qtd = state.pedido.dados[def.id].length;
     const tamanho = def.grupo?.tamanho || def.itens;
-    for (let g = 0; g < def.itens / tamanho; g++) {
+    const variavel = def.min < def.itens;
+    const nomeGrupo = def.grupo?.rotulo || 'Grupo';
+    const nomeItem = (def.rotuloItem || def.rotulo).toLowerCase();
+    for (let g = 0; g < qtd / tamanho; g++) {
       const grupo = document.createElement('section');
       grupo.className = 'grupo';
-      grupo.innerHTML = `<h4>${esc(def.grupo ? `${def.grupo.rotulo} ${g + 1}` : def.rotulo)}</h4>`;
+      grupo.innerHTML = `<header><h4>${esc(def.grupo ? `${nomeGrupo} ${g + 1}` : def.rotulo)}</h4><small>${tamanho} ${esc(nomeItem)}${tamanho > 1 ? 's' : ''}</small></header>`;
+      if (variavel && qtd > def.min) {
+        const remover = document.createElement('button');
+        remover.type = 'button';
+        remover.className = 'remover-grupo';
+        remover.textContent = 'Remover';
+        remover.setAttribute('aria-label', `Remover ${nomeGrupo.toLowerCase()} ${g + 1}`);
+        remover.onclick = async () => {
+          const nomes = state.pedido.dados[def.id].slice(g * tamanho, (g + 1) * tamanho).map((it) => it.nome).filter(Boolean).join(', ');
+          if (!(await confirmar(`Remover ${nomeGrupo.toLowerCase()} ${g + 1}?`, `${nomes ? nomes + ' saem' : 'Os produtos dela saem'} do vídeo. As imagens continuam na Biblioteca.`, 'Remover'))) return;
+          mudarQuantidade(def, (lista) => lista.splice(g * tamanho, tamanho));
+        };
+        grupo.querySelector('header').append(remover);
+      }
       for (let i = g * tamanho; i < (g + 1) * tamanho; i++) {
         const card = document.createElement('div');
         card.className = 'item-card';
         card.innerHTML = `<div class="item-titulo"><b>${i + 1}</b>${esc(def.rotuloItem || def.rotulo)} ${i + 1}</div>`;
+        if (def === listaPrincipal() && encartesProntos().length) {
+          const trocar = document.createElement('button');
+          trocar.type = 'button';
+          trocar.className = 'trocar-encarte';
+          trocar.textContent = 'Trocar pelo encarte';
+          trocar.setAttribute('aria-label', `Trocar ${(def.rotuloItem || def.rotulo).toLowerCase()} ${i + 1} por um produto do encarte`);
+          trocar.onclick = () => abrirTroca(i);
+          card.querySelector('.item-titulo').append(trocar);
+        }
         let par = null;
         for (const sub of def.campos) {
           const c = campo(sub, [def.id, i, sub.id], `${def.id}_${i + 1}_${sub.id}`);
@@ -211,9 +237,49 @@ async function montarFormulario() {
       }
       form.append(grupo);
     }
+    if (variavel) {
+      const grupos = qtd / tamanho, maximo = def.itens / tamanho;
+      const rodape = document.createElement('div');
+      rodape.className = 'grupo-rodape';
+      const adicionar = document.createElement('button');
+      adicionar.type = 'button';
+      adicionar.className = 'adicionar-grupo';
+      adicionar.disabled = grupos >= maximo;
+      adicionar.textContent = grupos >= maximo ? `Limite de ${maximo} ${nomeGrupo.toLowerCase()}s` : `+ Adicionar ${nomeGrupo.toLowerCase()}`;
+      adicionar.onclick = () => mudarQuantidade(def, (lista) => lista.push(...itensPadrao(def, lista.length, tamanho)), true);
+      const resumo = document.createElement('small');
+      resumo.textContent = `${grupos} de ${maximo} ${nomeGrupo.toLowerCase()}${maximo > 1 ? 's' : ''} · ${qtd} ${nomeItem}${qtd > 1 ? 's' : ''} · a duração do vídeo é dividida igualmente`;
+      rodape.append(adicionar, resumo);
+      form.append(rodape);
+    }
   }
   form.scrollTop = rolagem;
   aplicarValidacao(state.validacao);
+}
+
+// lista com quantidade variável (template com "min"): itens novos vêm do conteúdo de exemplo do template
+function itensPadrao(def, de, qtd) {
+  const padrao = state.esquema.padrao[def.id];
+  return Array.from({ length: qtd }, (_, i) => structuredClone(padrao[(de + i) % padrao.length]));
+}
+async function mudarQuantidade(def, mudar, rolarAteNovo = false) {
+  mudar(state.pedido.dados[def.id]);
+  agendarSalvar();
+  await montarFormulario();
+  if (rolarAteNovo) {
+    const novo = [...el('formulario').querySelectorAll('.grupo')].at(-1);
+    novo?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    novo?.querySelector('input')?.focus({ preventScroll: true });
+  }
+}
+// quantos produtos vão em cada vídeo do "Gerar todos" (mesma regra de tamanhos_dos_videos no servidor)
+const passoDe = (lista) => lista.grupo?.tamanho || 1;
+const limitesCartelas = (lista) => [(lista.min ?? lista.itens) / passoDe(lista), lista.itens / passoDe(lista)];
+function tamanhosDosVideos(n, lista, cartelas) {
+  const passo = passoDe(lista), [gmin, gmax] = limitesCartelas(lista);
+  cartelas ??= gmax;
+  const grupos = Math.ceil(n / passo), total = Math.ceil(grupos / cartelas);
+  return Array.from({ length: total }, (_, k) => Math.max(gmin, Math.floor(grupos / total) + (k < grupos % total ? 1 : 0)) * passo);
 }
 
 function aplicarValidacao(detalhes) {
@@ -397,6 +463,9 @@ async function carregarEncartes() {
     }
     if (!state.encarteSel && state.encartes.length) state.encarteSel = state.encartes[0].id;
     if (!el('editor').hidden) desenharCardEncarte();
+    // o botão "Trocar pelo encarte" dos produtos depende de haver encarte pronto
+    const temTroca = !!el('formulario').querySelector('.trocar-encarte');
+    if (state.esquema && !el('editor').hidden && temTroca !== (encartesProntos().length > 0 && !!listaPrincipal())) montarFormulario();
     if (state.encartes.some((e) => e.status === 'lendo')) encTimer = setTimeout(carregarEncartes, 1500);
   } catch (e) { encTimer = setTimeout(carregarEncartes, 8000); }
 }
@@ -482,15 +551,14 @@ function desenharEncarte() {
 }
 el('usar-encarte').addEventListener('click', () => {
   const lista = listaPrincipal();
-  const subs = Object.fromEntries(lista.campos.map((s) => [s.id, s]));
-  state.ordem.forEach((k, i) => {
-    const it = state.encarte[k], alvo = state.pedido.dados[lista.id][i];
-    if (subs.nome) alvo.nome = it.nome;
-    if (subs.imagem) alvo.imagem = 'biblioteca:' + it.imagem;
-    if (subs.por) alvo.por = it.por;
-    if (subs.de) alvo.de = it.de;
-    if (subs.unidade && subs.unidade.opcoes?.includes(it.unidade)) alvo.unidade = it.unidade;
-  });
+  if (lista.min < lista.itens) { // lista variável: a quantidade acompanha os produtos escolhidos (em grupos completos)
+    const passo = lista.grupo?.tamanho || 1;
+    const qtd = Math.min(lista.itens, Math.max(lista.min, Math.ceil(state.ordem.length / passo) * passo));
+    const atual = state.pedido.dados[lista.id];
+    if (atual.length > qtd) atual.splice(qtd);
+    else atual.push(...itensPadrao(lista, atual.length, qtd - atual.length));
+  }
+  state.ordem.forEach((k, i) => preencherItem(lista, state.pedido.dados[lista.id][i], state.encarte[k]));
   const n = state.ordem.length;
   state.ordem = [];
   desenharEncarte();
@@ -499,6 +567,53 @@ el('usar-encarte').addEventListener('click', () => {
   aviso(`${n} produtos preenchidos a partir do encarte. Confira antes de gerar.`);
   el('formulario').scrollTo({ top: 0, behavior: 'smooth' });
 });
+
+// produto do encarte -> item da lista do pedido (só os campos que o template tem)
+function preencherItem(lista, alvo, it) {
+  const subs = Object.fromEntries(lista.campos.map((s) => [s.id, s]));
+  if (subs.nome) alvo.nome = it.nome;
+  if (subs.imagem) alvo.imagem = 'biblioteca:' + it.imagem;
+  if (subs.por) alvo.por = it.por;
+  if (subs.de) alvo.de = it.de;
+  if (subs.unidade && subs.unidade.opcoes?.includes(it.unidade)) alvo.unidade = it.unidade;
+}
+
+// ---------- trocar um produto do formulário por um do encarte ----------
+const troca = { i: null, encarte: null };
+const encartesProntos = () => state.encartes.filter((e) => e.status === 'pronto' && e.itens.length);
+function abrirTroca(i) {
+  troca.i = i;
+  troca.encarte = (encartesProntos().find((e) => e.id === state.encarteSel) || encartesProntos()[0])?.id;
+  const atual = state.pedido.dados[listaPrincipal().id][i];
+  el('trocar-titulo').textContent = `Trocar o produto ${i + 1}${atual?.nome ? ` · ${atual.nome}` : ''}`;
+  el('trocar-busca').value = '';
+  desenharTroca();
+  el('trocar-dialog').showModal();
+  el('trocar-busca').focus();
+}
+function desenharTroca() {
+  const prontos = encartesProntos(), enc = prontos.find((e) => e.id === troca.encarte);
+  el('trocar-encartes').hidden = prontos.length < 2;
+  el('trocar-encartes').innerHTML = prontos.slice(0, 8).map((e) => `<button type="button" class="chip ${e.id === troca.encarte ? 'ativo' : ''}" data-id="${e.id}">
+    <strong>${esc(e.nome)}</strong><small>${e.itens.length} produtos · ${hora(e.criado)}</small></button>`).join('');
+  el('trocar-encartes').querySelectorAll('.chip').forEach((c) => c.addEventListener('click', () => { troca.encarte = c.dataset.id; desenharTroca(); }));
+  const termo = el('trocar-busca').value.trim().toLowerCase();
+  const itens = (enc?.itens || []).map((it, k) => [it, k]).filter(([it]) => !termo || (it.nome || '').toLowerCase().includes(termo));
+  el('trocar-total').textContent = enc ? `${itens.length} de ${enc.itens.length} produtos` : '';
+  el('trocar-grade').innerHTML = itens.length ? itens.map(([it, k]) => `<button type="button" class="card ${avisosDe(it).length ? 'com-aviso' : ''}" data-k="${k}">
+    ${avisosDe(it).length ? `<span class="alerta" title="${esc(avisosDe(it).join('\n'))}">Conferir</span>` : ''}
+    <img class="thumb" src="/ofertas/miniatura/${it.imagem}.png" alt="" loading="lazy">${itemEncarte(it)}</button>`).join('')
+    : `<p class="help">${enc ? 'Nenhum produto com esse nome.' : 'Importe um encarte no card “Encarte” para trocar produtos.'}</p>`;
+  el('trocar-grade').querySelectorAll('.card').forEach((c) => c.addEventListener('click', () => {
+    const lista = listaPrincipal(), it = enc.itens[Number(c.dataset.k)];
+    preencherItem(lista, state.pedido.dados[lista.id][troca.i], it);
+    el('trocar-dialog').close();
+    montarFormulario();
+    agendarSalvar();
+    aviso(`Produto ${troca.i + 1} trocado por ${it.nome || 'produto do encarte'}.${avisosDe(it).length ? ' Confira: este produto tem aviso no encarte.' : ''}`);
+  }));
+}
+el('trocar-busca').addEventListener('input', desenharTroca);
 
 // ---------- conferir / marcar na página (diálogo) ----------
 // Áreas vêm do servidor nas unidades do encarte (pontos do PDF ou pixels da imagem); a tela trabalha em frações.
@@ -617,21 +732,71 @@ el('conferir-excluir').addEventListener('click', async () => {
 });
 
 // ---------- gerar todos os vídeos do encarte ----------
-el('encarte-todos').addEventListener('click', async () => {
-  const enc = encAtual(), max = listaPrincipal().itens, n = enc.itens.length;
-  const total = Math.ceil(n / max), resto = total * max - n;
-  const pendentes = enc.itens.filter((it) => avisosDe(it).length).length;
-  const texto = `Cada vídeo usa ${max} produtos, na ordem do encarte.${resto ? ` O último é completado com os ${resto} primeiros produtos.` : ''}`
-    + `${pendentes ? ` Atenção: ${pendentes} ${pendentes === 1 ? 'produto ainda tem aviso' : 'produtos ainda têm avisos'} para conferir.` : ''} Os vídeos entram na fila de geração.`;
-  if (!(await confirmar(`Gerar ${total} ${total === 1 ? 'vídeo' : 'vídeos'} com os ${n} produtos?`, texto, `Gerar ${total} ${total === 1 ? 'vídeo' : 'vídeos'}`))) return;
+// "Gerar todos": o usuário escolhe cartelas por vídeo (ou quantos vídeos) e o que fazer com o produto sem par
+function planoLote() {
+  const enc = encAtual(), lista = listaPrincipal(), passo = passoDe(lista), [gmin, gmax] = limitesCartelas(lista);
+  const impar = document.querySelector('input[name=of-lote-impar]:checked').value;
+  const total = enc.itens.length, sobra = passo > 1 ? total % passo : 0;
+  const n = impar === 'fora' && sobra && total > passo ? total - sobra : total;
+  const cartelas = Math.min(gmax, Math.max(gmin, Math.round(Number(el('lote-cartelas').value) || gmax)));
+  const tamanhos = tamanhosDosVideos(n, lista, cartelas);
+  return { enc, lista, passo, gmin, gmax, impar, sobra, n, cartelas, tamanhos, repetidos: tamanhos.reduce((a, b) => a + b, 0) - n };
+}
+const plural = (n, um, varios) => `${n} ${n === 1 ? um : varios}`;
+function desenharLote() {
+  const p = planoLote(), nomeGrupo = (p.lista.grupo?.rotulo || 'cartela').toLowerCase();
+  el('lote-cartelas').value = p.cartelas;
+  el('lote-videos').value = p.tamanhos.length;
+  el('lote-titulo').textContent = `Gerar ${plural(p.tamanhos.length, 'vídeo', 'vídeos')} com ${plural(p.enc.itens.length, 'produto', 'produtos')}`;
+  el('lote-sub').textContent = `${p.enc.nome} · na ordem do encarte`;
+  el('lote-cartelas-ajuda').textContent = p.gmin === p.gmax ? `Fixo neste template (${p.gmax}).` : `De ${p.gmin} a ${p.gmax} por vídeo.`;
+  el('lote-videos-ajuda').textContent = 'Os vídeos saem com quantidades parecidas.';
+  el('lote-impar').hidden = !p.sobra;
+  el('lote-primeiro').textContent = p.enc.itens[0]?.nome ? `(${p.enc.itens[0].nome})` : '';
+  el('lote-ultimo').textContent = p.enc.itens.at(-1)?.nome ? `(${p.enc.itens.at(-1).nome})` : '';
+  // vídeos iguais em sequência viram uma linha: "Vídeos 1 a 3 · 4 cartelas (8 produtos)"
+  const linhas = [];
+  p.tamanhos.forEach((t, k) => { const ult = linhas.at(-1); if (ult?.t === t) ult.ate = k + 1; else linhas.push({ t, de: k + 1, ate: k + 1 }); });
+  el('lote-resumo').innerHTML = linhas.map((l) => `<li><b>${l.de === l.ate ? `Vídeo ${l.de}` : `Vídeos ${l.de} a ${l.ate}`}</b><span>${plural(l.t / p.passo, nomeGrupo, nomeGrupo + 's')} · ${plural(l.t, 'produto', 'produtos')}</span></li>`).join('');
+  const notas = [];
+  if (p.repetidos) notas.push(`${plural(p.repetidos, 'produto se repete', 'produtos se repetem')} para completar ${p.repetidos > p.sobra ? 'os vídeos' : 'a cartela'} (a partir do 1º do encarte).`);
+  if (p.n < p.enc.itens.length) notas.push(`${p.enc.itens.at(-1).nome || 'O último produto'} fica de fora.`);
+  el('lote-nota').textContent = notas.join(' ');
+  const pendentes = p.enc.itens.filter((it) => avisosDe(it).length).length;
+  el('lote-aviso').hidden = !pendentes;
+  el('lote-aviso').textContent = `Atenção: ${plural(pendentes, 'produto ainda tem aviso', 'produtos ainda têm avisos')} para conferir.`;
+  const base = p.enc.nome.replace(/\.[^.]+$/, '');
+  el('lote-nomes').textContent = p.tamanhos.length > 1 ? `Nomes: ${base} (1) … ${base} (${p.tamanhos.length})` : `Nome: ${base}`;
+  el('lote-gerar').textContent = `Gerar ${plural(p.tamanhos.length, 'vídeo', 'vídeos')}`;
+}
+el('lote-cartelas').addEventListener('change', desenharLote);
+// quantidade de vídeos -> cartelas por vídeo (o mínimo que cabe nesses vídeos); o resumo mostra o resultado real
+el('lote-videos').addEventListener('change', () => {
+  const p = planoLote(), videos = Math.max(1, Math.round(Number(el('lote-videos').value) || 1));
+  el('lote-cartelas').value = Math.ceil(Math.ceil(p.n / p.passo) / videos);
+  desenharLote();
+});
+document.querySelectorAll('input[name=of-lote-impar]').forEach((r) => r.addEventListener('change', desenharLote));
+el('encarte-todos').addEventListener('click', () => {
+  const [gmin, gmax] = limitesCartelas(listaPrincipal());
+  Object.assign(el('lote-cartelas'), { min: gmin, max: gmax, value: gmax, disabled: gmin === gmax });
+  el('lote-videos').disabled = gmin === gmax;
+  document.querySelector('input[name=of-lote-impar][value=repetir]').checked = true;
+  desenharLote();
+  el('lote-dialog').showModal();
+});
+el('lote-gerar').addEventListener('click', async () => {
+  const p = planoLote();
+  el('lote-gerar').disabled = true;
   try {
-    const r = await api('/encarte-gerar-todos', { body: { encarte: enc.id, template: state.pedido.template } });
+    const r = await api('/encarte-gerar-todos', { body: { encarte: p.enc.id, template: state.pedido.template, cartelas: p.cartelas, impar: p.impar } });
+    el('lote-dialog').close();
     const falhos = r.videos.filter((v) => !v.render);
     aviso(falhos.length ? `${r.videos.length - falhos.length} na fila. ${falhos.length} não ${falhos.length === 1 ? 'pôde' : 'puderam'} ser gerado(s): abra em Pedidos recentes para corrigir.`
       : `${r.videos.length} ${r.videos.length === 1 ? 'vídeo enviado' : 'vídeos enviados'} para a fila de geração.`, 7000);
     carregarFila();
     mostrar(falhos.length ? 'pedidos' : 'fila');
-  } catch (e) { falha(e); }
+  } catch (e) { falha(e); } finally { el('lote-gerar').disabled = false; }
 });
 
 // ---------- pedidos ----------

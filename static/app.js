@@ -33,7 +33,40 @@ function resetCompletion(){clearTimeout(completionTimer);$('export-complete').hi
 
 async function refreshThumbs(){const run=++thumbRun;for(const m of job?.media||[]){if(run!==thumbRun)return;const key=JSON.stringify(m.settings);if(thumbKeys.get(m.id)===key)continue;try{const result=await request('/api/preview',{id:m.id,settings:m.settings});if(run!==thumbRun)return;if(JSON.stringify(m.settings)!==key)continue;thumbCache.set(m.id,result.image);thumbKeys.set(m.id,key);const i=job.media.findIndex(x=>x.id===m.id);const card=$('grid').children[i];if(card)card.querySelector('.thumb').src=result.image;}catch(e){/* The individual editor displays decoding errors. */}}}
 function toast(message) { $('toast').textContent = message; $('toast').hidden = false; clearTimeout(toast.timer); toast.timer = setTimeout(() => $('toast').hidden = true, 6500); }
+// Pela rede o servidor não enxerga as pastas deste computador: ele exporta para uma pasta temporária (navegador:<token>)
+// e o navegador grava os arquivos na pasta escolhida (Chrome/Edge em HTTPS) ou os baixa (qualquer navegador, inclusive HTTP).
+const browserTargets=new Map();let planTarget=null;
 async function request(path, body, method) {
+  const target=body?.folder&&browserTargets.get(body.folder);
+  if(target)body={...body,folder:'navegador:'+target.token};
+  if(path==='/api/plan')planTarget=target||null;
+  const data=await baseRequest(path,body,method);
+  const delivery=path==='/api/export'?planTarget:['/api/vector/export','/api/eap/export'].includes(path)?target:null;
+  if(delivery){await deliver(delivery);if(data.path)data.path=delivery.label;}
+  return data;
+}
+async function browserFolder(){
+  let handle=null;
+  if(window.showDirectoryPicker){try{handle=await showDirectoryPicker({id:'exportar',mode:'readwrite'});}catch(e){if(e.name==='AbortError')return null;throw e;}}
+  const label=handle?handle.name+' (neste computador)':'Downloads deste computador';
+  browserTargets.set(label,{token:Array.from(crypto.getRandomValues(new Uint8Array(16)),b=>b.toString(16).padStart(2,'0')).join(''),handle,label});
+  return label;
+}
+async function deliver(target){
+  const kept=[];
+  try{
+    for(const name of await baseRequest('/api/entrega?token='+target.token)){
+      const response=await fetch(`/entrega?token=${target.token}&name=${encodeURIComponent(name)}`);
+      if(!response.ok)throw new Error(`Não foi possível baixar ${name}.`);
+      if(!target.handle){const a=document.createElement('a');a.href=URL.createObjectURL(await response.blob());a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),60000);continue;}
+      const exists=await target.handle.getFileHandle(name).then(()=>true,()=>false);
+      if(exists&&!confirm(`"${name}" já existe na pasta ${target.handle.name}. Substituir?`)){kept.push(name);await response.body.cancel();continue;}
+      await response.body.pipeTo(await (await target.handle.getFileHandle(name,{create:true})).createWritable());
+    }
+  }finally{await baseRequest('/api/entrega-limpar',{token:target.token}).catch(()=>{});}
+  if(kept.length)toast(`Mantido${kept.length>1?'s':''} sem substituir: ${kept.join(', ')}.`);
+}
+async function baseRequest(path, body, method) {
   const response = await fetch(path, {method:method || (body ? 'POST' : 'GET'),headers:body ? {'Content-Type':'application/json','X-Indoor':'1'} : {},body:body ? JSON.stringify(body) : undefined});
   const data = await response.json(); if (!response.ok) throw new Error(data.error || 'Não foi possível concluir a operação.'); return data;
 }
@@ -68,7 +101,7 @@ async function loadHistory(){historySelected.clear();$('delete-history').disable
 function dateName(){return new Date().toLocaleDateString('pt-BR').replaceAll('/','.');}
 async function chooseFolder(){
  if(info.nativePicker){toast('Escolha a pasta na janela do sistema.');const result=await request('/api/pick-folder',{});$('toast').hidden=true;return result.path;}
- return new Promise(resolve=>{const d=$('remote-folder-dialog');$('remote-path').value=exportFolder||job?.meta?.folder||'';const cancel=()=>{d.close();resolve(null);};d.oncancel=e=>{e.preventDefault();cancel();};d.querySelector('.close').onclick=cancel;$('use-remote-folder').onclick=()=>{if(!$('remote-path').value.trim())return;d.close();resolve($('remote-path').value.trim());};d.showModal();});
+ return new Promise(resolve=>{const d=$('remote-folder-dialog');$('use-browser-folder').textContent=window.showDirectoryPicker?'Escolher pasta neste computador':'Baixar neste computador';$('use-browser-folder').onclick=async()=>{try{const label=await browserFolder();if(!label)return;d.close();resolve(label);}catch(e){toast(e.message);}};const last=[exportFolder,job?.meta?.folder].find(f=>f&&!browserTargets.has(f)&&!f.endsWith(' (neste computador)')&&f!=='Downloads deste computador')||'';$('remote-path').value=last;d.querySelector('details').open=!!last;const cancel=()=>{d.close();resolve(null);};d.oncancel=e=>{e.preventDefault();cancel();};d.querySelector('.close').onclick=cancel;$('use-remote-folder').onclick=()=>{if(!$('remote-path').value.trim())return;d.close();resolve($('remote-path').value.trim());};d.showModal();});
 }
 async function openExport(){const folder=await chooseFolder();if(!folder)return;await save();exportFolder=folder;exportIds=job.media.filter(m=>selected.has(m.id)).map(m=>m.id);previewIndex=0;const meta=job.meta||{};$('export-name').value=meta.template||('VT - '+(job.title==='Nova edição'?'Cliente - Campanha '+dateName():job.title)).slice(0,85);$('format').value=editorKind==='video'?'mp4':meta.format||'jpg';$('folder-label').textContent=folder;$('overwrite').checked=false;$('overwrite-label').hidden=true;$('export-result').hidden=true;resetCompletion();$('export-dialog').showModal();await Promise.all([finalPreview(),refreshPlan()]);}
 async function finalPreview(){const serial=++finalSerial;const m=job.media.find(m=>m.id===exportIds[previewIndex]);if(!m)return;$('preview-index').textContent=`${previewIndex+1} / ${exportIds.length}`;const data=await request('/api/preview',{id:m.id,settings:m.settings});if(serial!==finalSerial)return;$('final-image').src=data.image;$('final-notes').textContent=`${m.settings.width} × ${m.settings.height} px. ${data.notes.join(' ')}`;}

@@ -3,8 +3,10 @@
 Heurística, não OCR: usa a camada de texto e as imagens com máscara (smask) do PDF. O resultado
 é uma SUGESTÃO que o usuário revisa no formulário.
 """
+import io
 import re
 import pymupdf
+from PIL import Image
 
 # rótulos soltos do layout; KG/CADA em maiúsculas são unidade, "Kg" faz parte do nome
 RUIDO = re.compile(r'^([Cc]lube de [Dd]escontos?|R\$|KG|CADA|UN|UNID\.?|PCT|\d+\s?g)$')
@@ -23,28 +25,43 @@ def _dist(rect, p, numerico):
     return d * 3 if numerico and p.y < rect.y0 else d
 
 
-def _agrupar(recortes):
-    """Une recortes do mesmo produto até estabilizar: os que se sobrepõem (ex.: 3 peças da mesma maminha)
-    e cópias da mesma imagem encostadas (ex.: dois potes de creatina lado a lado)."""
-    grupos = [(pymupdf.Rect(r), {xref}) for r, xref, _ in recortes]
+def _agrupar(recortes, doc):
+    """Une recortes do mesmo produto: os que se sobrepõem de verdade (ex.: pacotes de hambúrguer empilhados)
+    e cópias da mesma imagem encostadas (ex.: três peças de maminha, dois potes de creatina)."""
+    mascaras = {}
+    def opaco(rec, p):
+        r, _, smask, t = rec
+        if smask not in mascaras: mascaras[smask] = pymupdf.Pixmap(doc, smask)
+        m = mascaras[smask]
+        u, v = (p.x - r.x0) / r.width, (p.y - r.y0) / r.height
+        if t[0] < 0: u = 1 - u
+        if t[3] < 0: v = 1 - v
+        return m.pixel(min(int(u * m.width), m.width - 1), min(int(v * m.height), m.height - 1))[0] > 128
     def juntar(a, b):
-        (ra, xa), (rb, xb) = a, b
+        ra, rb = a[0], b[0]
         inter = ra & rb
-        if not inter.is_empty and inter.width * inter.height > 0.15 * min(ra.width * ra.height, rb.width * rb.height): return True
+        if not inter.is_empty:
+            # conta só onde as duas são opacas: numa coluna de ofertas, as bordas transparentes de
+            # vizinhos se cruzam (melão sobre o tomate) sem que um produto cubra o outro. Nos encartes
+            # conferidos, vizinhos dão 0 a 1% e peças do mesmo produto, 7% ou mais
+            n = 12
+            pontos = [pymupdf.Point(inter.x0 + inter.width * (i + .5) / n, inter.y0 + inter.height * (j + .5) / n) for i in range(n) for j in range(n)]
+            ambos = sum(opaco(a, p) and opaco(b, p) for p in pontos) / len(pontos)
+            if ambos * inter.get_area() > 0.05 * min(ra.get_area(), rb.get_area()): return True
         perto = pymupdf.Rect(ra.x0 - ra.width * .15, ra.y0 - ra.height * .15, ra.x1 + ra.width * .15, ra.y1 + ra.height * .15)
-        return bool(xa & xb) and perto.intersects(rb)
-    mudou = True
-    while mudou:
-        mudou = False
-        for i in range(len(grupos)):
-            for j in range(i + 1, len(grupos)):
-                if juntar(grupos[i], grupos[j]):
-                    grupos[i] = (grupos[i][0] | grupos[j][0], grupos[i][1] | grupos[j][1])
-                    del grupos[j]
-                    mudou = True
-                    break
-            if mudou: break
-    return [r for r, _ in grupos]
+        return a[1] == b[1] and perto.intersects(rb)
+    grupo = list(range(len(recortes)))
+    def raiz(i):
+        while grupo[i] != i: i = grupo[i]
+        return i
+    for i in range(len(recortes)):
+        for j in range(i + 1, len(recortes)):
+            if raiz(i) != raiz(j) and juntar(recortes[i], recortes[j]): grupo[raiz(j)] = raiz(i)
+    caixas = {}
+    for i, rec in enumerate(recortes):
+        k = raiz(i)
+        caixas[k] = caixas[k] | rec[0] if k in caixas else pymupdf.Rect(rec[0])
+    return list(caixas.values())
 
 
 def _nome(spans, rect):
@@ -125,6 +142,38 @@ def _pixmap(doc, xref, smask):
     return pix
 
 
+def _recortes(page):
+    """Imagens com transparência da página, uma por posição e na ordem de pintura: (rect, xref, smask, transform)."""
+    smasks = {img[0]: img[1] for img in page.get_images(full=True) if img[1]}
+    vistos, out = set(), []
+    for info in page.get_image_info(xrefs=True):
+        r, xref = pymupdf.Rect(info['bbox']), info['xref']
+        chave = (xref, tuple(round(v, 1) for v in r))
+        if xref in smasks and chave not in vistos:
+            vistos.add(chave)
+            out.append((r, xref, smasks[xref], info['transform']))
+    return out
+
+
+def _foto(doc, partes):
+    """PNG do produto: todas as partes do grupo (ex.: 3 peças de maminha) coladas na posição do encarte,
+    na ordem de pintura, na resolução da parte mais nítida."""
+    if len(partes) == 1: return _pixmap(doc, partes[0][1], partes[0][2]).tobytes('png')
+    caixa = pymupdf.Rect(partes[0][0])
+    for parte in partes[1:]: caixa |= parte[0]
+    imagens = [(r, Image.open(io.BytesIO(_pixmap(doc, xref, smask).tobytes('png'))).convert('RGBA'), t) for r, xref, smask, t in partes]
+    escala = min(max(im.width / r.width for r, im, _ in imagens), 3000 / max(caixa.width, caixa.height))
+    tela = Image.new('RGBA', (round(caixa.width * escala), round(caixa.height * escala)))
+    for r, im, t in imagens:
+        # ponytail: só espelhamento; parte girada (b/c da matriz) sai sem girar
+        if t[0] < 0: im = im.transpose(Image.Transpose.FLIP_LEFT_RIGHT)
+        if t[3] < 0: im = im.transpose(Image.Transpose.FLIP_TOP_BOTTOM)
+        x, y = round((r.x0 - caixa.x0) * escala), round((r.y0 - caixa.y0) * escala)
+        im = im.resize((max(1, min(round(r.width * escala), tela.width - x)), max(1, min(round(r.height * escala), tela.height - y))), Image.Resampling.LANCZOS)
+        tela.alpha_composite(im, (x, y))
+    out = io.BytesIO(); tela.save(out, 'PNG'); return out.getvalue()
+
+
 def extrair(pdf_bytes):
     """-> [{'nome', 'por', 'de', 'unidade', 'avisos', 'pagina', 'area', 'png': bytes}] na ordem de leitura do encarte."""
     doc = pymupdf.open(stream=pdf_bytes, filetype='pdf')
@@ -140,14 +189,9 @@ def extrair(pdf_bytes):
                     if UNIDADE.match(t): unidades.append((pymupdf.Rect(s['bbox']), t, s['size']))
                     if t and s['size'] >= 5 and len(t) <= 60 and not RUIDO.match(t):
                         spans.append((pymupdf.Rect(s['bbox']), t, s['size']))
-        recortes = []  # (rect, xref, smask)
-        for img in page.get_images(full=True):
-            xref, smask = img[0], img[1]
-            if not smask: continue  # sem transparência = fundo, logo de cartão etc.
-            for r in page.get_image_rects(xref):
-                if r.width >= 25 and r.height >= 25 and r.width * r.height <= area * 0.3:
-                    recortes.append((r, xref, smask))
-        grupos = [{'rect': g, 'spans': [], 'precos': [], 'unidades': []} for g in _agrupar(recortes)]
+        # sem transparência = fundo, logo de cartão etc. (ficam de fora em _recortes)
+        recortes = [x for x in _recortes(page) if x[0].width >= 25 and x[0].height >= 25 and x[0].get_area() <= area * 0.3]
+        grupos = [{'rect': g, 'spans': [], 'precos': [], 'unidades': []} for g in _agrupar(recortes, doc)]
         if not grupos: continue
         textos = [s for s in spans if LETRAS.search(s[1])]
         equivalencia = lambda r: any(l.y0 - r.height < r.y0 < l.y1 + r.height and -5 < r.x0 - l.x1 < 40 for l in legendas)
@@ -163,16 +207,13 @@ def extrair(pdf_bytes):
             nome = _nome(g['spans'], g['rect'])
             por, de, rect_por = _precos(g['precos'])
             if not nome or not por: continue  # sem nome ou preço não é produto (ex.: logo do SAC)
-            # a imagem do produto = o maior recorte dentro do grupo
-            dentro = [x for x in recortes if g['rect'].contains(x[0])]
-            r, xref, smask = max(dentro, key=lambda x: x[0].width * x[0].height)
             unidade = _unidade(g['unidades'], rect_por)
             # área da oferta (foto + textos) em pontos do PDF, para o "ver no encarte"
             area_oferta = pymupdf.Rect(g['rect'])
             for x in g['spans'] + g['precos'] + g['unidades']: area_oferta |= x[0]
             itens.append({'nome': nome, 'por': por, 'de': de, 'unidade': unidade, 'avisos': avisos(nome, por, de, unidade),
                           'pagina': page.number + 1, 'area': [round(v, 1) for v in area_oferta],
-                          'png': _pixmap(doc, xref, smask).tobytes('png')})
+                          'png': _foto(doc, [x for x in recortes if g['rect'].contains(x[0])])})
     return itens
 
 
@@ -192,8 +233,8 @@ def imagem_pagina(pdf_bytes, numero, largura=1600):
 
 
 def ler_area(pdf_bytes, numero, area):
-    """Oferta marcada à mão: a mesma leitura do automático, só dentro da área. A imagem é o maior
-    recorte com transparência ali dentro; sem nenhum, a área renderizada (com o fundo do encarte)."""
+    """Oferta marcada à mão: a mesma leitura do automático, só dentro da área. A imagem são os
+    recortes com transparência do grupo mais perto do preço; sem nenhum, a área renderizada (com o fundo do encarte)."""
     doc = pymupdf.open(stream=pdf_bytes, filetype='pdf')
     pg = doc[numero - 1]
     rect = pymupdf.Rect(area) & pg.rect
@@ -209,15 +250,13 @@ def ler_area(pdf_bytes, numero, area):
                 if t and sp['size'] >= 5 and len(t) <= 60 and not RUIDO.match(t): spans.append((r, t, sp['size']))
     equivalencia = lambda r: any(l.y0 - r.height < r.y0 < l.y1 + r.height and -5 < r.x0 - l.x1 < 40 for l in legendas)
     por, de, rect_por = _precos([x for x in _tokens_preco(spans) if not equivalencia(x[0])])
-    candidatos = [(r, img[0], img[1]) for img in pg.get_images(full=True) if img[1]
-                  for r in pg.get_image_rects(img[0]) if (r & rect).get_area() > 0.6 * r.get_area() and r.width >= 25]
+    candidatos = [x for x in _recortes(pg) if (x[0] & rect).get_area() > 0.6 * x[0].get_area() and x[0].width >= 25]
     if candidatos:
         # a área pode pegar a foto de um vizinho: vale o grupo de fotos mais perto do preço
-        grupos = _agrupar(candidatos)
+        grupos = _agrupar(candidatos, doc)
         alvo = (rect_por.tl + rect_por.br) / 2 if rect_por else None
         foto = min(grupos, key=lambda g: _dist(g, alvo, True)) if alvo else max(grupos, key=lambda g: g.get_area())
-        r, xref, smask = max([c for c in candidatos if foto.contains(c[0])], key=lambda c: c[0].get_area())
-        png = _pixmap(doc, xref, smask).tobytes('png')
+        png = _foto(doc, [c for c in candidatos if foto.contains(c[0])])
     else:
         foto = rect
         png = pg.get_pixmap(matrix=pymupdf.Matrix(3, 3), clip=rect).tobytes('png')

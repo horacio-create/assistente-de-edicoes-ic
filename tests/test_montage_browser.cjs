@@ -91,7 +91,7 @@ const [url,sample,output]=process.argv.slice(2);
   await focusTimeline();await page.keyboard.press('e');assert.equal((await settings()).previewVisible,false);
   await page.evaluate(()=>{info.nativePicker=false;});
   await focusTimeline();await page.keyboard.press('Control+e');
-  await page.locator('#remote-path').fill(output);await page.locator('#use-remote-folder').click();
+  await page.locator('#remote-folder-dialog summary').click();await page.locator('#remote-path').fill(output);await page.locator('#use-remote-folder').click();
   await page.waitForFunction(()=>!busy&&plan!==null&&finalPlayer.readyState>=2);
   await page.locator('#final-video-scrub').fill('1.8');await page.locator('#final-video-play').click();
   await page.waitForFunction(()=>finalSegment===1&&finalPlayer.currentTime<1&&!finalPlayer.paused,{},{timeout:5000});

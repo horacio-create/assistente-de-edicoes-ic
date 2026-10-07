@@ -62,7 +62,7 @@ const [url,sample,output]=process.argv.slice(2);
     // Browser test uses the app's network folder dialog to avoid native Windows UI.
     await page.evaluate(()=>{info.nativePicker=false;});
     await page.locator('#open-export').click();
-    await page.locator('#remote-path').fill(output);await page.locator('#use-remote-folder').click();
+    await page.locator('#remote-folder-dialog summary').click();await page.locator('#remote-path').fill(output);await page.locator('#use-remote-folder').click();
     await page.waitForFunction(()=>!busy&&plan!==null);
     assert.match(await page.locator('#export-audio-status').textContent(),/Sem áudio/);
     await page.locator('#final-video-play').click();

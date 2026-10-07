@@ -419,9 +419,22 @@ def enfileirar(pedido):
     FILA.set()
     return ident
 
+def tamanhos_dos_videos(n, lista, cartelas=None):
+    """Quantos produtos vão em cada vídeo do lote. `cartelas` = máximo de cartelas (grupos) por vídeo,
+    escolhido pelo usuário (padrão: o máximo do template). Os vídeos são equilibrados (11 cartelas, até 5
+    por vídeo: 4 + 4 + 3, e não 5 + 5 + 1) e nenhum fica abaixo do mínimo do template; o que faltar é
+    completado com os primeiros produtos. Lista fixa: todos com `itens` (21 / 6 = 4 vídeos de 6)."""
+    passo = (lista.get('grupo') or {}).get('tamanho') or 1
+    gmin, gmax = (lista.get('min') or lista['itens']) // passo, lista['itens'] // passo
+    cartelas = gmax if cartelas is None else int(cartelas)
+    if not gmin <= cartelas <= gmax: raise ValueError(f'Escolha de {gmin} a {gmax} cartelas por vídeo.')
+    grupos = -(-n // passo)
+    total = -(-grupos // cartelas)
+    return [max(gmin, grupos // total + (k < grupos % total)) * passo for k in range(total)]
+
 def gerar_todos(value):
-    """Todos os produtos do encarte, em vídeos com a quantidade do template (ex.: 21 produtos / 6 = 4 vídeos).
-    O último vídeo é completado com os primeiros produtos, para não sair com espaços vazios."""
+    """Todos os produtos do encarte em vídeos (ver tamanhos_dos_videos). `impar`: com número ímpar de produtos
+    a última cartela fica incompleta; "repetir" completa com o primeiro produto, "fora" deixa o último de fora."""
     ident, template = str(value.get('encarte', '')), value.get('template')
     schema = esquema(template)
     lista = next((c for c in schema['campos'] if c['tipo'] == 'lista'), None)
@@ -432,22 +445,30 @@ def gerar_todos(value):
     if not itens: raise ValueError('Este encarte não tem produtos. Marque as ofertas na página.')
     sem_preco = [it['nome'] or f'produto {k + 1}' for k, it in enumerate(itens) if not PRECO.fullmatch(it.get('por') or '')]
     if sem_preco: raise ValueError(f'Confira antes de gerar: {", ".join(sem_preco[:4])} sem preço em destaque.')
-    n = lista['itens']
-    total = -(-len(itens) // n)
+    if value.get('impar', 'repetir') not in ('repetir', 'fora'): raise ValueError('Opção inválida para produto sobrando.')
+    passo = (lista.get('grupo') or {}).get('tamanho') or 1
+    if value.get('impar') == 'fora' and len(itens) > passo: itens = itens[:len(itens) - len(itens) % passo]
+    tamanhos = tamanhos_dos_videos(len(itens), lista, value.get('cartelas'))
+    total = len(tamanhos)
     base = Path(row['nome']).stem
     videos = []
-    for g in range(total):
+    inicio = 0
+    for g, n in enumerate(tamanhos):
         dados = json.loads(json.dumps(schema['padrao']))
-        preencher_lista(lista, dados[lista['id']], [itens[(g * n + i) % len(itens)] for i in range(n)])
+        modelo = dados[lista['id']]
+        dados[lista['id']] = [json.loads(json.dumps(modelo[i % len(modelo)])) for i in range(n)]
+        preencher_lista(lista, dados[lista['id']], [itens[(inicio + i) % len(itens)] for i in range(n)])
+        inicio += n
         # revision 1: não é um rascunho intocado (o "Novo vídeo" reaproveita/apaga os de revision 0)
-        pedido = {'id': uid(), 'template': schema['id'], 'titulo': f'{base} · vídeo {g + 1} de {total}', 'dados': dados, 'revision': 1}
+        titulo = f'{base} ({g + 1})' if total > 1 else base
+        pedido = {'id': uid(), 'template': schema['id'], 'titulo': titulo, 'dados': dados, 'revision': 1}
         with connect() as db:
             db.execute('INSERT INTO ofertas_pedidos VALUES(?,?,?,?,?,?,?)', (pedido['id'], pedido['template'], pedido['titulo'],
                        json.dumps(dados, ensure_ascii=False), 1, now(), now()))
         erros = preparar(schema['id'], dados)['erros']
         videos.append({'pedido': pedido['id'], 'titulo': pedido['titulo'], 'render': None if erros else enfileirar(pedido), 'erros': erros[:3]})
     with connect() as db: registrar(db, 'Vídeos do encarte enviados para a fila', row['nome'], videos=total)
-    return {'videos': videos, 'completados': total * n - len(itens)}
+    return {'videos': videos, 'completados': sum(tamanhos) - len(itens)}
 
 def apagar_encarte(ident):
     """Apaga o encarte do card: o PDF e a lista de produtos. As imagens extraídas continuam na biblioteca."""
@@ -600,7 +621,12 @@ def api(method, path, query, raw):
     if path == '/pedidos':
         schema = esquema(value.get('template'))
         titulo = f"{schema['nome']} · {time.strftime('%d/%m')}"
-        padrao = json.dumps(schema['padrao'], ensure_ascii=False)
+        dados = json.loads(json.dumps(schema['padrao']))
+        for c in schema['campos']:
+            if c.get('tipo') == 'lista' and c.get('min') is not None and c['min'] < c['itens']:
+                # lista variável começa com uma cartela (ou o mínimo do template); "Adicionar cartela" traz as outras
+                dados[c['id']] = dados[c['id']][:max(c['min'], (c.get('grupo') or {}).get('tamanho') or 1)]
+        padrao = json.dumps(dados, ensure_ascii=False)
         with LOCK, connect() as db:
             # rascunho nunca salvo (revision 0) e nunca gerado = só os valores padrão: reabre em vez de empilhar cópias
             intocados = [r['id'] for r in db.execute('''SELECT id FROM ofertas_pedidos p WHERE template=? AND revision=0

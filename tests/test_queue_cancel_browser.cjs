@@ -7,7 +7,7 @@ const [url,image,output]=process.argv.slice(2);fs.mkdirSync(output,{recursive:tr
   await page.goto(url,{waitUntil:'networkidle'});await page.getByRole('button',{name:'Vídeos',exact:true}).click();await page.locator('#files').setInputFiles(image);await page.waitForFunction(()=>!busy&&project()?.clips.length===1);
   await page.evaluate(()=>commitClipDuration(1));await page.locator('#queue-add').click();await page.waitForFunction(()=>!busy&&exportQueue().length===1);
   await page.evaluate(()=>commitClipDuration(120));await page.locator('#queue-add').click();await page.waitForFunction(()=>!busy&&exportQueue().length===2);
-  await page.evaluate(()=>info.nativePicker=false);await page.locator('#open-export').click();await page.locator('#remote-path').fill(output);await page.locator('#use-remote-folder').click();await page.waitForFunction(()=>!busy&&plan?.files.length===2);
+  await page.evaluate(()=>info.nativePicker=false);await page.locator('#open-export').click();await page.locator('#remote-folder-dialog summary').click();await page.locator('#remote-path').fill(output);await page.locator('#use-remote-folder').click();await page.waitForFunction(()=>!busy&&plan?.files.length===2);
   await page.locator('#export-name').fill('VT - Cancelamento de fila');await page.waitForFunction(()=>plan?.files[0]?.name==='VT 01 - Cancelamento de fila.mp4');await page.locator('#confirm-export').click();
   await page.waitForFunction(()=>$('export-progress-dialog').open&&$('export-progress-title').textContent.includes('VT 02 -'),null,{timeout:60000});
   await page.screenshot({path:path.join(output,'cancelando-segundo-item.png')});await page.locator('#cancel-export').click();await page.waitForFunction(()=>!busy&&exportQueue().length===1&&plan?.files.length===1);

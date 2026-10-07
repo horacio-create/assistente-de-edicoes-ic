@@ -1,15 +1,18 @@
-# Proxy só deste sistema (independente de outros projetos do servidor), porta 80, HTTP, para qualquer nome
-# que aponte para o servidor (IP, DuckDNS…). Sem login: o acesso é ABERTO a quem souber o endereço.
-# Para exigir senha, acrescente dentro do bloco:  basic_auth { usuario <hash de "caddy hash-password"> }
-{
-	auto_https off
-}
+# Proxy só deste sistema (independente de outros projetos do servidor). HTTPS com certificado automático
+# (Let's Encrypt, renovado pelo Caddy) para o domínio abaixo, cujo registro A precisa apontar para o servidor.
+# O HTTP do domínio redireciona para o HTTPS sozinho. Sem login: o acesso é ABERTO a quem souber o endereço.
+# Para exigir senha, acrescente dentro do bloco do domínio:  basic_auth { usuario <hash de "caddy hash-password"> }
 
-:80 {
+assistente-edicao.indoorchannel.com.br {
 	request_body {
 		max_size 110MB
 	}
 	# comprime HTML/JS/JSON (o runtime do HyperFrames da prévia cai de ~490 KB para ~150 KB)
 	encode zstd gzip
 	reverse_proxy assistente:8080
+}
+
+# quem ainda usa o endereço antigo pelo IP é levado ao domínio
+http://136.114.119.96 {
+	redir https://assistente-edicao.indoorchannel.com.br{uri} permanent
 }

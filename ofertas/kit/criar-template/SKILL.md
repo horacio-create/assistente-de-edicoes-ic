@@ -51,8 +51,10 @@ O template de exemplo foi criado em 1920×1080, antes desse padrão: use-o como 
 ## Passo a passo
 
 1. **Entenda a peça.** Com o designer, identifique o que muda a cada semana (vira campo) e o que é
-   fixo (fica no HTML/fundo). Pergunte quantos itens a lista tem: a quantidade é **fixa** por template
-   (6 produtos em 3 painéis ≠ 4 produtos em 2 painéis — são dois templates).
+   fixo (fica no HTML/fundo). Pergunte quantos itens a lista tem e se a quantidade varia de vídeo
+   para vídeo. Fixa (ex.: sempre 6): `"itens": 6`. Variável (ex.: 2 ou 3 painéis de 2): `"itens": 6,
+   "min": 4` + a variável `produtos_total`, e o template divide os 15s entre os painéis usados — veja
+   CONTRATO.md §3.1.
 2. **Use HyperFrames** para o layout e a animação (skills `/hyperframes`, `/hyperframes-core`,
    `/hyperframes-animation`, se instaladas). Restrições do contrato:
    - **Uma composição só** em `index.html`. **Nunca** use `data-composition-src` — sub-composições não
@@ -65,7 +67,7 @@ O template de exemplo foi criado em 1920×1080, antes desse padrão: use-o como 
    - Textos digitados pelo usuário entram com `textContent`, nunca `innerHTML`.
 3. **Escreva o `template.json`** (`"contrato": 1`, `id` igual ao nome da pasta, `nome`, `cliente`,
    `descricao`, `capaEm` = segundo bonito para a capa, `campos`). Tipos: `texto` (com `max`), `preco`,
-   `imagem`, `numero` (`min`/`max`/`passo`), `opcoes`, `cor`, `booleano`, `lista` (`itens`, `campos`,
+   `imagem`, `numero` (`min`/`max`/`passo`), `opcoes`, `cor`, `booleano`, `lista` (`itens`, `min` opcional, `campos`,
    `rotuloItem`, `grupo: {tamanho, rotulo}` para agrupar no formulário). Rótulos em português, do jeito
    que quem preenche fala ("Preço Clube de Desconto", não "price2"). Use `ajuda` para orientar.
 4. **Declare uma variável por campo** em `data-composition-variables` no `<html>`:

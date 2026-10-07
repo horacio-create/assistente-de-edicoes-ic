@@ -102,3 +102,47 @@ test("tamanho: fora do padrão avisa (sem bloquear); 1280×720 não avisa", () =
   const dir = copia((d) => editar(d, "index.html", (h) => h.replace('data-width="1920" data-height="1080"', 'data-width="1280" data-height="720"')));
   assert.deepEqual(validarTemplate(dir).avisos, []);
 });
+
+// modelo com lista variável: 4 a 6 produtos (2 ou 3 painéis), padrão 6
+function variavel(min = 4, total = 6) {
+  return copia((d) => {
+    editar(d, "template.json", (j) => j.replace('"itens": 6,', `"itens": 6,\n      "min": ${min},`));
+    editar(d, "index.html", (h) =>
+      h.replace("data-composition-variables='[", `data-composition-variables='[\n  { "id": "produtos_total", "type": "number", "label": "Quantidade de produtos", "default": ${total}, "min": ${min}, "max": 6, "step": 2 },`),
+    );
+  });
+}
+
+test("lista variável: template válido exige produtos_total e min coerente", () => {
+  assert.deepEqual(validarTemplate(variavel()).erros, []);
+  assert.match(validarTemplate(variavel(3)).erros.join(), /"min" \(3\) não é múltiplo de grupo.tamanho \(2\)/);
+  assert.match(validarTemplate(variavel(4, 5)).erros.join(), /"produtos_total": valor padrão 5 não é múltiplo/);
+  const semTotal = copia((d) => editar(d, "template.json", (j) => j.replace('"itens": 6,', '"itens": 6,\n      "min": 4,')));
+  assert.match(validarTemplate(semTotal).erros.join(), /"produtos_total".*não está declarada/);
+});
+
+test("lista variável: aceita 4 ou 6, recusa 5 e 2; total vai para o template", () => {
+  const t = lerTemplate(variavel());
+  const dados = dadosPadrao(t);
+  assert.equal(dados.produtos.length, 6);
+  const seis = prepararDados(t, dados, t.dir);
+  assert.deepEqual(seis.erros, []);
+  assert.equal(seis.variaveis.produtos_total, 6);
+
+  dados.produtos.splice(4);
+  const quatro = prepararDados(t, dados, t.dir);
+  assert.deepEqual(quatro.erros, []);
+  assert.equal(quatro.variaveis.produtos_total, 4);
+  assert.equal(Object.keys(quatro.variaveis).length, t.declaracoes.length); // os que faltam ficam com o padrão
+  assert.equal(quatro.variaveis.produtos_5_nome, t.declaracoes.find((d) => d.id === "produtos_5_nome").default);
+
+  dados.produtos.push(dados.produtos[0]);
+  assert.match(prepararDados(t, dados, t.dir).erros[0], /de 4 a 6 itens, de 2 em 2 \(recebidos 5\)/);
+  dados.produtos.splice(2);
+  assert.match(prepararDados(t, dados, t.dir).erros[0], /recebidos 2/);
+});
+
+test("lista variável: quantidade padrão vem do default de produtos_total", () => {
+  const t = lerTemplate(variavel(4, 4));
+  assert.equal(dadosPadrao(t).produtos.length, 4);
+});
