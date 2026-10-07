@@ -66,8 +66,10 @@ Para exportar é necessário ter vídeo ou imagem cobrindo toda a montagem.
 - Tempo atual editável: digite 14,22 ou 14.22 e pressione Enter; Esc cancela.
 - Alt + rolagem do mouse amplia/reduz a timeline, entre a visão padrão (100%) e
   quadro a quadro (40 px por quadro a 30 fps). Clique na porcentagem para voltar a 100%.
-- Adicionar logo coloca a marca em Suas mídias e em uma faixa superior durante toda
-  a montagem, com transparência. Selecione seu bloco para ajustar posição e duração.
+- Para sobrepor uma logo ou outra imagem, importe em Suas mídias e arraste para uma
+  faixa acima do vídeo. Selecione o bloco e ajuste Escala, posição e duração.
+  PNGs transparentes preservam o vídeo por baixo na prévia e no MP4; Criar fundo
+  continua preenchendo a tela com a cor escolhida.
 - Faixas Vídeo 01, Vídeo 02… e Áudio 01, Áudio 02… com numeração independente.
 - Cadeado e olho à esquerda de cada faixa de vídeo. O cadeado protege todos os seus trechos;
   o olho oculta só a prévia. Todas as faixas continuam na revisão e na exportação.

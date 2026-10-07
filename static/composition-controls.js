@@ -193,7 +193,7 @@ function renderCompositionCanvas(canvas,time,final=false,pool=compositionPlayers
  let buffer=compositionBuffers.get(canvas);if(!buffer){buffer=document.createElement('canvas');compositionBuffers.set(canvas,buffer);}
  if(buffer.width!==w||buffer.height!==h){buffer.width=w;buffer.height=h;}
  const ctx=buffer.getContext('2d');ctx.setTransform(1,0,0,1,0,0);ctx.fillStyle='#000';ctx.fillRect(0,0,w,h);
- for(const {c,m,source} of sources)drawVideoCanvas({...m,settings:{...c.settings,width:s.width,height:s.height}},source,buffer,m.role==='logo');
+ for(const {c,m,source} of sources)drawVideoCanvas({...m,settings:{...c.settings,width:s.width,height:s.height}},source,buffer,m.role==='logo'||(m.kind==='image'&&c.settings.mode!=='background'));
  if(!sources.length&&activeClips.some(c=>projectMedia(c)?.kind!=='audio')){ctx.setTransform(1,0,0,1,0,0);ctx.fillStyle='#eeeef4';ctx.fillRect(0,0,w,h);ctx.fillStyle='#64647d';ctx.font=`${Math.max(14,w/40)}px Segoe UI`;ctx.textAlign='center';ctx.fillText('Prévia oculta pelo olho',w/2,h/2);ctx.textAlign='start';}
  if(canvas.width!==w||canvas.height!==h){canvas.width=w;canvas.height=h;}
  const output=canvas.getContext('2d');output.setTransform(1,0,0,1,0,0);output.drawImage(buffer,0,0);

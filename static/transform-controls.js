@@ -22,7 +22,7 @@ function transformFrameVisible(){
 }
 function syncTransformBox(){
  const m=transformMedia(),visible=m&&m.kind!=='audio'&&transformFrameVisible()&&!$('studio').hidden;
- const scaleLabel=m?.role==='logo'?'Escala':'Zoom',label=$('zoom-value').parentElement;label.firstChild.textContent=scaleLabel+' ';$('zoom').setAttribute('aria-label',scaleLabel);$('number-zoom').setAttribute('aria-label',scaleLabel+' em porcentagem');
+ const scaleLabel=m?.role==='logo'||(editorKind==='video'&&m?.kind==='image')?'Escala':'Zoom',label=$('zoom-value').parentElement;label.firstChild.textContent=scaleLabel+' ';$('zoom').setAttribute('aria-label',scaleLabel);$('number-zoom').setAttribute('aria-label',scaleLabel+' em porcentagem');
  transformToggle.disabled=!m||m.kind==='audio'||busy;transformToggle.setAttribute('aria-pressed',String(transformControlsVisible));
  transformBox.hidden=!transformControlsVisible||!visible;if(transformBox.hidden)return;
  const s=m.settings,g=mediaGeometry(m),stage=$('stage').getBoundingClientRect(),shell=transformShell.getBoundingClientRect(),scale=stage.width/s.width;

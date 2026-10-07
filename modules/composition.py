@@ -137,7 +137,8 @@ def export(media, folder, output_path, project, logo_for, progress=None, cancell
             elif m['kind'] == 'audio':
                 common += ['-threads','1','-ss',str(c['in']),'-t',str(c['out']-c['in']),'-i',str(folder/(m['id']+'.source'))]
             else:
-                image,_=render(folder/(m['id']+'.png'),c['settings'],logo,transparent=m.get('role')=='logo')
+                image,_=render(folder/(m['id']+'.png'),c['settings'],logo,
+                               transparent=m.get('role')=='logo' or c['settings']['mode']!='background')
                 rendered=work/f'image-{i}.png';image.save(rendered)
                 common += ['-threads','1','-loop','1','-framerate',str(FPS),'-t',str(c['duration']),'-i',str(rendered)]
         for offset,(i,path) in enumerate(logo_inputs.items()):
@@ -178,7 +179,7 @@ def export(media, folder, output_path, project, logo_for, progress=None, cancell
                         filters.append(f'[{label}_audio]adelay={round(c["at"]*1000)}:all=1,apad,atrim=duration={total}[{audio_label}]')
                         audios.append(f'[{audio_label}]')
                 else:
-                    pixel_format='yuva420p' if m.get('role')=='logo' else 'yuv420p'
+                    pixel_format='yuva420p'
                     filters.append(f'[{i}:v:0]format={pixel_format},setpts=PTS-STARTPTS,trim=duration={c["duration"]}[{label}_out]')
                     source=f'[{label}_out]'
                 filters.append(source+f'setpts=PTS+{c["at"]}/TB[placed{i}]')
