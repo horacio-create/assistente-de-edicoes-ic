@@ -114,10 +114,8 @@ async function chooseFolder(){
   $('use-download-folder').hidden=!canPick;
   const chooseBrowser=async downloadOnly=>{try{const label=await browserFolder(downloadOnly);if(!label)return;d.close();resolve(label);}catch(e){toast(e.message);}};
   $('use-browser-folder').onclick=()=>chooseBrowser(false);$('use-download-folder').onclick=()=>chooseBrowser(true);
-  const last=[exportFolder,job?.meta?.folder].find(f=>f&&!browserTargets.has(f)&&!f.endsWith(' (neste computador)')&&f!=='Downloads deste computador')||'';
-  $('remote-path').value=last;d.querySelector('details').open=!!last;
   const cancel=()=>{d.close();resolve(null);};d.oncancel=e=>{e.preventDefault();cancel();};d.querySelector('.close').onclick=cancel;
-  $('use-remote-folder').onclick=()=>{if(!$('remote-path').value.trim())return;d.close();resolve($('remote-path').value.trim());};d.showModal();
+  d.showModal();
  });
 }
 async function openExport(){const folder=await chooseFolder();if(!folder)return;await save();exportFolder=folder;exportIds=job.media.filter(m=>selected.has(m.id)).map(m=>m.id);previewIndex=0;const meta=job.meta||{};$('export-name').value=meta.template||('VT - '+(job.title==='Nova edição'?'Cliente - Campanha '+dateName():job.title)).slice(0,85);$('format').value=editorKind==='video'?'mp4':meta.format||'jpg';$('folder-label').textContent=folder;$('overwrite').checked=false;$('overwrite-label').hidden=true;$('export-result').hidden=true;resetCompletion();$('export-dialog').showModal();await Promise.all([finalPreview(),refreshPlan()]);}
@@ -240,3 +238,9 @@ window.addEventListener('keydown',e=>{
  if(typing&&!isAdjustment(target))return;
  e.preventDefault();undoEdit(key==='y'||e.shiftKey);
 });
+
+// Keep the workspace beside the transient menu, including keyboard navigation.
+const toolSidebar=document.querySelector('.sidebar');
+function syncSidebarPreview(){document.body.classList.toggle('sidebar-preview-open',toolSidebar.matches(':hover')||toolSidebar.contains(document.activeElement));}
+for(const event of ['mouseenter','mouseleave','focusin'])toolSidebar.addEventListener(event,syncSidebarPreview);
+toolSidebar.addEventListener('focusout',()=>requestAnimationFrame(syncSidebarPreview));

@@ -32,13 +32,7 @@ body.sidebar-collapsed .sidebar .sidebar-toggle{color:#d9d9ed;opacity:.65}
 .filmstrip-track{display:grid;grid-template-columns:38px minmax(0,1fr) 38px;gap:7px;align-items:center}.strip-arrow{width:36px;height:36px;padding:6px;border-radius:50%;display:grid;place-items:center}.strip-arrow svg{width:22px;height:22px}.strip-arrow:disabled{opacity:.25}.grid .card{cursor:grab}.grid .card .thumb{cursor:grab}.media-ordinal{position:absolute;top:6px;left:30px;min-width:17px;height:17px;padding:2px 4px;background:#20203cc9;color:white;border-radius:4px;font-size:10px;pointer-events:none}.being-moved{opacity:.4}#reorder-marker{position:absolute;top:3px;bottom:15px;width:3px;border-radius:3px;background:#6967c9;z-index:5;pointer-events:none}#reorder-ghost{position:fixed;z-index:40;padding:9px 13px;background:#20203c;color:white;border-radius:9px;font-size:12px;pointer-events:none;box-shadow:0 4px 15px #20203c33}.reordering,.reordering *{cursor:grabbing!important;user-select:none!important}.reordering .grid{scroll-behavior:auto;scroll-snap-type:none}
 
 .system-version{position:absolute;bottom:20px;left:12px;color:#b4b7f0;font-size:10px;font-weight:650;line-height:18px;white-space:nowrap;letter-spacing:0;pointer-events:none}.sidebar-collapsed .system-version{left:8px;font-size:9px}.export-complete{display:flex;gap:9px;align-items:center;color:#237c35;font-size:14px;font-weight:750;padding:12px 0;animation:completion-in .2s ease-out}.export-complete svg{width:36px;height:36px;padding:7px;border-radius:50%;background:#81d680}.export-complete[hidden]{display:none}@keyframes completion-in{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}@media(prefers-reduced-motion:reduce){.export-complete{animation:none}}
-/* V1.6.3 — transição da barra lateral.
-   Recolhida + mouse: abre POR CIMA do conteúdo (a página não se desloca), com espera curta para não abrir
-   de raspão. Os nomes entram durante o movimento e terminam junto com a barra (240ms); ao recolher somem
-   antes. Só a opacidade anima nos nomes (a largura não "cresce"), o que mantém tudo leve.
-   Sem body:has(.sidebar:hover/:focus-within): essas regras faziam o navegador reavaliar a página inteira
-   a cada hover/foco (até 150ms travado com a prévia tocando). A página não se desloca porque nenhuma
-   regra muda a margem do main com a barra recolhida. */
+/* Menu expansion keeps the workspace visible beside the sidebar. */
 .sidebar-collapsed .sidebar:hover{transition-delay:.08s}
 .sidebar .workspace,.sidebar .upcoming>span,.sidebar .nav{white-space:nowrap}
 .sidebar .nav span,.sidebar .upcoming>span>span,.sidebar .workspace{transition:opacity .08s linear,max-width 0s}
@@ -423,3 +417,23 @@ body.video-workspace{height:100dvh;overflow:hidden}
 .video-workspace .composition-position #montage-current-time:focus-visible{text-decoration:underline;text-underline-offset:3px}
 
 #open-export>span svg{color:#2d3144}
+
+/* Transient tool navigation pushes the editor and its footer together. */
+body.sidebar-collapsed.sidebar-preview-open main{margin-left:var(--sidebar-width);transition:margin-left .24s var(--motion) .08s}
+main{transition:margin-left .24s var(--motion)}
+.composition-editor .legacy-original-size{display:none!important}
+#pixel-geometry{margin-top:16px;margin-bottom:12px}
+#pixel-geometry h3{margin:0 0 12px}
+#pixel-geometry .geometry-row{display:flex;align-items:center;gap:8px;margin-bottom:10px;min-width:0}
+#pixel-geometry .geometry-icon{display:flex;flex:none;width:22px;color:#2d3144}
+#pixel-geometry .geometry-icon svg{width:22px;height:22px}
+#pixel-geometry .geometry-pair{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px;flex:1;min-width:0}
+#pixel-geometry .geometry-field{display:flex;align-items:center;gap:5px;min-width:0;height:32px;margin:0;padding:0 7px;border:1px solid var(--line);border-radius:7px;background:#fff;font-size:12px;color:#626276}
+#pixel-geometry .geometry-field:focus-within{border-color:#6967c9;box-shadow:0 0 0 2px #6967c918}
+#pixel-geometry .geometry-field input{flex:1;width:0;min-width:0;min-height:0;height:30px;padding:0!important;margin:0;border:0!important;outline:0;box-shadow:none!important;background:transparent;font-size:12px;color:#2d3144}
+#pixel-geometry .rotation-field{flex:1}
+#pixel-geometry .scale-pair{position:relative;padding-bottom:18px}
+#pixel-geometry .scale-pair .geometry-field{align-self:start}
+#pixel-geometry .proportion-link{position:absolute;left:50%;bottom:-1px;transform:translateX(-50%);width:23px;height:20px;display:grid;place-items:center;color:#2d3144;background:#fff;z-index:1}
+#pixel-geometry .proportion-link svg{width:18px;height:18px}
+#pixel-geometry .proportion-curve{position:absolute;bottom:0;left:0;width:100%;height:18px;fill:none;stroke:#aaaec3;stroke-width:1.2;pointer-events:none}
