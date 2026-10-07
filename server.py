@@ -5,6 +5,7 @@ import json
 import mimetypes
 import os
 import re
+import shutil
 import socket
 import subprocess
 import sys
@@ -156,7 +157,24 @@ def clean(value):
         raise ValueError('Esse nome é reservado pelo Windows. Escolha outro.')
     return value
 
+ENTREGAS = DATA / 'entregas'
+
+def entrega(token, criar=False):
+    """Pasta temporária de uma exportação feita pela rede: o servidor grava nela e o navegador baixa os arquivos."""
+    if not re.fullmatch(r'[0-9a-f]{32}', token or ''): raise ValueError('Entrega inválida.')
+    if criar:
+        # ponytail: limpeza oportunista; entregas que o navegador não recolheu somem depois de um dia
+        for velha in ENTREGAS.glob('*'):
+            if velha.stat().st_mtime < time.time() - 86400: shutil.rmtree(velha, ignore_errors=True)
+        (ENTREGAS / token).mkdir(parents=True, exist_ok=True)
+    return ENTREGAS / token
+
+def arquivos_entrega(token):
+    pasta = entrega(token)
+    return sorted(f.name for f in pasta.iterdir() if f.is_file() and not f.name.startswith('.')) if pasta.is_dir() else []
+
 def directory(value):
+    if m := re.fullmatch(r'navegador:([0-9a-f]{32})', str(value)): return entrega(m[1], criar=True)
     p = Path(value).expanduser()
     if not p.is_absolute() or not p.is_dir(): raise ValueError('Escolha uma pasta existente acessível pelo PC que hospeda a aplicação.')
     p = p.resolve()
@@ -197,7 +215,11 @@ def api(method, path, query, raw, environ=None):
     if path == '/api/history':
         with connect() as db:
             return [dict(r) | {'detail': json.loads(r['detail'])} for r in db.execute('SELECT events.*,jobs.title FROM events LEFT JOIN jobs ON events.job=jobs.id WHERE events.hidden=0 ORDER BY events.id DESC LIMIT 500')]
+    if path == '/api/entrega' and method == 'GET': return arquivos_entrega(query.get('token', [''])[0])
     if method != 'POST': raise ValueError('Operação não encontrada.')
+    if path == '/api/entrega-limpar':
+        shutil.rmtree(entrega(value.get('token')), ignore_errors=True)
+        return {'ok': True}
     if path == '/api/export-cancel':
         token = value.get('token', '')
         if export_progress.cancel(token): return {'accepted': True}
@@ -605,7 +627,9 @@ def app(environ, start_response):
         validate_host(host)
         if origin and origin not in (f'http://{host}', f'https://{host}'):
             raise ValueError('Origem não autorizada.')
-        if environ.get('HTTP_SEC_FETCH_SITE') == 'cross-site': raise ValueError('Origem não autorizada.')
+        # abrir a página por um link de outro site (WhatsApp, e-mail) é permitido; o resto vindo de fora, não
+        if environ.get('HTTP_SEC_FETCH_SITE') == 'cross-site' and not (method == 'GET' and environ.get('HTTP_SEC_FETCH_MODE') == 'navigate'):
+            raise ValueError('Origem não autorizada.')
         resposta = ofertas.handle(environ)  # /api/ofertas/* e /ofertas/*; o módulo trata os próprios erros
         if resposta:
             start_response(resposta[0], resposta[1])
@@ -651,6 +675,16 @@ def app(environ, start_response):
                         remaining -= len(chunk)
                         yield chunk
             return chunks() if method != 'HEAD' else []
+        elif path == '/entrega':
+            query = parse_qs(environ.get('QUERY_STRING', ''))
+            token, name = query.get('token', [''])[0], query.get('name', [''])[0]
+            if name not in arquivos_entrega(token): raise FileNotFoundError()
+            arquivo = entrega(token) / name
+            start_response('200 OK', [('Content-Type', 'application/octet-stream'), ('Content-Length', str(arquivo.stat().st_size)),
+                                      ('Cache-Control', 'no-store'), ('X-Content-Type-Options', 'nosniff')])
+            def partes():
+                with arquivo.open('rb') as stream: yield from iter(lambda: stream.read(65536), b'')
+            return partes()
         elif path.startswith(('/media/', '/logo/', '/vetor/', '/eap/')):
             ident = path.split('/')[-1]
             if not re.fullmatch(r'[0-9a-f]{32}', ident): raise ValueError('Mídia inválida.')

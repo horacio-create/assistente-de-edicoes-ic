@@ -97,6 +97,35 @@ class VectorTests(unittest.TestCase):
             self.assertEqual(dest.read_bytes(), original)
             self.assertEqual(sorted(p.name for p in Path(folder).iterdir()), [dest.name])
 
+    def test_network_export_goes_to_browser_delivery_and_is_cleaned(self):
+        ident = api('/api/vector/upload', query={'name': ['logo.png']}, raw=ring())['id']
+        token = 'ab' * 16
+        api('/api/vector/export', {'id': ident, 'settings': {'widthMm': 30}, 'folder': 'navegador:' + token, 'name': 'MS6 - Rede'})
+        self.assertEqual(server.api('GET', '/api/entrega', {'token': [token]}, b''), ['MS6 - Rede.dxf'])
+        env = {'REQUEST_METHOD': 'GET', 'PATH_INFO': '/entrega', 'HTTP_HOST': 'localhost:8080',
+               'QUERY_STRING': f'token={token}&name=MS6%20-%20Rede.dxf'}
+        statuses = []
+        body = b''.join(server.app(env, lambda status, headers: statuses.append(status)))
+        self.assertEqual(statuses, ['200 OK'])
+        self.assertEqual(len(list(read_dxf(body).modelspace())), 3)
+        statuses.clear()
+        server.app(env | {'QUERY_STRING': f'token={token}&name=../historico.sqlite'}, lambda status, headers: statuses.append(status))
+        self.assertEqual(statuses, ['404 Not Found'])
+        api('/api/entrega-limpar', {'token': token})
+        self.assertEqual(server.api('GET', '/api/entrega', {'token': [token]}, b''), [])
+        with self.assertRaises(ValueError): api('/api/vector/export', {'id': ident, 'folder': 'navegador:../x', 'name': 'x'})
+
+    def test_link_from_other_site_opens_page_but_cannot_call_api(self):
+        def status(method, path, mode):
+            got = []
+            server.app({'REQUEST_METHOD': method, 'PATH_INFO': path, 'HTTP_HOST': 'localhost:8080', 'CONTENT_LENGTH': '0',
+                        'wsgi.input': io.BytesIO(), 'HTTP_SEC_FETCH_SITE': 'cross-site', 'HTTP_SEC_FETCH_MODE': mode},
+                       lambda s, h: got.append(s))
+            return got[0]
+        self.assertEqual(status('GET', '/', 'navigate'), '200 OK')
+        self.assertEqual(status('GET', '/api/history', 'cors'), '400 Bad Request')
+        self.assertEqual(status('POST', '/api/history-delete', 'navigate'), '400 Bad Request')
+
     def test_invalid_ids_and_formats_are_rejected(self):
         for ident in ('../../segredo', 'x' * 32, None):
             with self.assertRaises(ValueError): api('/api/vector/trace', {'id': ident, 'settings': {}})
