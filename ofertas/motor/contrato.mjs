@@ -66,15 +66,25 @@ export function lerTemplate(dir) {
   return { dir: resolve(dir), meta, html, declaracoes: lerDeclaracoes(html) };
 }
 
+// Lista com quantidade variável: "min" (opcional) até "itens", sempre em grupos completos.
+// Sem "min" a quantidade é fixa (min = itens), como sempre foi.
+export const minimoLista = (c) => c.min ?? c.itens;
+export const passoLista = (c) => c.grupo?.tamanho || 1;
+export const listaVariavel = (c) => c.min !== undefined && c.min !== c.itens;
+
 // campo do contrato -> ids das variáveis HyperFrames que ele ocupa
+// (lista variável ganha "<lista>_total": quantos itens vieram, para o template dividir o tempo)
 export function variaveisEsperadas(campos) {
   const out = [];
   for (const c of campos) {
     if (c.tipo !== "lista") out.push({ id: c.id, campo: c, rotulo: c.rotulo });
-    else
+    else {
       for (let n = 1; n <= c.itens; n++)
         for (const sub of c.campos)
           out.push({ id: `${c.id}_${n}_${sub.id}`, campo: sub, rotulo: `${c.rotuloItem || c.rotulo} ${n} › ${sub.rotulo}` });
+      if (listaVariavel(c))
+        out.push({ id: `${c.id}_total`, campo: { tipo: "numero", min: minimoLista(c), max: c.itens }, rotulo: `quantidade de ${c.rotulo}` });
+    }
   }
   return out;
 }
@@ -152,6 +162,10 @@ export function validarTemplate(dir) {
     if (c.tipo === "lista") {
       if (!Number.isInteger(c.itens) || c.itens < 1) erros.push(`${onde}: "itens" deve ser um inteiro ≥ 1.`);
       if (c.grupo && c.itens % c.grupo.tamanho) erros.push(`${onde}: "itens" (${c.itens}) não é múltiplo de grupo.tamanho (${c.grupo.tamanho}).`);
+      if (c.min !== undefined) {
+        if (!Number.isInteger(c.min) || c.min < 1 || c.min > c.itens) erros.push(`${onde}: "min" deve ser um inteiro entre 1 e "itens" (${c.itens}).`);
+        else if (c.min % passoLista(c)) erros.push(`${onde}: "min" (${c.min}) não é múltiplo de grupo.tamanho (${passoLista(c)}).`);
+      }
       if (!Array.isArray(c.campos) || !c.campos.length) erros.push(`${onde}: lista sem "campos".`);
       for (const sub of c.campos || []) {
         checarCampo(sub, `${onde} › "${sub.id}"`);
@@ -179,6 +193,10 @@ export function validarTemplate(dir) {
       imagem: (p) => (existsSync(join(t.dir, p)) ? { valor: p } : { erro: `imagem padrão "${p}" não existe no template.` }),
     });
     if (r.erro) erros.push(`variável "${id}": valor padrão inválido — ${r.erro}`);
+  }
+  for (const c of meta.campos.filter(listaVariavel)) {
+    const total = decl.get(`${c.id}_total`)?.default;
+    if (total !== undefined && total % passoLista(c)) erros.push(`variável "${c.id}_total": valor padrão ${total} não é múltiplo de grupo.tamanho (${passoLista(c)}).`);
   }
   const esperadosIds = new Set(esperadas.map((e) => e.id));
   for (const d of declaracoes)
@@ -231,9 +249,17 @@ export function prepararDados(template, dados, baseDir) {
       continue;
     }
     const itens = dados[c.id];
-    if (!Array.isArray(itens) || itens.length !== c.itens) {
-      erro(null, `são necessários exatamente ${c.itens} itens (recebidos ${Array.isArray(itens) ? itens.length : 0}).`, c.rotulo);
+    const qtd = Array.isArray(itens) ? itens.length : 0, min = minimoLista(c), passo = passoLista(c);
+    if (qtd < min || qtd > c.itens || qtd % passo) {
+      const faixa = min === c.itens ? `exatamente ${c.itens}` : `de ${min} a ${c.itens}`;
+      erro(null, `são necessários ${faixa} itens${passo > 1 && min !== c.itens ? `, de ${passo} em ${passo}` : ""} (recebidos ${qtd}).`, c.rotulo);
       continue;
+    }
+    if (listaVariavel(c)) {
+      variaveis[`${c.id}_total`] = qtd;
+      // itens que não vieram ficam com o padrão do template (o template não os mostra)
+      for (let n = qtd + 1; n <= c.itens; n++)
+        for (const sub of c.campos) variaveis[`${c.id}_${n}_${sub.id}`] = decl.get(`${c.id}_${n}_${sub.id}`)?.default;
     }
     const subIds = new Set(c.campos.map((s) => s.id));
     itens.forEach((item, i) => {
@@ -252,7 +278,8 @@ export function dadosPadrao(template) {
   for (const c of template.meta.campos) {
     if (c.tipo !== "lista") dados[c.id] = decl.get(c.id);
     else
-      dados[c.id] = Array.from({ length: c.itens }, (_, i) =>
+      // lista variável: começa com a quantidade padrão do template (default de "<lista>_total")
+      dados[c.id] = Array.from({ length: listaVariavel(c) ? decl.get(`${c.id}_total`) ?? c.itens : c.itens }, (_, i) =>
         Object.fromEntries(c.campos.map((s) => [s.id, decl.get(`${c.id}_${i + 1}_${s.id}`)])),
       );
   }
@@ -285,7 +312,9 @@ export function esquema(template) {
     duracao: attr("data-duration"),
     capaEm: template.meta.capaEm ?? 0,
     campos: template.meta.campos.map((c) =>
-      c.tipo === "lista" ? { ...c, campos: c.campos.map((s) => enriquecer(s, `${c.id}_1_${s.id}`)) } : enriquecer(c, c.id),
+      c.tipo === "lista"
+        ? { ...c, min: minimoLista(c), campos: c.campos.map((s) => enriquecer(s, `${c.id}_1_${s.id}`)) }
+        : enriquecer(c, c.id),
     ),
     padrao: dadosPadrao(template),
   };

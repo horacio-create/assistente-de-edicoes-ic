@@ -45,6 +45,10 @@ body:not(.sidebar-collapsed) .sidebar .nav[data-view=ofertas].active,.sidebar-co
 #ofertas .campo .help{margin:4px 0 0}
 #ofertas .grupo{border-top:1px solid var(--line);padding-top:14px;margin-top:6px}
 #ofertas .grupo>h4{font-size:11px;letter-spacing:.6px;text-transform:uppercase;color:#64647c;margin:0 0 10px;font-weight:750}
+#ofertas .grupo>h4{display:flex;align-items:center;justify-content:space-between;gap:8px}
+#ofertas .remover-grupo{font-size:11px;text-transform:none;letter-spacing:0;font-weight:600;color:#b4485e}
+#ofertas .grupo-rodape{display:flex;align-items:center;gap:12px;flex-wrap:wrap;border-top:1px solid var(--line);padding:14px 0 6px}
+#ofertas .grupo-rodape small{color:#64647c}
 #ofertas .item-card{border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:12px;background:#fafafd;transition:border-color .2s,box-shadow .2s}
 #ofertas .item-card.com-erro{border-color:#e5b7c1}
 #ofertas .item-card:focus-within{border-color:#aaa8dc;box-shadow:0 3px 12px #6967c91a}
