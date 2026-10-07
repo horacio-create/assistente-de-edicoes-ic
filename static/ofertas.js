@@ -194,10 +194,12 @@ async function montarFormulario() {
     const variavel = def.min < def.itens;
     const nomeGrupo = def.grupo?.rotulo || 'Grupo';
     const nomeItem = (def.rotuloItem || def.rotulo).toLowerCase();
+    const incompleto = variavel && def.grupo?.incompleto; // a última cartela pode ter menos itens (ex.: produto sozinho)
     for (let g = 0; g < qtd / tamanho; g++) {
+      const noGrupo = Math.min(tamanho, qtd - g * tamanho);
       const grupo = document.createElement('section');
       grupo.className = 'grupo';
-      grupo.innerHTML = `<header><h4>${esc(def.grupo ? `${nomeGrupo} ${g + 1}` : def.rotulo)}</h4><small>${tamanho} ${esc(nomeItem)}${tamanho > 1 ? 's' : ''}</small></header>`;
+      grupo.innerHTML = `<header><h4>${esc(def.grupo ? `${nomeGrupo} ${g + 1}` : def.rotulo)}</h4><small>${noGrupo} ${esc(nomeItem)}${noGrupo > 1 ? 's' : ''}${noGrupo < tamanho ? ' · centralizado' : ''}</small></header>`;
       if (variavel && qtd > def.min) {
         const remover = document.createElement('button');
         remover.type = 'button';
@@ -211,10 +213,19 @@ async function montarFormulario() {
         };
         grupo.querySelector('header').append(remover);
       }
-      for (let i = g * tamanho; i < (g + 1) * tamanho; i++) {
+      for (let i = g * tamanho; i < g * tamanho + noGrupo; i++) {
         const card = document.createElement('div');
         card.className = 'item-card';
         card.innerHTML = `<div class="item-titulo"><b>${i + 1}</b>${esc(def.rotuloItem || def.rotulo)} ${i + 1}</div>`;
+        if (incompleto && qtd > def.min) {
+          const tirar = document.createElement('button');
+          tirar.type = 'button';
+          tirar.className = 'remover-item';
+          tirar.textContent = 'Remover';
+          tirar.setAttribute('aria-label', `Remover ${nomeItem} ${i + 1}`);
+          tirar.onclick = () => mudarQuantidade(def, (lista) => lista.splice(i, 1));
+          card.querySelector('.item-titulo').append(tirar);
+        }
         if (def === listaPrincipal() && encartesProntos().length) {
           const trocar = document.createElement('button');
           trocar.type = 'button';
@@ -238,15 +249,18 @@ async function montarFormulario() {
       form.append(grupo);
     }
     if (variavel) {
-      const grupos = qtd / tamanho, maximo = def.itens / tamanho;
+      const grupos = Math.ceil(qtd / tamanho), maximo = def.itens / tamanho;
       const rodape = document.createElement('div');
       rodape.className = 'grupo-rodape';
       const adicionar = document.createElement('button');
       adicionar.type = 'button';
       adicionar.className = 'adicionar-grupo';
-      adicionar.disabled = grupos >= maximo;
-      adicionar.textContent = grupos >= maximo ? `Limite de ${maximo} ${nomeGrupo.toLowerCase()}s` : `+ Adicionar ${nomeGrupo.toLowerCase()}`;
-      adicionar.onclick = () => mudarQuantidade(def, (lista) => lista.push(...itensPadrao(def, lista.length, tamanho)), true);
+      adicionar.disabled = qtd >= def.itens;
+      // com cartela incompleta, adicionar completa a última (1 produto); senão, uma cartela nova
+      const novos = incompleto ? (qtd % tamanho ? 1 : Math.min(tamanho, def.itens - qtd)) : tamanho;
+      adicionar.textContent = qtd >= def.itens ? `Limite de ${maximo} ${nomeGrupo.toLowerCase()}s`
+        : novos < tamanho ? `+ Adicionar ${nomeItem}` : `+ Adicionar ${nomeGrupo.toLowerCase()}`;
+      adicionar.onclick = () => mudarQuantidade(def, (lista) => lista.push(...itensPadrao(def, lista.length, novos)), true);
       const resumo = document.createElement('small');
       resumo.textContent = `${grupos} de ${maximo} ${nomeGrupo.toLowerCase()}${maximo > 1 ? 's' : ''} · ${qtd} ${nomeItem}${qtd > 1 ? 's' : ''} · a duração do vídeo é dividida igualmente`;
       rodape.append(adicionar, resumo);
@@ -274,7 +288,7 @@ async function mudarQuantidade(def, mudar, rolarAteNovo = false) {
 }
 // quantos produtos vão em cada vídeo do "Gerar todos" (mesma regra de tamanhos_dos_videos no servidor)
 const passoDe = (lista) => lista.grupo?.tamanho || 1;
-const limitesCartelas = (lista) => [(lista.min ?? lista.itens) / passoDe(lista), lista.itens / passoDe(lista)];
+const limitesCartelas = (lista) => [Math.ceil((lista.min ?? lista.itens) / passoDe(lista)), lista.itens / passoDe(lista)];
 function tamanhosDosVideos(n, lista, cartelas) {
   const passo = passoDe(lista), [gmin, gmax] = limitesCartelas(lista);
   cartelas ??= gmax;
@@ -552,7 +566,7 @@ function desenharEncarte() {
 el('usar-encarte').addEventListener('click', () => {
   const lista = listaPrincipal();
   if (lista.min < lista.itens) { // lista variável: a quantidade acompanha os produtos escolhidos (em grupos completos)
-    const passo = lista.grupo?.tamanho || 1;
+    const passo = lista.grupo?.incompleto ? 1 : lista.grupo?.tamanho || 1;
     const qtd = Math.min(lista.itens, Math.max(lista.min, Math.ceil(state.ordem.length / passo) * passo));
     const atual = state.pedido.dados[lista.id];
     if (atual.length > qtd) atual.splice(qtd);
@@ -740,6 +754,7 @@ function planoLote() {
   const n = impar === 'fora' && sobra && total > passo ? total - sobra : total;
   const cartelas = Math.min(gmax, Math.max(gmin, Math.round(Number(el('lote-cartelas').value) || gmax)));
   const tamanhos = tamanhosDosVideos(n, lista, cartelas);
+  if (impar === 'sozinho' && sobra) tamanhos[tamanhos.length - 1] -= passo - sobra; // última cartela com 1 produto
   return { enc, lista, passo, gmin, gmax, impar, sobra, n, cartelas, tamanhos, repetidos: tamanhos.reduce((a, b) => a + b, 0) - n };
 }
 const plural = (n, um, varios) => `${n} ${n === 1 ? um : varios}`;
@@ -753,23 +768,25 @@ function desenharLote() {
   el('lote-videos-ajuda').textContent = 'Os vídeos saem com quantidades parecidas.';
   el('lote-impar').hidden = !p.sobra;
   el('lote-primeiro').textContent = p.enc.itens[0]?.nome ? `(${p.enc.itens[0].nome})` : '';
-  el('lote-ultimo').textContent = p.enc.itens.at(-1)?.nome ? `(${p.enc.itens.at(-1).nome})` : '';
+  el('lote-ultimo').textContent = el('lote-ultimo-sozinho').textContent = p.enc.itens.at(-1)?.nome ? `(${p.enc.itens.at(-1).nome})` : '';
   // vídeos iguais em sequência viram uma linha: "Vídeos 1 a 3 · 4 cartelas (8 produtos)"
   const linhas = [];
   p.tamanhos.forEach((t, k) => { const ult = linhas.at(-1); if (ult?.t === t) ult.ate = k + 1; else linhas.push({ t, de: k + 1, ate: k + 1 }); });
-  el('lote-resumo').innerHTML = linhas.map((l) => `<li><b>${l.de === l.ate ? `Vídeo ${l.de}` : `Vídeos ${l.de} a ${l.ate}`}</b><span>${plural(l.t / p.passo, nomeGrupo, nomeGrupo + 's')} · ${plural(l.t, 'produto', 'produtos')}</span></li>`).join('');
+  el('lote-resumo').innerHTML = linhas.map((l) => `<li><b>${l.de === l.ate ? `Vídeo ${l.de}` : `Vídeos ${l.de} a ${l.ate}`}</b><span>${plural(Math.ceil(l.t / p.passo), nomeGrupo, nomeGrupo + 's')} · ${plural(l.t, 'produto', 'produtos')}</span></li>`).join('');
   const notas = [];
   if (p.repetidos) notas.push(`${plural(p.repetidos, 'produto se repete', 'produtos se repetem')} para completar ${p.repetidos > p.sobra ? 'os vídeos' : 'a cartela'} (a partir do 1º do encarte).`);
+  if (p.impar === 'sozinho' && p.sobra) notas.push(`${p.enc.itens.at(-1).nome || 'O último produto'} aparece sozinho, centralizado, na última ${nomeGrupo}.`);
   if (p.n < p.enc.itens.length) notas.push(`${p.enc.itens.at(-1).nome || 'O último produto'} fica de fora.`);
   el('lote-nota').textContent = notas.join(' ');
   const pendentes = p.enc.itens.filter((it) => avisosDe(it).length).length;
   el('lote-aviso').hidden = !pendentes;
   el('lote-aviso').textContent = `Atenção: ${plural(pendentes, 'produto ainda tem aviso', 'produtos ainda têm avisos')} para conferir.`;
-  const base = p.enc.nome.replace(/\.[^.]+$/, '');
+  const base = el('lote-nome').value.trim() || p.enc.nome.replace(/\.[^.]+$/, '');
   el('lote-nomes').textContent = p.tamanhos.length > 1 ? `Nomes: ${base} (1) … ${base} (${p.tamanhos.length})` : `Nome: ${base}`;
   el('lote-gerar').textContent = `Gerar ${plural(p.tamanhos.length, 'vídeo', 'vídeos')}`;
 }
 el('lote-cartelas').addEventListener('change', desenharLote);
+el('lote-nome').addEventListener('input', desenharLote);
 // quantidade de vídeos -> cartelas por vídeo (o mínimo que cabe nesses vídeos); o resumo mostra o resultado real
 el('lote-videos').addEventListener('change', () => {
   const p = planoLote(), videos = Math.max(1, Math.round(Number(el('lote-videos').value) || 1));
@@ -781,7 +798,10 @@ el('encarte-todos').addEventListener('click', () => {
   const [gmin, gmax] = limitesCartelas(listaPrincipal());
   Object.assign(el('lote-cartelas'), { min: gmin, max: gmax, value: gmax, disabled: gmin === gmax });
   el('lote-videos').disabled = gmin === gmax;
-  document.querySelector('input[name=of-lote-impar][value=repetir]').checked = true;
+  const sozinho = Boolean(listaPrincipal().grupo?.incompleto); // template centraliza o produto sozinho: vira o padrão
+  el('lote-sozinho').hidden = !sozinho;
+  document.querySelector(`input[name=of-lote-impar][value=${sozinho ? 'sozinho' : 'repetir'}]`).checked = true;
+  el('lote-nome').value = encAtual().nome.replace(/\.[^.]+$/, '');
   desenharLote();
   el('lote-dialog').showModal();
 });
@@ -789,7 +809,7 @@ el('lote-gerar').addEventListener('click', async () => {
   const p = planoLote();
   el('lote-gerar').disabled = true;
   try {
-    const r = await api('/encarte-gerar-todos', { body: { encarte: p.enc.id, template: state.pedido.template, cartelas: p.cartelas, impar: p.impar } });
+    const r = await api('/encarte-gerar-todos', { body: { encarte: p.enc.id, template: state.pedido.template, cartelas: p.cartelas, impar: p.impar, nome: el('lote-nome').value } });
     el('lote-dialog').close();
     const falhos = r.videos.filter((v) => !v.render);
     aviso(falhos.length ? `${r.videos.length - falhos.length} na fila. ${falhos.length} não ${falhos.length === 1 ? 'pôde' : 'puderam'} ser gerado(s): abra em Pedidos recentes para corrigir.`

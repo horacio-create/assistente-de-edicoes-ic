@@ -392,9 +392,21 @@ class FluxoTests(unittest.TestCase):
             return g
         g = lote(cartelas=2, impar='fora')
         self.assertEqual(([v['titulo'] for v in g['videos']], g['completados']), (['Semana 14 (1)', 'Semana 14 (2)'], 0))
-        g = lote(cartelas=2, impar='repetir')
+        g = lote(cartelas=2, impar='repetir', nome='  Ofertas FLV  ')
+        self.assertEqual([v['titulo'] for v in g['videos']], ['Ofertas FLV (1)', 'Ofertas FLV (2)', 'Ofertas FLV (3)'])
         self.assertEqual((len(g['videos']), g['completados']), (3, 3))  # 5 cartelas em vídeos de no mínimo 2
         self.assertEqual(json_de('POST', '/api/ofertas/encarte-gerar-todos', {'encarte': enc['id'], 'template': 'carne-variavel', 'cartelas': 9})[0], 400)
+        self.assertEqual(json_de('POST', '/api/ofertas/encarte-gerar-todos', {'encarte': enc['id'], 'template': 'carne-variavel', 'impar': 'sozinho'})[0], 400)
+
+        # grupo.incompleto: o 9º produto aparece sozinho na última cartela, sem repetir nem descartar
+        meta['campos'][1].update(min=1, grupo={**meta['campos'][1]['grupo'], 'incompleto': True})
+        (pasta / 'template.json').write_text(json.dumps(meta))
+        (pasta / 'index.html').write_text((pasta / 'index.html').read_text().replace('"default": 6, "min": 4, "max": 6, "step": 2', '"default": 6, "min": 1, "max": 6, "step": 1'))
+        self.assertTrue(json_de('POST', '/api/ofertas/templates-publicar', raw=zipar(pasta, 'carne-variavel/'))[1]['ok'])
+        g = lote(cartelas=3, impar='sozinho')
+        self.assertEqual((g['completados'], [v['erros'] for v in g['videos']]), (0, [[], []]))
+        ultimo = json_de('GET', f"/api/ofertas/pedido?id={g['videos'][1]['pedido']}")[1]
+        self.assertEqual(len(ultimo['dados']['produtos']), 3)  # 6 + 3: a 2ª cartela do último vídeo tem 1 produto
 
     def test_encarte_recusa_o_que_nao_e_pdf_nem_imagem(self):
         status, r = json_de('POST', '/api/ofertas/encarte?nome=x.pdf', raw=b'nao e pdf')

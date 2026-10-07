@@ -425,7 +425,7 @@ def tamanhos_dos_videos(n, lista, cartelas=None):
     por vídeo: 4 + 4 + 3, e não 5 + 5 + 1) e nenhum fica abaixo do mínimo do template; o que faltar é
     completado com os primeiros produtos. Lista fixa: todos com `itens` (21 / 6 = 4 vídeos de 6)."""
     passo = (lista.get('grupo') or {}).get('tamanho') or 1
-    gmin, gmax = (lista.get('min') or lista['itens']) // passo, lista['itens'] // passo
+    gmin, gmax = -(-(lista.get('min') or lista['itens']) // passo), lista['itens'] // passo  # min 1 com cartela de 2: 1 cartela
     cartelas = gmax if cartelas is None else int(cartelas)
     if not gmin <= cartelas <= gmax: raise ValueError(f'Escolha de {gmin} a {gmax} cartelas por vídeo.')
     grupos = -(-n // passo)
@@ -434,7 +434,8 @@ def tamanhos_dos_videos(n, lista, cartelas=None):
 
 def gerar_todos(value):
     """Todos os produtos do encarte em vídeos (ver tamanhos_dos_videos). `impar`: com número ímpar de produtos
-    a última cartela fica incompleta; "repetir" completa com o primeiro produto, "fora" deixa o último de fora."""
+    a última cartela fica incompleta; "repetir" completa com o primeiro produto, "fora" deixa o último de fora e
+    "sozinho" mostra o último sozinho na cartela (só templates com grupo.incompleto)."""
     ident, template = str(value.get('encarte', '')), value.get('template')
     schema = esquema(template)
     lista = next((c for c in schema['campos'] if c['tipo'] == 'lista'), None)
@@ -445,12 +446,16 @@ def gerar_todos(value):
     if not itens: raise ValueError('Este encarte não tem produtos. Marque as ofertas na página.')
     sem_preco = [it['nome'] or f'produto {k + 1}' for k, it in enumerate(itens) if not PRECO.fullmatch(it.get('por') or '')]
     if sem_preco: raise ValueError(f'Confira antes de gerar: {", ".join(sem_preco[:4])} sem preço em destaque.')
-    if value.get('impar', 'repetir') not in ('repetir', 'fora'): raise ValueError('Opção inválida para produto sobrando.')
+    impar = value.get('impar', 'repetir')
+    if impar not in ('repetir', 'fora', 'sozinho'): raise ValueError('Opção inválida para produto sobrando.')
+    if impar == 'sozinho' and not (lista.get('grupo') or {}).get('incompleto'):
+        raise ValueError('Este template não mostra produto sozinho na cartela.')
     passo = (lista.get('grupo') or {}).get('tamanho') or 1
-    if value.get('impar') == 'fora' and len(itens) > passo: itens = itens[:len(itens) - len(itens) % passo]
+    if impar == 'fora' and len(itens) > passo: itens = itens[:len(itens) - len(itens) % passo]
     tamanhos = tamanhos_dos_videos(len(itens), lista, value.get('cartelas'))
+    if impar == 'sozinho' and len(itens) % passo: tamanhos[-1] -= passo - len(itens) % passo  # última cartela incompleta
     total = len(tamanhos)
-    base = Path(row['nome']).stem
+    base = str(value.get('nome') or '').strip()[:150] or Path(row['nome']).stem  # nome escolhido no lote; " (n)" vem depois
     videos = []
     inicio = 0
     for g, n in enumerate(tamanhos):
