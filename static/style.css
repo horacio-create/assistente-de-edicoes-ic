@@ -306,3 +306,6 @@ body.video-workspace{height:100dvh;overflow:hidden}
 .queue-entry svg{width:17px;height:17px}
 #rename-timeline-dialog{width:min(440px,calc(100vw - 32px))}
 @media(max-width:900px){.library-tabs button{font-size:9px}.timeline-tab{max-width:110px;font-size:10px}.timeline-tab svg{display:none}.timeline-delete svg{width:12px}.timeline-item svg{width:12px}.video-workspace .timeline-body{grid-template-columns:29px minmax(0,1fr);gap:3px}.video-workspace .timeline-rail button{width:25px;height:27px;padding:3px}.video-workspace .queue-actions button{padding:6px}.timeline-rail svg{width:18px}.video-workspace .montage-tools{flex-wrap:nowrap}}
+
+/* Video navigation stays beside the timeline tools. */
+.video-workspace .media-arrow{display:none!important}
