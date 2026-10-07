@@ -2,6 +2,47 @@
 
 ## 1.8.0 — versão oficial — 06/10/2026
 
+### Refinamentos visuais da fila de 07/10/2026
+
+- Adicionar à fila e Fila recebem rótulos separados e ícones de mídias empilhadas.
+  Contagem oculta quando vazia; quantidade em elipse verde quando houver itens.
+- Tempo atual mantém edição sem caixa e usa o verde da barra de reprodução.
+- Ícone de áudio mais próximo do texto; setas da timeline ampliadas e preenchidas em SVG,
+  com as mesmas dimensões dos demais ícones; seta de Exportar maior e próxima do nome.
+
+### Controles de tempo e medidas de 07/10/2026
+
+- Relógio ao lado do olho/mudo abre velocidade e duração do trecho, com porcentagem
+  de duração: abaixo de 100% acelera, acima desacelera. Porcentagem e segundos ligados.
+- Duplo clique no bloco da timeline abre Ajustar trecho, preservando a barra verde
+  e suas duas alças para início/fim. Aplicar confirma; Cancelar e Esc preservam o corte.
+- Painel direito concentra transformação: posição cartesiana X/Y em pixels,
+  rotação em graus e largura/altura proporcionais em pixels, além do modelo de timelines.
+- Tempo sai do painel direito; tamanho máximo continua editável na revisão da exportação.
+  Nas selecionadas deixa de aparecer em edições de vídeo. T abre duração; P abre exportação.
+- Mantidos desfazer/refazer, bloqueios e velocidades entre 0,25× e 4×; imagens e áudio
+  continuam com duração editável. Exportação real conferida com o novo tempo e geometria.
+
+### Reutilização de timelines de 07/10/2026
+
+- Em todas utiliza a timeline aberta como modelo completo: saída, rotação, escala,
+  posição, cortes, duração e camadas. Cada destino mantém seu arquivo principal.
+- Com uma única timeline, cria uma por arquivo do mesmo tipo, até dez por edição.
+  Lista os arquivos excedentes e orienta a continuar em outra edição.
+- Cortes são adaptados à duração disponível, com aviso por arquivo quando a montagem
+  é encurtada ou alongada; logos e áudio acompanham o tempo adaptado.
+- Mantém nomes, números e identificadores da fila, atualizando os modelos das timelines
+  afetadas. Timelines bloqueadas são preservadas. Ctrl+Z desfaz a operação inteira.
+
+### Correção de exportação de 07/10/2026
+
+- Exportação individual e em fila detecta a opção de leitura de filtros disponível no
+  FFmpeg instalado: compatível com o FFmpeg 5.1 do servidor e com motores recentes
+  do portátil, preservando os filtros em arquivos para montagens com muitos trechos.
+- Seleção de pasta pelo navegador sugere Downloads, explica pastas protegidas e oferece
+  Baixar em Downloads mesmo quando o seletor de pastas está disponível. Cancelar a
+  seleção não inicia downloads; pastas permitidas mantêm a gravação direta.
+
 ### Empacotamento Windows de 07/10/2026
 
 - Portátil atualizado com FFmpeg/FFprobe e inclusão do código/templates de Ofertas.

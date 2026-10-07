@@ -354,6 +354,11 @@ def api(method, path, query, raw, environ=None):
             db.execute('UPDATE jobs SET title=?,meta=?,updated=?,revision=revision+1 WHERE id=?', (str(value.get('title', 'Nova edição'))[:180], json.dumps(meta), now(), job))
             event(db, job, 'Ajustes salvos', {'midias': len(value['media'])})
         return get_job(job)
+    if path == '/api/reuse-timelines':
+        with LOCK, connect() as db:
+            check_revision(db, value['job'], value['revision'])
+            known = get_job(value['job'])
+            return projects.reuse_timelines(value['meta'], known['media'], lambda s: logo_path(s, value['job']))
     if path == '/api/preview':
         with connect() as db: row = db.execute('SELECT * FROM media WHERE id=?', (value['id'],)).fetchone()
         if not row: raise ValueError('Mídia não encontrada.')
@@ -692,7 +697,7 @@ def app(environ, start_response):
             content_type = 'image/png'
         else:
             name = 'index.html' if path == '/' else path.lstrip('/')
-            if name not in ('index.html','app.js','video-controls.js','composition-controls.js','project-controls.js','editor-layout.js','audio-panels.js','transform-controls.js', 'edition-names.js','export-progress.js','undo-history.js','vector.js','eap.js','style.css','favicon.svg','logo-indoor.png','ofertas.js','ofertas.css','tarefas.js','tarefas.css'): raise FileNotFoundError()
+            if name not in ('index.html','app.js','video-controls.js','composition-controls.js','project-controls.js','editor-layout.js','audio-panels.js','transform-controls.js','clip-dialogs.js', 'edition-names.js','export-progress.js','undo-history.js','vector.js','eap.js','style.css','favicon.svg','logo-indoor.png','ofertas.js','ofertas.css','tarefas.js','tarefas.css'): raise FileNotFoundError()
             data = (ROOT / 'static' / name).read_bytes()
             content_type = mimetypes.guess_type(name)[0] or 'application/octet-stream'
     except Conflict as exc:

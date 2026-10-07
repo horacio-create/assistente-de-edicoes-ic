@@ -8,6 +8,7 @@ import subprocess
 import tempfile
 import threading
 from pathlib import Path
+from functools import lru_cache
 from PIL import Image
 from modules.images import DEFAULT, settings as image_settings, render as render_image, rotated_size
 
@@ -40,6 +41,15 @@ def run(args, timeout=300):
         detail = result.stderr.decode('utf-8', errors='replace')[-1200:]
         raise ValueError('Não foi possível processar o vídeo. ' + detail)
     return result.stdout
+
+@lru_cache(maxsize=8)
+def filter_file_option(executable):
+    """Keep large graphs in files across both server and portable FFmpeg builds."""
+    options = run([executable, '-hide_banner', '-h', 'full'], timeout=30).decode('utf-8', errors='replace')
+    # FFmpeg 5/6 need the script option; newer builds eventually remove it and
+    # accept the slash-prefixed file syntax instead. Inspect the actual binary.
+    return '-filter_complex_script' if '-filter_complex_script' in options.split() else '-/filter_complex'
+
 
 class ExportCancelled(Exception):
     pass

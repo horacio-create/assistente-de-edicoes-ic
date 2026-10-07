@@ -102,6 +102,18 @@ execute `powershell -NoProfile -ExecutionPolicy Bypass -File Instalar-video.ps1`
 Os binários não entram no Git. São obtidos do distribuidor Windows indicado em
 https://ffmpeg.org/download.html; as informações e a licença do distribuidor acompanham a instalação.
 O empacotamento portátil inclui esse motor quando um novo executável é gerado.
+A exportação de montagens detecta a opção de leitura de filtros suportada pelo motor
+instalado, incluindo o FFmpeg 5.1 distribuído pelo Debian Bookworm no servidor.
+Os filtros continuam em arquivos temporários, evitando o limite de linha de comando
+em montagens com muitos trechos.
+
+No acesso pela rede, escolha uma pasta de trabalho no computador do navegador ou use
+Baixar em Downloads. O navegador pode bloquear pastas do sistema e a raiz do disco;
+use uma subpasta de Documentos/Vídeos ou baixe os arquivos e mova-os depois. O destino
+real dos downloads segue as configurações do navegador. Pastas compartilhadas selecionadas
+no computador recebem os arquivos pelo navegador; o campo Pasta acessível pelo servidor
+é para caminhos que a máquina/container que hospeda o sistema consegue acessar.
+
 
 Cada seção mantém sua edição durante a sessão. Salvar edição persiste ajustes e ordem;
 Edições recentes permite recuperá-los. As edições de imagens existentes são preservadas.
@@ -153,3 +165,32 @@ As logos e a identidade visual pertencem à Indoor Channel.
 Código de empacotamento em `packaging/`; consulte `packaging/LEIA-ME.md`. Arquivo único com lançador C/MinGW, Python Windows embutido, FFmpeg/FFprobe e janela Edge/Chrome em modo aplicativo. Sem PyInstaller.
 
 Build Windows de 07/10/2026: 117 testes Python aprovados, 19 pulados, cinco testes JavaScript de desfazer e oito de contrato aprovados. O teste automatizado do executável confirmou imagens, vídeo com áudio, DXF, EAP e limpeza dos temporários. A janela do navegador, o seletor nativo e o fechamento pelo lockfile ainda precisam de validação manual. Ofertas mantém a dependência externa de Node.js e do motor instalado.
+
+### Reutilizar a timeline em lote
+
+Em **Reutilizar estes ajustes → Em todas**, a timeline aberta fornece o modelo completo
+(saída, enquadramento, cortes, duração, logos e áudio). Nas demais timelines, o arquivo
+principal é substituído pelo arquivo de cada destino; as outras camadas acompanham o modelo.
+Com uma única timeline, o sistema prepara uma por arquivo do mesmo tipo da biblioteca,
+até **10 timelines por edição**. A operação não adiciona itens à fila automaticamente.
+
+Vídeos mais curtos têm seus cortes ajustados ao material disponível. Um resumo informa
+as durações encurtadas/alongadas e os arquivos não processados. Para os excedentes,
+importe-os em uma nova edição ou exclua as outras nove timelines e repita a operação.
+Timelines bloqueadas são preservadas. Itens já enfileirados das timelines afetadas são
+atualizados, mantendo seus nomes e números. **Ctrl+Z** desfaz a operação completa.
+
+### Cortes, velocidade e transformação
+
+Dê **dois cliques sobre o bloco da mídia na timeline** para abrir **Ajustar trecho**:
+a barra verde e suas duas alças definem início e fim, mantendo a velocidade do corte.
+O **relógio ao lado do olho/mudo** abre **Velocidade e duração**. A porcentagem indica
+quanto dura o trecho em relação ao seu corte a 100%: **50% = metade da duração (2×)**;
+**200% = dobro da duração (0,5×)**. Porcentagem e nova duração em segundos são ligados.
+O limite é de 25% a 400%, equivalente a velocidades entre 4× e 0,25×.
+
+Aplicar confirma; Cancelar ou Esc preserva o estado anterior. Bloqueios e Ctrl+Z/Ctrl+Y
+continuam funcionando. Imagens têm duração editável; áudios também aceitam velocidade.
+No painel direito, posição X/Y usa pixels a partir do centro (Y positivo para cima),
+rotação usa graus, e largura/altura usam pixels preservando a proporção. O tamanho
+máximo em MB fica na revisão da exportação. **T** abre duração; **P** abre exportação.

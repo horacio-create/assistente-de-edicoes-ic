@@ -45,9 +45,16 @@ async function request(path, body, method) {
   if(delivery){await deliver(delivery);if(data.path)data.path=delivery.label;}
   return data;
 }
-async function browserFolder(){
+async function browserFolder(downloadOnly=false){
   let handle=null;
-  if(window.showDirectoryPicker){try{handle=await showDirectoryPicker({id:'exportar',mode:'readwrite'});}catch(e){if(e.name==='AbortError')return null;throw e;}}
+  if(!downloadOnly&&window.showDirectoryPicker){
+    try{handle=await showDirectoryPicker({id:'indoor-export',mode:'readwrite',startIn:'downloads'});}
+    catch(e){
+      if(e.name==='AbortError')return null;
+      if(['SecurityError','NotAllowedError'].includes(e.name))throw new Error('O navegador não permitiu usar esta pasta. Escolha uma pasta de trabalho ou use Baixar em Downloads.');
+      throw e;
+    }
+  }
   const label=handle?handle.name+' (neste computador)':'Downloads deste computador';
   browserTargets.set(label,{token:Array.from(crypto.getRandomValues(new Uint8Array(16)),b=>b.toString(16).padStart(2,'0')).join(''),handle,label});
   return label;
@@ -101,7 +108,17 @@ async function loadHistory(){historySelected.clear();$('delete-history').disable
 function dateName(){return new Date().toLocaleDateString('pt-BR').replaceAll('/','.');}
 async function chooseFolder(){
  if(info.nativePicker){toast('Escolha a pasta na janela do sistema.');const result=await request('/api/pick-folder',{});$('toast').hidden=true;return result.path;}
- return new Promise(resolve=>{const d=$('remote-folder-dialog');$('use-browser-folder').textContent=window.showDirectoryPicker?'Escolher pasta neste computador':'Baixar neste computador';$('use-browser-folder').onclick=async()=>{try{const label=await browserFolder();if(!label)return;d.close();resolve(label);}catch(e){toast(e.message);}};const last=[exportFolder,job?.meta?.folder].find(f=>f&&!browserTargets.has(f)&&!f.endsWith(' (neste computador)')&&f!=='Downloads deste computador')||'';$('remote-path').value=last;d.querySelector('details').open=!!last;const cancel=()=>{d.close();resolve(null);};d.oncancel=e=>{e.preventDefault();cancel();};d.querySelector('.close').onclick=cancel;$('use-remote-folder').onclick=()=>{if(!$('remote-path').value.trim())return;d.close();resolve($('remote-path').value.trim());};d.showModal();});
+ return new Promise(resolve=>{
+  const d=$('remote-folder-dialog'),canPick=typeof window.showDirectoryPicker==='function';
+  $('use-browser-folder').textContent=canPick?'Escolher pasta neste computador':'Baixar em Downloads';
+  $('use-download-folder').hidden=!canPick;
+  const chooseBrowser=async downloadOnly=>{try{const label=await browserFolder(downloadOnly);if(!label)return;d.close();resolve(label);}catch(e){toast(e.message);}};
+  $('use-browser-folder').onclick=()=>chooseBrowser(false);$('use-download-folder').onclick=()=>chooseBrowser(true);
+  const last=[exportFolder,job?.meta?.folder].find(f=>f&&!browserTargets.has(f)&&!f.endsWith(' (neste computador)')&&f!=='Downloads deste computador')||'';
+  $('remote-path').value=last;d.querySelector('details').open=!!last;
+  const cancel=()=>{d.close();resolve(null);};d.oncancel=e=>{e.preventDefault();cancel();};d.querySelector('.close').onclick=cancel;
+  $('use-remote-folder').onclick=()=>{if(!$('remote-path').value.trim())return;d.close();resolve($('remote-path').value.trim());};d.showModal();
+ });
 }
 async function openExport(){const folder=await chooseFolder();if(!folder)return;await save();exportFolder=folder;exportIds=job.media.filter(m=>selected.has(m.id)).map(m=>m.id);previewIndex=0;const meta=job.meta||{};$('export-name').value=meta.template||('VT - '+(job.title==='Nova edição'?'Cliente - Campanha '+dateName():job.title)).slice(0,85);$('format').value=editorKind==='video'?'mp4':meta.format||'jpg';$('folder-label').textContent=folder;$('overwrite').checked=false;$('overwrite-label').hidden=true;$('export-result').hidden=true;resetCompletion();$('export-dialog').showModal();await Promise.all([finalPreview(),refreshPlan()]);}
 async function finalPreview(){const serial=++finalSerial;const m=job.media.find(m=>m.id===exportIds[previewIndex]);if(!m)return;$('preview-index').textContent=`${previewIndex+1} / ${exportIds.length}`;const data=await request('/api/preview',{id:m.id,settings:m.settings});if(serial!==finalSerial)return;$('final-image').src=data.image;$('final-notes').textContent=`${m.settings.width} × ${m.settings.height} px. ${data.notes.join(' ')}`;}

@@ -14,7 +14,7 @@ const [url,sample,output]=process.argv.slice(2);fs.mkdirSync(output,{recursive:t
   await page.waitForFunction(()=>{const c=$('live-preview'),v=c.getContext('2d').getImageData(c.width/2,c.height/2,1,1).data;return v[2]>180&&v[0]<25;});
   // Record every committed canvas across frame stepping; the initial red poster must never return.
   await page.evaluate(()=>{window.previewSamples=[];window.watchPreview=true;const record=()=>{if(!watchPreview)return;const c=$('live-preview');previewSamples.push(Array.from(c.getContext('2d').getImageData(c.width/2,c.height/2,1,1).data));requestAnimationFrame(record);};record();});
-  await page.locator('.canvas-shell').click({position:{x:10,y:10}});
+  await page.locator('#editor .canvas-shell').click({position:{x:10,y:10}});
   for(let i=0;i<18;i++){await page.keyboard.press('ArrowRight');await page.waitForTimeout(12);}
   for(let i=0;i<12;i++){await page.keyboard.press('ArrowLeft');await page.waitForTimeout(12);}
   await page.waitForFunction(()=>{const p=[...compositionPlayers.values()][0];return p.frameReady&&!p.seeking&&Math.abs(p.currentTime-compositionCursor)<.001;});
@@ -26,9 +26,9 @@ const [url,sample,output]=process.argv.slice(2);fs.mkdirSync(output,{recursive:t
   await page.evaluate(()=>{seekComposition(1.4);seekComposition(.01);seekComposition(1.8);});
   await page.waitForFunction(()=>{const p=[...compositionPlayers.values()][0];return p.frameReady&&!p.seeking&&Math.abs(p.currentTime-3.3)<.001;});
   assert.equal(await page.locator('#audio-status').isVisible(),false);assert.equal(await page.locator('#audio-action').isVisible(),true);
-  const trim=await page.locator('.clip-properties .trim-track').evaluate(el=>{const range=el.querySelector('input'),thumb=getComputedStyle(range,'::-webkit-slider-thumb');return {track:el.clientHeight,input:range.clientHeight,thumb:parseFloat(thumb.height),bottom:el.getBoundingClientRect().bottom,labels:el.nextElementSibling.getBoundingClientRect().top};});
+  await page.locator('.layer-clip.selected').dblclick();const trim=await page.locator('#clip-trim-dialog .trim-track').evaluate(el=>{const range=el.querySelector('input'),thumb=getComputedStyle(range,'::-webkit-slider-thumb');return {track:el.clientHeight,input:range.clientHeight,thumb:parseFloat(thumb.height),bottom:el.getBoundingClientRect().bottom,labels:el.nextElementSibling.getBoundingClientRect().top};});
   assert.equal(trim.input,trim.track);assert.ok(trim.labels>=trim.bottom);assert.ok(trim.thumb<=trim.track,JSON.stringify(trim));
-  await page.locator('#edition-name').click();await page.locator('#edition-title').fill('Clínica Sorriso — Outubro');await page.locator('#rename-form button[type=submit]').click();
+  await page.locator('#clip-trim-dialog .close').click();await page.locator('#edition-name').click();await page.locator('#edition-title').fill('Clínica Sorriso — Outubro');await page.locator('#rename-form button[type=submit]').click();
   await page.waitForFunction(()=>!busy&&job.title==='Clínica Sorriso — Outubro');
   const editionId=await page.evaluate(()=>job.id);await page.getByRole('button',{name:'Edições recentes',exact:true}).click();
   const card=page.locator(`.recent-card[data-job-id="${editionId}"]`);await card.waitFor();assert.match(await card.textContent(),/Clínica Sorriso/);
