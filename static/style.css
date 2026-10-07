@@ -374,3 +374,5 @@ body.video-workspace{height:100dvh;overflow:hidden}
 .transform-visibility-toggle{position:absolute;z-index:4;right:8px;bottom:8px;width:28px;height:28px;padding:4px;display:grid;place-items:center;background:#81d680;color:#2d3144;border-radius:5px;border-color:#81d680}
 .transform-visibility-toggle svg{display:block;width:18px;height:18px}
 .transform-visibility-toggle[aria-pressed=false]{background:#fff;border-color:#d8d8e5}
+
+#remote-folder-dialog .folder-actions{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-top:14px}#remote-folder-dialog .folder-actions .primary{margin-top:0}

@@ -125,6 +125,7 @@ def export(media, folder, output_path, project, logo_for, progress=None, cancell
     with tempfile.TemporaryDirectory(prefix='indoor-composition-') as work:
         work = Path(work)
         common = [videos.tool('ffmpeg'),'-hide_banner','-loglevel','error','-nostdin','-y']
+        filter_file_option = videos.filter_file_option(common[0])
         logo_inputs, info = {}, {}
         for i,c in enumerate(clips):
             m = rows[c['mediaId']]
@@ -195,7 +196,7 @@ def export(media, folder, output_path, project, logo_for, progress=None, cancell
             graphs[n].write_text(graph(n==2),encoding='utf-8')
         for attempt in range(3):
             for n in (1,2):
-                args=common+['-filter_complex_threads','2','-/filter_complex',str(graphs[n]),'-map','[out]',
+                args=common+['-filter_complex_threads','2',filter_file_option,str(graphs[n]),'-map','[out]',
                              '-c:v','libx264','-preset','medium','-b:v',str(bitrate),'-pix_fmt','yuv420p',
                              '-pass',str(n),'-passlogfile',str(work/'pass'),'-t',str(total),'-threads','2']
                 if n==1: args+=['-an','-f','null',os.devnull]

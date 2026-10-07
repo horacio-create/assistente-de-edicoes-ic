@@ -2,6 +2,15 @@
 
 ## 1.8.0 — versão oficial — 06/10/2026
 
+### Correção de exportação de 07/10/2026
+
+- Exportação individual e em fila detecta a opção de leitura de filtros disponível no
+  FFmpeg instalado: compatível com o FFmpeg 5.1 do servidor e com motores recentes
+  do portátil, preservando os filtros em arquivos para montagens com muitos trechos.
+- Seleção de pasta pelo navegador sugere Downloads, explica pastas protegidas e oferece
+  Baixar em Downloads mesmo quando o seletor de pastas está disponível. Cancelar a
+  seleção não inicia downloads; pastas permitidas mantêm a gravação direta.
+
 ### Empacotamento Windows de 07/10/2026
 
 - Portátil atualizado com FFmpeg/FFprobe e inclusão do código/templates de Ofertas.

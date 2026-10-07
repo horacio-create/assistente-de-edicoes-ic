@@ -102,6 +102,18 @@ execute `powershell -NoProfile -ExecutionPolicy Bypass -File Instalar-video.ps1`
 Os binários não entram no Git. São obtidos do distribuidor Windows indicado em
 https://ffmpeg.org/download.html; as informações e a licença do distribuidor acompanham a instalação.
 O empacotamento portátil inclui esse motor quando um novo executável é gerado.
+A exportação de montagens detecta a opção de leitura de filtros suportada pelo motor
+instalado, incluindo o FFmpeg 5.1 distribuído pelo Debian Bookworm no servidor.
+Os filtros continuam em arquivos temporários, evitando o limite de linha de comando
+em montagens com muitos trechos.
+
+No acesso pela rede, escolha uma pasta de trabalho no computador do navegador ou use
+Baixar em Downloads. O navegador pode bloquear pastas do sistema e a raiz do disco;
+use uma subpasta de Documentos/Vídeos ou baixe os arquivos e mova-os depois. O destino
+real dos downloads segue as configurações do navegador. Pastas compartilhadas selecionadas
+no computador recebem os arquivos pelo navegador; o campo Pasta acessível pelo servidor
+é para caminhos que a máquina/container que hospeda o sistema consegue acessar.
+
 
 Cada seção mantém sua edição durante a sessão. Salvar edição persiste ajustes e ordem;
 Edições recentes permite recuperá-los. As edições de imagens existentes são preservadas.
