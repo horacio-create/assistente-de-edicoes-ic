@@ -39,6 +39,14 @@ def init():
         ''')
         if 'hidden' not in {r[1] for r in db.execute('PRAGMA table_info(events)')}:
             db.execute('ALTER TABLE events ADD COLUMN hidden INTEGER NOT NULL DEFAULT 0')
+        columns = {r[1] for r in db.execute('PRAGMA table_info(media)')}
+        for name, definition in [('kind', "TEXT NOT NULL DEFAULT 'image'"),
+                                 ('duration', 'REAL'), ('has_audio', 'INTEGER NOT NULL DEFAULT 0'),
+                                 ('original_bytes', 'INTEGER'), ('fps', 'REAL')]:
+            if name not in columns:
+                db.execute(f'ALTER TABLE media ADD COLUMN {name} {definition}')
+        if 'role' not in columns:
+            db.execute("ALTER TABLE media ADD COLUMN role TEXT NOT NULL DEFAULT 'media'")
 
 def event(db, job, action, detail):
     db.execute('INSERT INTO events(job,time,action,detail) VALUES(?,?,?,?)', (job, now(), action, json.dumps(detail, ensure_ascii=False)))

@@ -6,6 +6,7 @@ param(
 )
 $ErrorActionPreference = 'Stop'
 $AppRoot = (Resolve-Path -LiteralPath $AppRoot).Path
+& (Join-Path $AppRoot 'Instalar-video.ps1')
 $WorkDir = [IO.Path]::GetFullPath($WorkDir)
 $Output = [IO.Path]::GetFullPath($Output)
 New-Item -ItemType Directory -Force -Path $WorkDir | Out-Null

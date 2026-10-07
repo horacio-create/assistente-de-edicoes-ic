@@ -1,0 +1,745 @@
+<!doctype html>
+<!--
+  TEMPLATE: Hora da Carne (Rede Uniforça) — 15s, 3 painéis × 2 produtos.
+  Contrato da Fábrica de Vídeos: todo o conteúdo vem de window.__hyperframes.getVariables()
+  (campos descritos em template.json). Não edite produtos aqui — use o sistema / dados.json.
+-->
+<html lang="pt-BR" data-composition-variables='[
+  {
+    "id": "validade",
+    "type": "string",
+    "label": "Datas da oferta",
+    "default": "07 e 08 de Outubro de 2026."
+  },
+  {
+    "id": "produtos_1_nome",
+    "type": "string",
+    "label": "Produto 1 · nome",
+    "default": "Paleta Suína Com Pele e Osso Congelada Kg"
+  },
+  {
+    "id": "produtos_1_imagem",
+    "type": "string",
+    "label": "Produto 1 · imagem",
+    "default": "assets/produtos/paleta-suina.png"
+  },
+  {
+    "id": "produtos_1_de",
+    "type": "string",
+    "label": "Produto 1 · preço normal",
+    "default": "21,99"
+  },
+  {
+    "id": "produtos_1_por",
+    "type": "string",
+    "label": "Produto 1 · preço Clube",
+    "default": "14,99"
+  },
+  {
+    "id": "produtos_1_unidade",
+    "type": "enum",
+    "label": "Produto 1 · unidade",
+    "default": "KG",
+    "options": [
+      {
+        "value": "KG",
+        "label": "KG"
+      },
+      {
+        "value": "CADA",
+        "label": "CADA"
+      },
+      {
+        "value": "100g",
+        "label": "100g"
+      },
+      {
+        "value": "UN",
+        "label": "UN"
+      },
+      {
+        "value": "PCT",
+        "label": "PCT"
+      }
+    ]
+  },
+  {
+    "id": "produtos_1_tamanho",
+    "type": "number",
+    "label": "Produto 1 · tamanho da imagem",
+    "default": 1,
+    "min": 0.3,
+    "max": 1,
+    "step": 0.05
+  },
+  {
+    "id": "produtos_2_nome",
+    "type": "string",
+    "label": "Produto 2 · nome",
+    "default": "Peito Bovino Com Osso Kg"
+  },
+  {
+    "id": "produtos_2_imagem",
+    "type": "string",
+    "label": "Produto 2 · imagem",
+    "default": "assets/produtos/peito-bovino.png"
+  },
+  {
+    "id": "produtos_2_de",
+    "type": "string",
+    "label": "Produto 2 · preço normal",
+    "default": "34,99"
+  },
+  {
+    "id": "produtos_2_por",
+    "type": "string",
+    "label": "Produto 2 · preço Clube",
+    "default": "27,99"
+  },
+  {
+    "id": "produtos_2_unidade",
+    "type": "enum",
+    "label": "Produto 2 · unidade",
+    "default": "KG",
+    "options": [
+      {
+        "value": "KG",
+        "label": "KG"
+      },
+      {
+        "value": "CADA",
+        "label": "CADA"
+      },
+      {
+        "value": "100g",
+        "label": "100g"
+      },
+      {
+        "value": "UN",
+        "label": "UN"
+      },
+      {
+        "value": "PCT",
+        "label": "PCT"
+      }
+    ]
+  },
+  {
+    "id": "produtos_2_tamanho",
+    "type": "number",
+    "label": "Produto 2 · tamanho da imagem",
+    "default": 1,
+    "min": 0.3,
+    "max": 1,
+    "step": 0.05
+  },
+  {
+    "id": "produtos_3_nome",
+    "type": "string",
+    "label": "Produto 3 · nome",
+    "default": "Coxão Mole Bovino Peça ou Pedaço Kg"
+  },
+  {
+    "id": "produtos_3_imagem",
+    "type": "string",
+    "label": "Produto 3 · imagem",
+    "default": "assets/produtos/coxao-mole.png"
+  },
+  {
+    "id": "produtos_3_de",
+    "type": "string",
+    "label": "Produto 3 · preço normal",
+    "default": "54,99"
+  },
+  {
+    "id": "produtos_3_por",
+    "type": "string",
+    "label": "Produto 3 · preço Clube",
+    "default": "46,99"
+  },
+  {
+    "id": "produtos_3_unidade",
+    "type": "enum",
+    "label": "Produto 3 · unidade",
+    "default": "KG",
+    "options": [
+      {
+        "value": "KG",
+        "label": "KG"
+      },
+      {
+        "value": "CADA",
+        "label": "CADA"
+      },
+      {
+        "value": "100g",
+        "label": "100g"
+      },
+      {
+        "value": "UN",
+        "label": "UN"
+      },
+      {
+        "value": "PCT",
+        "label": "PCT"
+      }
+    ]
+  },
+  {
+    "id": "produtos_3_tamanho",
+    "type": "number",
+    "label": "Produto 3 · tamanho da imagem",
+    "default": 1,
+    "min": 0.3,
+    "max": 1,
+    "step": 0.05
+  },
+  {
+    "id": "produtos_4_nome",
+    "type": "string",
+    "label": "Produto 4 · nome",
+    "default": "Maminha Bovina Pul Selection Congelada Kg"
+  },
+  {
+    "id": "produtos_4_imagem",
+    "type": "string",
+    "label": "Produto 4 · imagem",
+    "default": "assets/produtos/maminha-pul-3.png"
+  },
+  {
+    "id": "produtos_4_de",
+    "type": "string",
+    "label": "Produto 4 · preço normal",
+    "default": "79,99"
+  },
+  {
+    "id": "produtos_4_por",
+    "type": "string",
+    "label": "Produto 4 · preço Clube",
+    "default": "54,99"
+  },
+  {
+    "id": "produtos_4_unidade",
+    "type": "enum",
+    "label": "Produto 4 · unidade",
+    "default": "KG",
+    "options": [
+      {
+        "value": "KG",
+        "label": "KG"
+      },
+      {
+        "value": "CADA",
+        "label": "CADA"
+      },
+      {
+        "value": "100g",
+        "label": "100g"
+      },
+      {
+        "value": "UN",
+        "label": "UN"
+      },
+      {
+        "value": "PCT",
+        "label": "PCT"
+      }
+    ]
+  },
+  {
+    "id": "produtos_4_tamanho",
+    "type": "number",
+    "label": "Produto 4 · tamanho da imagem",
+    "default": 0.85,
+    "min": 0.3,
+    "max": 1,
+    "step": 0.05
+  },
+  {
+    "id": "produtos_5_nome",
+    "type": "string",
+    "label": "Produto 5 · nome",
+    "default": "Fígado Bovino Peça ou Pedaço Congelado Kg"
+  },
+  {
+    "id": "produtos_5_imagem",
+    "type": "string",
+    "label": "Produto 5 · imagem",
+    "default": "assets/produtos/figado-bovino.png"
+  },
+  {
+    "id": "produtos_5_de",
+    "type": "string",
+    "label": "Produto 5 · preço normal",
+    "default": "19,99"
+  },
+  {
+    "id": "produtos_5_por",
+    "type": "string",
+    "label": "Produto 5 · preço Clube",
+    "default": "15,99"
+  },
+  {
+    "id": "produtos_5_unidade",
+    "type": "enum",
+    "label": "Produto 5 · unidade",
+    "default": "KG",
+    "options": [
+      {
+        "value": "KG",
+        "label": "KG"
+      },
+      {
+        "value": "CADA",
+        "label": "CADA"
+      },
+      {
+        "value": "100g",
+        "label": "100g"
+      },
+      {
+        "value": "UN",
+        "label": "UN"
+      },
+      {
+        "value": "PCT",
+        "label": "PCT"
+      }
+    ]
+  },
+  {
+    "id": "produtos_5_tamanho",
+    "type": "number",
+    "label": "Produto 5 · tamanho da imagem",
+    "default": 1,
+    "min": 0.3,
+    "max": 1,
+    "step": 0.05
+  },
+  {
+    "id": "produtos_6_nome",
+    "type": "string",
+    "label": "Produto 6 · nome",
+    "default": "Costela Suína Congelada Kg"
+  },
+  {
+    "id": "produtos_6_imagem",
+    "type": "string",
+    "label": "Produto 6 · imagem",
+    "default": "assets/produtos/costela-suina.png"
+  },
+  {
+    "id": "produtos_6_de",
+    "type": "string",
+    "label": "Produto 6 · preço normal",
+    "default": "29,99"
+  },
+  {
+    "id": "produtos_6_por",
+    "type": "string",
+    "label": "Produto 6 · preço Clube",
+    "default": "22,99"
+  },
+  {
+    "id": "produtos_6_unidade",
+    "type": "enum",
+    "label": "Produto 6 · unidade",
+    "default": "KG",
+    "options": [
+      {
+        "value": "KG",
+        "label": "KG"
+      },
+      {
+        "value": "CADA",
+        "label": "CADA"
+      },
+      {
+        "value": "100g",
+        "label": "100g"
+      },
+      {
+        "value": "UN",
+        "label": "UN"
+      },
+      {
+        "value": "PCT",
+        "label": "PCT"
+      }
+    ]
+  },
+  {
+    "id": "produtos_6_tamanho",
+    "type": "number",
+    "label": "Produto 6 · tamanho da imagem",
+    "default": 1,
+    "min": 0.3,
+    "max": 1,
+    "step": 0.05
+  }
+]'>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1920, height=1080" />
+    <title>Hora da Carne</title>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <style>
+      @font-face {
+        font-family: "Montserrat";
+        font-weight: 400;
+        src: url("assets/fonts/montserrat-400.woff2") format("woff2");
+      }
+      @font-face {
+        font-family: "Montserrat";
+        font-weight: 700;
+        src: url("assets/fonts/montserrat-700.woff2") format("woff2");
+      }
+      @font-face {
+        font-family: "Montserrat";
+        font-weight: 900;
+        src: url("assets/fonts/montserrat-900.woff2") format("woff2");
+      }
+      @font-face {
+        font-family: "Barlow";
+        font-weight: 700;
+        src: url("assets/fonts/barlow-700.woff2") format("woff2");
+      }
+      @font-face {
+        font-family: "M PLUS Rounded 1c";
+        font-weight: 900;
+        src: url("assets/fonts/mplus-rounded-900.woff2") format("woff2");
+      }
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        width: 1920px;
+        height: 1080px;
+        overflow: hidden;
+        background: #f3e7d3;
+      }
+      #root {
+        position: relative;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        font-family: Montserrat, sans-serif;
+        color: #3b1d16;
+      }
+      #fundo {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+      #validade {
+        position: absolute;
+        left: 1250px;
+        width: 500px;
+        top: 389px;
+        text-align: center;
+        color: #752020;
+        font-size: 23px;
+        line-height: 1.2;
+      }
+      #validade b {
+        display: block;
+        color: #b5121b;
+        font-weight: 700;
+        font-size: 24px;
+      }
+
+      /* painel = interior do quadro branco do fundo */
+      .painel {
+        position: absolute;
+        left: 40px;
+        right: 40px;
+        top: 472px;
+        bottom: 90px;
+        display: flex;
+        justify-content: space-around;
+        overflow: hidden;
+        border-radius: 0 0 40px 40px;
+      }
+      .produto {
+        position: relative;
+        width: 820px;
+        height: 100%;
+      }
+      .nome {
+        position: absolute;
+        top: 6px;
+        left: 90px;
+        right: 90px;
+        text-align: center;
+        text-wrap: balance;
+        font-weight: 900;
+        font-size: 30px;
+        line-height: 1.12;
+      }
+      /* tábua centralizada no produto (centro x=410); selo alinhado à borda direita da tábua */
+      .foto-box {
+        position: absolute;
+        left: 120px;
+        top: 58px;
+        width: 580px;
+        height: 300px;
+        display: flex;
+        justify-content: center;
+        align-items: flex-end;
+      }
+      .foto {
+        display: block;
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+        object-position: center bottom;
+        filter: drop-shadow(0 18px 14px rgba(60, 25, 10, 0.28));
+      }
+      /* preço normal — medidas do VT original: dígitos ~67px de altura, 37px à esquerda do selo */
+      .de {
+        position: absolute;
+        right: calc(100% - 375px);
+        top: 368px;
+        display: flex;
+        align-items: flex-start;
+        color: #5f4535;
+        font-family: "M PLUS Rounded 1c", sans-serif;
+        font-weight: 900;
+      }
+      .de .rs {
+        font-family: Barlow, sans-serif;
+        font-weight: 700;
+        font-size: 16px;
+        line-height: 1;
+        margin: 16px 4px 0 0;
+      }
+      .de .int {
+        font-size: 90px;
+        line-height: 1;
+        letter-spacing: -5px;
+      }
+      .de .cent-box {
+        display: block;
+        margin-left: 2px;
+      }
+      .de .cent {
+        display: block;
+        font-size: 52px;
+        line-height: 1;
+        letter-spacing: -3px;
+        margin-top: 8px;
+      }
+      .de .un {
+        display: block;
+        text-align: right;
+        padding-right: 4px;
+        font-family: Barlow, sans-serif;
+        font-weight: 700;
+        font-size: 15px;
+        line-height: 1;
+        margin-top: -6px;
+      }
+      .seta {
+        position: absolute;
+        left: 364px;
+        top: 446px;
+        width: 44px;
+        height: 26px;
+        overflow: visible;
+      }
+      /* selo Clube de Desconto — medidas copiadas do VT original (229x175 @1080p) */
+      .selo {
+        position: absolute;
+        left: 412px;
+        top: 322px;
+        width: 229px;
+        height: 175px;
+        background: #5f4535;
+        border-radius: 26px 26px 46px 46px;
+        color: #5f4535;
+      }
+      .selo-titulo {
+        position: absolute;
+        left: 0;
+        right: 0;
+        top: 9px;
+        text-align: center;
+        color: #fbf5ea;
+        font-family: Barlow, sans-serif;
+        font-weight: 700;
+        font-size: 22.5px;
+        line-height: 1;
+      }
+      .selo-preco {
+        position: absolute;
+        left: 3px;
+        right: 3px;
+        top: 33px;
+        bottom: 3px;
+        background: #e9e112;
+        border-radius: 42px 42px 44px 44px;
+        font-family: "M PLUS Rounded 1c", sans-serif;
+        font-weight: 900;
+      }
+      .selo-preco .rs {
+        position: absolute;
+        left: 0;
+        right: 0;
+        top: 15px;
+        text-align: center;
+        font-family: Barlow, sans-serif;
+        font-weight: 700;
+        font-size: 16px;
+        line-height: 1;
+      }
+      .selo-preco .valor {
+        position: absolute;
+        left: 0;
+        right: 0;
+        top: 27px;
+        display: flex;
+        justify-content: center;
+        gap: 3px;
+      }
+      .selo-preco .int {
+        font-size: 97px;
+        line-height: 1;
+        letter-spacing: -5px;
+      }
+      .selo-preco .cent-box {
+        position: relative;
+        display: block;
+      }
+      .selo-preco .cent {
+        display: block;
+        font-size: 54px;
+        line-height: 1;
+        letter-spacing: -3px;
+        margin-top: 6px;
+      }
+      .selo-preco .un {
+        display: block;
+        text-align: center;
+        font-family: Barlow, sans-serif;
+        font-weight: 700;
+        font-size: 18px;
+        line-height: 1;
+        margin-top: -2px;
+        padding-left: 6px;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root" data-composition-id="main" data-start="0" data-duration="15" data-width="1920" data-height="1080">
+      <img id="fundo" class="clip" src="assets/fundo.png" alt="" data-start="0" data-duration="15" data-track-index="0" />
+      <div id="validade" class="clip" data-start="0" data-duration="15" data-track-index="1">
+        <span>Ofertas válidas para os dias</span>
+        <b id="validade-datas"></b>
+      </div>
+
+      <!-- 3 painéis de 5s; cada um começa 0,35s antes do anterior sair (transição sobreposta) -->
+      <div id="painel-1" class="clip painel" data-start="0" data-duration="5.35" data-track-index="2"></div>
+      <div id="painel-2" class="clip painel" data-start="5" data-duration="5.35" data-track-index="3"></div>
+      <div id="painel-3" class="clip painel" data-start="10" data-duration="5" data-track-index="2"></div>
+    </div>
+
+    <template id="tpl-produto">
+      <div class="produto">
+        <div class="nome"></div>
+        <div class="foto-box"><img class="foto" alt="" /></div>
+        <div class="de" data-layout-allow-overlap></div>
+        <svg class="seta" viewBox="0 0 44 26">
+          <path d="M3 4 C 8 20, 26 24, 40 16 M31 13 L41 15.5 L35 23.5" fill="none" stroke="#3d2e27" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
+        <div class="selo">
+          <div class="selo-titulo">Clube de Desconto</div>
+          <div class="selo-preco"></div>
+        </div>
+      </div>
+    </template>
+
+    <script>
+      const v = window.__hyperframes.getVariables();
+      const campo = (n, id) => v[`produtos_${n}_${id}`];
+      const POR_PAINEL = 2;
+
+      document.getElementById("validade-datas").textContent = v.validade;
+
+      // "14,99" -> R$ | 14 | ,99 | KG   (no selo: 14 | 99 sem vírgula, como no VT original)
+      function preencherPreco(el, preco, unidade, noSelo) {
+        const [int, cent = "00"] = String(preco).split(",");
+        const valor =
+          '<span class="int" data-layout-allow-overlap></span><span class="cent-box"><span class="cent" data-layout-allow-overlap></span><span class="un" data-layout-allow-overlap></span></span>';
+        el.innerHTML = '<span class="rs" data-layout-allow-overlap>R$</span>' + (noSelo ? '<div class="valor">' + valor + "</div>" : valor);
+        el.querySelector(".int").textContent = int;
+        el.querySelector(".cent").textContent = (noSelo ? "" : ",") + cent;
+        el.querySelector(".un").textContent = unidade;
+      }
+
+      function montarProduto(n) {
+        const p = document.getElementById("tpl-produto").content.firstElementChild.cloneNode(true);
+        p.querySelector(".nome").textContent = campo(n, "nome");
+        const foto = p.querySelector(".foto");
+        foto.src = campo(n, "imagem");
+        foto.style.width = foto.style.height = (Number(campo(n, "tamanho")) || 1) * 100 + "%";
+        preencherPreco(p.querySelector(".selo-preco"), campo(n, "por"), campo(n, "unidade"), true);
+        if (String(campo(n, "de") || "").trim()) preencherPreco(p.querySelector(".de"), campo(n, "de"), campo(n, "unidade"), false);
+        else p.querySelectorAll(".de, .seta").forEach((el) => el.remove());
+        return p;
+      }
+
+      const tl = gsap.timeline({ paused: true });
+
+      function animarProduto(p, inicio, D, i) {
+        const t = inicio + i * 0.14;
+        const box = p.querySelector(".foto-box");
+        const foto = p.querySelector(".foto");
+        const nome = p.querySelector(".nome");
+        const selo = p.querySelector(".selo");
+        const precoNormal = [...p.querySelectorAll(".de, .seta")];
+
+        // ENTRADA — produto cai do topo e quica no quadro
+        tl.fromTo(box, { y: -620, rotation: i ? 8 : -8 }, { y: 0, rotation: 0, duration: 1.0, ease: "bounce.out" }, t);
+        // squash & stretch nos impactos do bounce
+        tl.fromTo(foto, { scaleY: 1.12, scaleX: 0.92 }, { scaleY: 1, scaleX: 1, duration: 0.18, ease: "sine.out" }, t + 0.36)
+          .to(foto, { scaleY: 0.9, scaleX: 1.08, duration: 0.07, ease: "sine.in" }, t + 0.54)
+          .to(foto, { scaleY: 1, scaleX: 1, duration: 0.25, ease: "elastic.out(1.2,0.4)" }, t + 0.61);
+        tl.fromTo(nome, { y: -30, opacity: 0 }, { y: 0, opacity: 1, duration: 0.45, ease: "power3.out" }, t + 0.4);
+
+        // selo pula para dentro; preço normal desliza; seta aparece
+        tl.fromTo(selo, { scale: 0, rotation: -12 }, { scale: 1, rotation: 0, duration: 0.6, ease: "back.out(2.6)" }, t + 0.75);
+        precoNormal.forEach((el, k) =>
+          tl.fromTo(el, { x: k ? -14 : -40, opacity: 0 }, { x: 0, opacity: 1, duration: 0.4, ease: k ? "back.out(2)" : "power2.out" }, t + 0.9 + k * 0.25),
+        );
+
+        // VIDA — quiques leves até a saída (repeat ímpar = termina em repouso)
+        const meios = Math.floor((D - 0.5 - 1.35 - i * 0.14) / 0.42);
+        tl.to(box, { y: -18, duration: 0.42, ease: "sine.out", yoyo: true, repeat: Math.max(1, meios % 2 ? meios - 2 : meios - 1) }, t + 1.35);
+        tl.to(selo, { scale: 1.08, duration: 0.2, ease: "sine.inOut", yoyo: true, repeat: 1 }, t + 2.1);
+        tl.to(selo, { scale: 1.08, duration: 0.2, ease: "sine.inOut", yoyo: true, repeat: 1 }, t + D - 1.6);
+
+        // SAÍDA — itens saltam e saem pela esquerda enquanto o próximo painel cai
+        const saida = inicio + D - 0.5 + i * 0.06;
+        tl.to(box, { y: -120, x: -260, rotation: -18, scale: 0.7, opacity: 0, duration: 0.42, ease: "back.in(1.6)" }, saida);
+        tl.to([nome, selo, ...precoNormal], { x: -180, opacity: 0, duration: 0.3, ease: "power2.in" }, saida + 0.05);
+      }
+
+      document.querySelectorAll(".painel").forEach((painel, k) => {
+        const inicio = Number(painel.dataset.start);
+        const D = Number(painel.dataset.duration);
+        for (let i = 0; i < POR_PAINEL; i++) {
+          const p = montarProduto(k * POR_PAINEL + i + 1);
+          painel.appendChild(p);
+          animarProduto(p, inicio, D, i);
+        }
+      });
+
+      window.__timelines["main"] = tl;
+    </script>
+  </body>
+</html>
