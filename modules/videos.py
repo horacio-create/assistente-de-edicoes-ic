@@ -9,7 +9,7 @@ import tempfile
 import threading
 from pathlib import Path
 from PIL import Image
-from modules.images import DEFAULT, settings as image_settings, render as render_image
+from modules.images import DEFAULT, settings as image_settings, render as render_image, rotated_size
 
 ROOT = Path(__file__).resolve().parents[1]
 SUPPORTED = {'.mp4', '.mov', '.m4v', '.mkv', '.avi', '.webm', '.wmv', '.mpeg', '.mpg'}
@@ -206,8 +206,9 @@ def filters(info, s, logo=None, include_audio=True):
     if rotation == 90: chain.append('transpose=clock')
     elif rotation == 180: chain.extend(['hflip', 'vflip'])
     elif rotation == 270: chain.append('transpose=cclock')
-    iw, ih = info['width'], info['height']
-    if rotation % 180: iw, ih = ih, iw
+    iw, ih = rotated_size(info['width'], info['height'], rotation)
+    if rotation % 90:
+        chain.extend(['format=rgba', f'rotate={math.radians(rotation)}:ow={iw}:oh={ih}:c=none'])
     w, h = s['width'], s['height']
     factor = 1 if s['lockSize'] else (max if s['mode'] == 'cover' else min)(w / iw, h / ih) * s['zoom']
     rw, rh = max(1, round(iw * factor)), max(1, round(ih * factor))

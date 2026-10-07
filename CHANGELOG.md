@@ -2,6 +2,21 @@
 
 ## 1.8.0 — versão oficial — 06/10/2026
 
+### Melhorias de 07/10/2026
+
+- Ícones centralizados, distância menor até seus nomes e estado Áudio mantido em negrito na fila.
+- Biblioteca Mídias/Edição e divisão entre prévia e timeline redimensionáveis, com limites,
+  ajuste por teclado, restauração por duplo clique e preferência preservada neste navegador.
+- Importação de músicas e áudio, ícones de tipo na biblioteca e faixas roxas abaixo dos vídeos.
+- Ondas sonoras reais acompanham os cortes; faixas recebem Vídeo 01… e Áudio 01….
+- Cadeado e mudo por faixa de áudio, respeitados na prévia, nas timelines salvas e na exportação.
+- Cortes, velocidade, copiar/colar entre timelines, fila e limite de tamanho também aceitam áudio.
+- Identificadores compatíveis com a importação em conexões HTTP da rede local.
+- Caixa de transformação para imagens, vídeos e logos, com alças de escala e rotação livre,
+  botão para ocultar os controles e arraste restrito ao objeto selecionado.
+- Home restaura posição, rotação e escala sem alterar o corte; propriedades da logo usam Escala.
+- Validação: 112 testes Python, cinco JavaScript e testes de navegador com exportação real.
+
 - Editor de vídeos, composição com imagens, múltiplas timelines, fila de exportação,
   navegação precisa e ajustes de experiência reunidos na versão oficial 1.8.0.
 - Integração das alterações de Logo EAP, Vetorização MS6 e suporte ao macOS já

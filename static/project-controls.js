@@ -12,7 +12,7 @@ function timelines(){return job?.meta?.timelines||[];}
 function activeTimeline(){return timelines().find(t=>t.id===job.meta.activeTimeline);}
 function exportQueue(){return job?.meta?.exportQueue||[];}
 function nextTimelineName(){let number=timelines().length+1;while(timelines().some(t=>t.name==='Timeline '+String(number).padStart(2,'0')))number++;return 'Timeline '+String(number).padStart(2,'0');}
-function emptyComposition(){return {version:1,settings:structuredClone(project()?.settings||{...defaults,targetMB:4,mute:false}),tracks:[{id:freshId(),locked:false,previewVisible:true}],clips:[]};}
+function emptyComposition(){return {version:1,settings:structuredClone(project()?.settings||{...defaults,targetMB:4,mute:false}),tracks:[{id:freshId(),kind:'video',locked:false,muted:false,previewVisible:true}],clips:[]};}
 function mutateEdition(mutate){undoGesture=null;editSettings(job.media,mutate);markDirty();}
 const timelineViews=new Map();let timelineScreen=null,clipClipboard=null,libraryTab='media',queueExportMode=false,timelinePanelSignature=null;
 const timelineIcon='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16M4 11h16M4 17h16M8 3v18"/><rect x="11" y="8" width="7" height="5" rx="1"/></svg>';
@@ -96,9 +96,9 @@ window.addEventListener('keydown',e=>{
  const key=e.key.toLowerCase();if(!['c','v'].includes(key))return;e.preventDefault();e.stopImmediatePropagation();if(e.repeat)return;
  if(key==='c'){const c=projectClip();if(c){clipClipboard={jobId:job.id,clip:structuredClone(c)};toast('Trecho copiado. Ctrl + V cola nesta ou em outra timeline.');}return;}
  if(!clipClipboard)return;if(clipClipboard.jobId!==job.id){toast('Copie um trecho desta edição para colar.');return;}
- if(project().clips.length>=100){toast('Limite de cem trechos nesta timeline.');return;}const track=projectTrack()||project().tracks[0];if(track.locked){toast('Desbloqueie a faixa antes de colar.');return;}
- const copy=structuredClone(clipClipboard.clip);copy.id=freshId();copy.track=track.id;copy.at=snapFrame(compositionCursor);copy.locked=false;
- if(editProject(()=>{insertClip(copy);compositionSelected=copy.id;compositionCursor=copy.at;}))selectProjectClip(copy.id,false);
+ if(project().clips.length>=100){toast('Limite de cem trechos nesta timeline.');return;}
+ const copy=structuredClone(clipClipboard.clip);copy.id=freshId();copy.track=null;copy.at=snapFrame(compositionCursor);copy.locked=false;
+ if(editProject(()=>{copy.track=trackForMedia(projectMedia(copy),projectTrack()?.id).id;insertClip(copy);compositionSelected=copy.id;compositionCursor=copy.at;}))selectProjectClip(copy.id,false);
 },true);
 
 const queueActions=document.createElement('div');queueActions.className='queue-actions';queueActions.hidden=true;
@@ -110,7 +110,7 @@ function syncQueueControls(){const video=editorKind==='video';queueActions.hidde
 function renderQueue(){
  const list=$('queue-list');list.replaceChildren();
  for(const item of exportQueue()){
-  const row=document.createElement('div');row.className='queue-entry';row.dataset.queueId=item.id;const text=document.createElement('div'),name=document.createElement('strong'),detail=document.createElement('small');name.textContent='VT '+String(item.number).padStart(2,'0')+' · '+item.name;const s=item.composition.settings;detail.textContent=seconds(projectDuration(item.composition))+' · '+s.width+' × '+s.height+' · '+(s.mute?'Sem áudio':'Áudio mantido');text.append(name,detail);
+  const row=document.createElement('div');row.className='queue-entry';row.dataset.queueId=item.id;const text=document.createElement('div'),name=document.createElement('strong'),detail=document.createElement('small');name.textContent='VT '+String(item.number).padStart(2,'0')+' · '+item.name;const s=item.composition.settings;detail.append(document.createTextNode(seconds(projectDuration(item.composition))+' · '+s.width+' × '+s.height+' · '));const audioState=document.createElement('strong');audioState.className='queue-audio-state';audioState.textContent=s.mute?'Sem áudio':'Áudio mantido';detail.append(audioState);text.append(name,detail);
   const remove=document.createElement('button');remove.type='button';remove.innerHTML=trashIcon;remove.setAttribute('aria-label','Remover VT '+String(item.number).padStart(2,'0')+' da fila');remove.dataset.help='Retirar da fila. A timeline continua na edição.';remove.onclick=()=>guard(async()=>{mutateEdition(()=>job.meta.exportQueue=exportQueue().filter(q=>q.id!==item.id));await save();renderQueue();});row.append(text,remove);list.append(row);
  }
  if(!exportQueue().length){const empty=document.createElement('p');empty.textContent='Nenhum vídeo na fila.';list.append(empty);}syncQueueControls();

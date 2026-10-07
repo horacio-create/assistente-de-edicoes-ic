@@ -21,9 +21,10 @@ def settings(value):
         s[key] = float(s[key])
         if not math.isfinite(s[key]) or not low <= s[key] <= high:
             raise ValueError('Ajuste fora do limite.')
-    s['rotation'] = int(s['rotation']) % 360
-    if s['rotation'] % 90:
-        raise ValueError('Use rotação em passos de 90°.')
+    s['rotation'] = float(s['rotation'])
+    if not math.isfinite(s['rotation']):
+        raise ValueError('Rotação inválida.')
+    s['rotation'] %= 360
     if s['lockX']: s['x'] = 0
     if s['lockY']: s['y'] = 0
     return s
@@ -63,13 +64,24 @@ def dominant(im):
     color = max(small.getcolors(4096), key=lambda pair: pair[0])[1]
     return '#%02x%02x%02x' % color
 
+def rotated_size(width, height, rotation):
+    """Expanded bounds, including Pillow's integer pixel rounding."""
+    if rotation % 90 == 0:
+        return (height, width) if rotation % 180 else (width, height)
+    angle = math.radians(rotation)
+    cosine, sine = abs(round(math.cos(angle), 15)), abs(round(math.sin(angle), 15))
+    span_x, span_y = width*cosine + height*sine, width*sine + height*cosine
+    return (math.ceil((width+span_x)/2)-math.floor((width-span_x)/2),
+            math.ceil((height+span_y)/2)-math.floor((height-span_y)/2))
+
+
 def render(source, value, logo=None, transparent=False):
     s = settings(value)
     with Image.open(source) as original:
         im = original.convert('RGBA')
     if s['flipH']: im = ImageOps.mirror(im)
     if s['flipV']: im = ImageOps.flip(im)
-    im = im.rotate(-s['rotation'], expand=True)
+    im = im.rotate(-s['rotation'], expand=True, resample=Image.Resampling.BICUBIC if s['rotation'] % 90 else Image.Resampling.NEAREST)
     w, h = s['width'], s['height']
     factor = 1 if s['lockSize'] else (max if s['mode'] == 'cover' else min)(w / im.width, h / im.height) * s['zoom']
     rw, rh = max(1, round(im.width * factor)), max(1, round(im.height * factor))
