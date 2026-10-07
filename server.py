@@ -17,7 +17,7 @@ from waitress import serve
 from version import VERSION
 from modules.images import DEFAULT, SUPPORTED, decode, dominant, encoded, render, settings
 from modules import ofertas
-from modules import videos, composition, naming, export_progress, projects
+from modules import videos, audio, composition, naming, export_progress, projects
 from modules import eap, vector
 from PIL import Image
 from storage import DATA, ROOT, connect, event, get_job, init, now, uid
@@ -100,6 +100,33 @@ def import_video(job, name, revision, raw):
     except Exception:
         for path in (source, proxy, poster): path.unlink(missing_ok=True)
         raise
+
+def import_audio(job, name, revision, raw):
+    with LOCK, connect() as db:
+        check_revision(db, job, revision)
+        row = db.execute('SELECT meta FROM jobs WHERE id=?', (job,)).fetchone()
+        if json.loads(row['meta']).get('editorKind') != 'video':
+            raise ValueError('Importe áudio na seção Vídeos.')
+    ident = uid()
+    source, proxy, poster = (DATA / 'midias' / (ident + ext) for ext in ('.source', '.m4a', '.png'))
+    try:
+        source.write_bytes(raw)
+        with PROCESS:
+            info, peaks = audio.import_audio(source, proxy, poster)
+        value = settings(DEFAULT | {'color': '#6a67ce'})
+        with LOCK, connect() as db:
+            check_revision(db, job, revision)
+            db.execute('INSERT INTO media(id,job,name,page,width,height,color,settings,notes,kind,duration,has_audio,original_bytes,waveform) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)',
+                       (ident, job, name, None, 400, 100, '#6a67ce', json.dumps(value), '[]',
+                        'audio', info['duration'], True, len(raw), json.dumps(peaks)))
+            name_first_import(db, job, {'title': naming.filename_title(name), 'origin': 'filename'})
+            db.execute('UPDATE jobs SET updated=?, revision=revision+1 WHERE id=?', (now(), job))
+            event(db, job, 'Áudio importado', {'arquivo': name, **info})
+        return {'job': get_job(job)}
+    except Exception:
+        for path in (source, proxy, poster): path.unlink(missing_ok=True)
+        raise
+
 
 def digest(path):
     if not path.is_file(): return None
@@ -255,6 +282,8 @@ def api(method, path, query, raw, environ=None):
         ext = Path(name).suffix.lower()
         if ext in videos.SUPPORTED:
             return import_video(job, name, revision, raw)
+        if ext in audio.SUPPORTED:
+            return import_audio(job, name, revision, raw)
         with LOCK:
             with connect() as db:
                 check_revision(db, job, revision)
@@ -336,6 +365,8 @@ def api(method, path, query, raw, environ=None):
             ids = value['ids']
             media = [m for m in job['media'] if m['id'] in ids]
         if not media: raise ValueError('Selecione ao menos uma mídia.')
+        if any(m['kind'] == 'audio' for m in media):
+            raise ValueError('Adicione o áudio à timeline e exporte a montagem em MP4.')
         if any((m['kind'] in ('video','composition')) != (fmt == 'mp4') for m in media):
             raise ValueError('Exporte vídeos em MP4 e imagens em JPG ou PNG, em lotes separados.')
         template = value.get('template')
@@ -586,10 +617,11 @@ def app(environ, start_response):
             body = environ['wsgi.input'].read(length)
             result = api(method, path, parse_qs(environ.get('QUERY_STRING', '')), body, environ)
             data = json.dumps(result, ensure_ascii=False).encode()
-        elif path.startswith('/video/'):
+        elif path.startswith(('/video/', '/audio/')):
             ident = path.split('/')[-1]
             if not re.fullmatch(r'[0-9a-f]{32}', ident): raise ValueError('Mídia inválida.')
-            video = DATA / 'midias' / (ident + '.mp4')
+            is_audio = path.startswith('/audio/')
+            video = DATA / 'midias' / (ident + ('.m4a' if is_audio else '.mp4'))
             size = video.stat().st_size
             first, last = 0, size - 1
             range_header = environ.get('HTTP_RANGE')
@@ -605,7 +637,7 @@ def app(environ, start_response):
                 if first > last or first >= size:
                     start_response('416 Range Not Satisfiable', [('Content-Range', f'bytes */{size}')]); return []
                 status = '206 Partial Content'
-            headers = [('Content-Type', 'video/mp4'), ('Content-Length', str(last-first+1)),
+            headers = [('Content-Type', 'audio/mp4' if is_audio else 'video/mp4'), ('Content-Length', str(last-first+1)),
                        ('Accept-Ranges', 'bytes'), ('X-Content-Type-Options', 'nosniff')]
             if range_header: headers.append(('Content-Range', f'bytes {first}-{last}/{size}'))
             start_response(status, headers)
@@ -626,7 +658,7 @@ def app(environ, start_response):
             content_type = 'image/png'
         else:
             name = 'index.html' if path == '/' else path.lstrip('/')
-            if name not in ('index.html','app.js','video-controls.js','composition-controls.js','project-controls.js','editor-layout.js', 'edition-names.js','export-progress.js','undo-history.js','vector.js','eap.js','style.css','favicon.svg','logo-indoor.png','ofertas.js','ofertas.css','tarefas.js','tarefas.css'): raise FileNotFoundError()
+            if name not in ('index.html','app.js','video-controls.js','composition-controls.js','project-controls.js','editor-layout.js','audio-panels.js','transform-controls.js', 'edition-names.js','export-progress.js','undo-history.js','vector.js','eap.js','style.css','favicon.svg','logo-indoor.png','ofertas.js','ofertas.css','tarefas.js','tarefas.css'): raise FileNotFoundError()
             data = (ROOT / 'static' / name).read_bytes()
             content_type = mimetypes.guess_type(name)[0] or 'application/octet-stream'
     except Conflict as exc:

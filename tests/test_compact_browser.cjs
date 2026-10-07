@@ -11,7 +11,7 @@ const [url,sample,output]=process.argv.slice(2);fs.mkdirSync(output,{recursive:t
  try{
   await page.goto(url,{waitUntil:'networkidle'});await page.getByRole('button',{name:'Vídeos',exact:true}).click();
   await page.locator('#files').setInputFiles(sample);await page.waitForFunction(()=>!busy&&project()?.clips.length===1);
-  await page.locator('.canvas-shell').hover();assert.equal(await page.locator('.composition-track').count(),1);
+  await page.locator('#editor .canvas-shell').hover();assert.equal(await page.locator('.composition-track').count(),1);
   assert.equal(await page.locator('#mode-help').isVisible(),false);assert.equal(await page.locator('.video-timeline>.help').isVisible(),false);
   // Additional tracks must stay inside the timeline, including at the export bar.
   await page.evaluate(()=>{editProject(()=>{for(let i=1;i<4;i++){const track={id:freshId(),locked:false,previewVisible:true};project().tracks.push(track);const clip=structuredClone(project().clips[0]);clip.id=freshId();clip.track=track.id;project().clips.push(clip);}});updateCounts();});
@@ -27,20 +27,20 @@ const [url,sample,output]=process.argv.slice(2);fs.mkdirSync(output,{recursive:t
   }
   await page.setViewportSize({width:1366,height:768});await stable();
   await page.locator('#layered-timeline').evaluate(el=>el.scrollTop=0);
-  const before=await page.locator('.adjustments').evaluate(el=>el.scrollTop);await page.locator('.adjustments').hover();await page.mouse.wheel(0,600);
+  const before=await page.locator('#editor .adjustments').evaluate(el=>el.scrollTop);await page.locator('#editor .adjustments').hover();await page.mouse.wheel(0,600);
   await page.waitForFunction(before=>document.querySelector('.adjustments').scrollTop>before,before);assert.equal(await page.evaluate(()=>scrollY),0);
   await page.locator('#mode').scrollIntoViewIfNeeded();await page.locator('#mode').hover();
   const hovered=Date.now();await page.waitForTimeout(1000);assert.equal(await page.locator('#hover-help').isVisible(),false);
   await page.locator('#hover-help').waitFor({state:'visible'});assert.ok(Date.now()-hovered>=2900);
   assert.match(await page.locator('#hover-help').textContent(),/Preserva toda a arte/);await shot('dica-enquadramento');
   await page.keyboard.press('Escape');assert.equal(await page.locator('#hover-help').isVisible(),false);
-  await page.locator('#mode').selectOption('cover');await page.locator('.canvas-shell').hover();await page.locator('#mode').hover();
+  await page.locator('#mode').selectOption('cover');await page.locator('#editor .canvas-shell').hover();await page.locator('#mode').hover();
   await page.locator('#hover-help').waitFor({state:'visible'});assert.match(await page.locator('#hover-help').textContent(),/bordas da arte podem ser cortadas/);
-  await page.locator('.canvas-shell').hover();assert.equal(await page.locator('#hover-help').isVisible(),false);
+  await page.locator('#editor .canvas-shell').hover();assert.equal(await page.locator('#hover-help').isVisible(),false);
   const eye=page.locator('.track-property[data-property="previewVisible"]').first();await eye.hover();await page.locator('#hover-help').waitFor({state:'visible'});
   assert.match(await page.locator('#hover-help').textContent(),/Oculta só a prévia/);assert.equal(await eye.getAttribute('title'),null);
   assert.equal(await page.locator('label.check').filter({hasText:'Travar centro horizontal'}).isVisible(),true);
-  await page.locator('.canvas-shell').hover();await page.getByRole('button',{name:'Edições recentes',exact:true}).click();
+  await page.locator('#editor .canvas-shell').hover();await page.getByRole('button',{name:'Edições recentes',exact:true}).click();
   await page.waitForFunction(()=>$('studio').hidden&&!document.body.classList.contains('video-workspace'));
   assert.equal(await page.evaluate(()=>document.body.classList.contains('video-workspace')),false);
   await page.getByRole('button',{name:'Imagens',exact:true}).click();await page.locator('#files').setInputFiles(path.join(path.dirname(sample),'slide-green.png'));

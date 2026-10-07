@@ -236,12 +236,9 @@ function drawVideoCanvas(m, source, canvas, overlay=false) {
   if (canvas.width !== w || canvas.height !== h) { canvas.width = w; canvas.height = h; }
   const ctx = canvas.getContext('2d'); ctx.setTransform(scale,0,0,scale,0,0);
   if(!overlay){ctx.fillStyle = s.mode === 'background' ? s.color : '#000'; ctx.fillRect(0,0,s.width,s.height);}
-  const rotated = s.rotation % 180 !== 0, iw = rotated ? m.height : m.width, ih = rotated ? m.width : m.height;
-  const factor = s.lockSize ? 1 : (s.mode === 'cover' ? Math.max(s.width/iw,s.height/ih) : Math.min(s.width/iw,s.height/ih))*s.zoom;
-  const rw = Math.max(1,Math.round(iw*factor)), rh = Math.max(1,Math.round(ih*factor));
-  const x = Math.round((s.width-rw)/2+s.x*s.width), y = Math.round((s.height-rh)/2+s.y*s.height);
+  const {rw,rh,x,y,drawW,drawH}=mediaGeometry(m);
   ctx.save(); ctx.translate(x+rw/2,y+rh/2); ctx.rotate(s.rotation*Math.PI/180); ctx.scale(s.flipH?-1:1,s.flipV?-1:1);
-  ctx.drawImage(source,-(rotated?rh:rw)/2,-(rotated?rw:rh)/2,rotated?rh:rw,rotated?rw:rh); ctx.restore();
+  ctx.drawImage(source,-drawW/2,-drawH/2,drawW,drawH); ctx.restore();
   if (s.logoId) {
     const logo = asset('/logo/'+s.logoId);
     if (logo) { const k=Math.min(s.width*(s.logoScale??.12)/logo.naturalWidth,s.height*.8/logo.naturalHeight),lw=Math.max(1,Math.round(logo.naturalWidth*k)),lh=Math.max(1,Math.round(logo.naturalHeight*k));ctx.drawImage(logo,Math.round((s.width-lw)*(s.logoX??.97)),Math.round((s.height-lh)*(s.logoY??.03)),lw,lh); }

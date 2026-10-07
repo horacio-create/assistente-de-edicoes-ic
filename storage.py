@@ -42,7 +42,8 @@ def init():
         columns = {r[1] for r in db.execute('PRAGMA table_info(media)')}
         for name, definition in [('kind', "TEXT NOT NULL DEFAULT 'image'"),
                                  ('duration', 'REAL'), ('has_audio', 'INTEGER NOT NULL DEFAULT 0'),
-                                 ('original_bytes', 'INTEGER'), ('fps', 'REAL')]:
+                                 ('original_bytes', 'INTEGER'), ('fps', 'REAL'),
+                                 ('waveform', "TEXT NOT NULL DEFAULT '[]'")]:
             if name not in columns:
                 db.execute(f'ALTER TABLE media ADD COLUMN {name} {definition}')
         if 'role' not in columns:
@@ -61,7 +62,7 @@ def get_job(job):
         result['media'] = []
         for m in db.execute('SELECT * FROM media WHERE job=? ORDER BY rowid', (job,)):
             item = dict(m)
-            for key in ('settings', 'notes'): item[key] = json.loads(item[key])
+            for key in ('settings', 'notes', 'waveform'): item[key] = json.loads(item[key])
             result['media'].append(item)
         order = {ident: n for n, ident in enumerate(result['meta'].get('mediaOrder', []))}
         result['media'].sort(key=lambda m: order.get(m['id'], len(order)))

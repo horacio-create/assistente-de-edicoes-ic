@@ -4,9 +4,10 @@ import assert from "node:assert/strict";
 import { cpSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { normalizarPreco, normalizarNumero, validarTemplate, prepararDados, dadosPadrao, lerTemplate } from "./contrato.mjs";
 
-const MODELO = new URL("../templates/uniforca-hora-da-carne", import.meta.url).pathname;
+const MODELO = fileURLToPath(new URL("../templates/uniforca-hora-da-carne", import.meta.url));
 
 // cópia do template modelo numa pasta temporária com o mesmo nome (id == pasta)
 function copia(alterar) {

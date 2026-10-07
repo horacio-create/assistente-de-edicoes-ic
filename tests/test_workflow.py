@@ -345,7 +345,7 @@ class WorkflowTests(unittest.TestCase):
         with self.assertRaises(ValueError):self.plan(names=['Igual','igual'])
 
     def test_input_bounds(self):
-        for patch in [{'width':99999},{'zoom':float('nan')},{'color':'red'},{'rotation':45}]:
+        for patch in [{'width':99999},{'zoom':float('nan')},{'color':'red'},{'rotation':float('inf')}]:
             with self.assertRaises(ValueError):settings(patch)
         for name in ['CON','nul','COM1','LPT9']:
             with self.assertRaises(ValueError):server.clean(name)

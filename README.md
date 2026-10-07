@@ -31,12 +31,26 @@ A seção Vídeos fica abaixo de Imagens na barra lateral. Importa MP4, AVI, MOV
 além de M4V, WMV e MPEG, até 100 MB por arquivo. A compatibilidade depende também do codec
 e da integridade do arquivo. Os originais são preservados.
 
+Também aceita músicas em MP3, WAV, M4A, AAC, OGG, FLAC, Opus, WMA e AIFF.
+Áudios entram automaticamente em faixas abaixo dos vídeos, com ondas sonoras reais,
+cor roxa e botões de cadeado e mudo. O mudo de cada faixa vale na prévia e na exportação;
+Remover áudio continua controlando toda a montagem. A duração inicial da música acompanha
+o fim do vídeo, quando houver, e o original completo continua disponível na biblioteca.
+Para exportar é necessário ter vídeo ou imagem cobrindo toda a montagem.
+
 - Editor compacto dentro da janela: formatos, biblioteca, prévia, timeline e exportação sempre visíveis.
 - Reprodução compacta com a largura da prévia; timeline logo abaixo, sem rolar a página.
+- Arraste as divisórias para alterar a largura de Mídias/Edição e a altura da timeline.
+  Dois cliques restauram o tamanho; as setas do teclado também ajustam a divisória selecionada.
 - Campos de corte e duração no painel Ajustes; sua rolagem alcança a base da timeline.
 - Explicações por dicas após três segundos com o mouse parado. Textos das caixas de seleção permanecem visíveis.
 - Mesmos ajustes de enquadramento, cor, tamanho, rotação, espelhamento e logo das imagens.
-- Biblioteca de vídeos, imagens e páginas de PDF, com importação visível em uma janela central.
+- A mídia visível selecionada tem caixa e alças para posição, escala proporcional e rotação livre.
+  O arraste começa apenas sobre o objeto ou suas alças. O botão na prévia mostra/oculta os controles.
+  Home restaura posição, rotação e escala sem alterar cortes ou duração; Shift encaixa o giro em 15°.
+  As alças respeitam cadeados e os bloqueios de tamanho/posição e não aparecem na exportação.
+  Logos mostram Escala nas propriedades e recuperam sua escala inicial com Home.
+- Biblioteca de vídeos, imagens, áudios e páginas de PDF, com ícones que identificam o tipo.
 - Arraste arquivos do computador para a biblioteca ou área do editor durante a edição.
 - Mídias e Edição em abas separadas; biblioteca compartilhada e até vinte timelines
   com cortes e ajustes independentes. Crie pelo +, renomeie com duplo clique e exclua em Edição.
@@ -46,7 +60,7 @@ e da integridade do arquivo. Os originais são preservados.
   guarde a seleção e arraste para a timeline. As seleções também ficam salvas na edição.
 - Até 100 trechos de fontes diferentes e dez faixas empilhadas. Uma faixa é criada inicialmente;
   arraste para o espaço acima das faixas para criar outra. A faixa de cima cobre a de baixo.
-- Dividir, remover, adicionar e reordenar acima da timeline. Encaixe automático evita espaços
+- Dividir, remover e reordenar na lateral da timeline. Encaixe automático evita espaços
   sem conteúdo; uma linha vertical verde indica o encaixe durante o arraste.
 - Cursor com alça e régua. Posição na montagem fica logo abaixo da prévia.
 - Tempo atual editável: digite 14,22 ou 14.22 e pressione Enter; Esc cancela.
@@ -54,7 +68,8 @@ e da integridade do arquivo. Os originais são preservados.
   quadro a quadro (40 px por quadro a 30 fps). Clique na porcentagem para voltar a 100%.
 - Adicionar logo coloca a marca em Suas mídias e em uma faixa superior durante toda
   a montagem, com transparência. Selecione seu bloco para ajustar posição e duração.
-- Cadeado e olho à esquerda de cada faixa. O cadeado protege todos os seus trechos;
+- Faixas Vídeo 01, Vídeo 02… e Áudio 01, Áudio 02… com numeração independente.
+- Cadeado e olho à esquerda de cada faixa de vídeo. O cadeado protege todos os seus trechos;
   o olho oculta só a prévia. Todas as faixas continuam na revisão e na exportação.
 - Imagem estática: a primeira imagem inserida começa com 15 segundos. Outras começam com
   cinco segundos; defina cada duração para criar apresentações de slides ou misturar com vídeos.
@@ -70,7 +85,8 @@ e da integridade do arquivo. Os originais são preservados.
 - Ctrl+Z, Ctrl+Shift+Z e Ctrl+Y também abrangem corte, velocidade, tamanho e remoção do áudio.
 - Atalhos visíveis nos botões e em “Atalhos do teclado”. C divide no cursor; S seleciona;
   R gira; A adiciona; Delete remove; Espaço reproduz; M alterna áudio; L alterna o cadeado;
-  E alterna o olho. Ctrl+setas muda a ordem; setas percorrem os quadros; I/O marcam início/fim.
+  E alterna o olho da faixa de vídeo ou o mudo da faixa de áudio. Ctrl+setas muda a ordem;
+  setas percorrem os quadros; I/O marcam início/fim.
   Ctrl+S salva e Ctrl+E abre a revisão. Não atuam durante a digitação nem em outras seções.
 
 Para montar 15 segundos, prepare os cortes na biblioteca ou divida os blocos na timeline,
