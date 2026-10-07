@@ -57,6 +57,21 @@ def zipar(pasta, prefixo='', extras=()):
     return out.getvalue()
 
 
+class TamanhosDosVideosTests(unittest.TestCase):
+    """Gerar todos: quantos produtos vão em cada vídeo."""
+    def test_lista_fixa_completa_o_ultimo_video(self):
+        fixa = {'itens': 6, 'grupo': {'tamanho': 2}}
+        self.assertEqual(ofertas.tamanhos_dos_videos(21, fixa), [6, 6, 6, 6])
+        self.assertEqual(ofertas.tamanhos_dos_videos(1, fixa), [6])
+
+    def test_lista_variavel_repete_o_minimo(self):
+        variavel = {'itens': 6, 'min': 4, 'grupo': {'tamanho': 2}}
+        self.assertEqual(ofertas.tamanhos_dos_videos(10, variavel), [6, 4])  # sem repetir nenhum
+        self.assertEqual(ofertas.tamanhos_dos_videos(7, variavel), [4, 4])   # repete 1 (e não 5)
+        self.assertEqual(ofertas.tamanhos_dos_videos(14, variavel), [6, 4, 4])
+        self.assertEqual(ofertas.tamanhos_dos_videos(3, variavel), [4])
+
+
 class IntegracaoTests(unittest.TestCase):
     def test_modulo_ativo_no_info_e_arquivos_estaticos(self):
         info = server.api('GET', '/api/info', {}, b'')
@@ -236,6 +251,21 @@ class FluxoTests(unittest.TestCase):
         page.insert_text((60, 300), '59,99', fontsize=16)
         return doc.tobytes()
 
+    def test_produto_em_varias_copias_sai_com_todas_na_foto(self):
+        import pymupdf
+        from modules.ofertas.encarte import extrair
+        doc = pymupdf.open()
+        page = doc.new_page(width=600, height=400)
+        xref = page.insert_image(pymupdf.Rect(50, 80, 150, 220), stream=png(), keep_proportion=False)
+        for x in (120, 190): page.insert_image(pymupdf.Rect(x, 85, x + 100, 225), xref=xref, keep_proportion=False)  # 3 peças encostadas
+        page.insert_text((60, 70), 'Maminha Bovina Kg', fontsize=12)
+        page.insert_text((80, 270), '49', fontsize=40)
+        page.insert_text((128, 255), ',90', fontsize=20)
+        page.insert_text((175, 270), 'KG', fontsize=8)
+        [item] = extrair(doc.tobytes())
+        foto = Image.open(io.BytesIO(item['png']))
+        self.assertAlmostEqual(foto.width / foto.height, 240 / 145, delta=0.05)  # as 3 lado a lado, não só uma
+
     def test_encarte_lido_em_segundo_plano_e_guardado(self):
         status, r = json_de('POST', '/api/ofertas/encarte?nome=teste.pdf', raw=self.pdf_picanha())
         self.assertEqual(status, 200, r)
@@ -306,6 +336,40 @@ class FluxoTests(unittest.TestCase):
         _, novo = json_de('POST', '/api/ofertas/pedidos', {'template': MODELO.name})
         self.assertNotEqual(novo['id'], v['pedido'])
         self.assertEqual(json_de('GET', f"/api/ofertas/pedido?id={v['pedido']}")[0], 200)
+
+    def test_template_com_quantidade_variavel_de_produtos(self):
+        """Lista com "min": o pedido aceita 4 ou 6 produtos e o Gerar todos não repete produtos à toa."""
+        pasta = TMP / 'variavel' / 'carne-variavel'
+        shutil.copytree(MODELO, pasta)
+        meta = json.loads((pasta / 'template.json').read_text())
+        meta['id'] = 'carne-variavel'
+        meta['campos'][1]['min'] = 4
+        (pasta / 'template.json').write_text(json.dumps(meta))
+        total = '{ "id": "produtos_total", "type": "number", "label": "Quantidade", "default": 6, "min": 4, "max": 6, "step": 2 },'
+        (pasta / 'index.html').write_text((pasta / 'index.html').read_text().replace("data-composition-variables='[", "data-composition-variables='[" + total, 1))
+        _, r = json_de('POST', '/api/ofertas/templates-publicar', raw=zipar(pasta, 'carne-variavel/'))
+        self.assertTrue(r['ok'], r)
+        _, esquema = json_de('GET', '/api/ofertas/esquema?template=carne-variavel')
+        lista = esquema['campos'][1]
+        self.assertEqual((lista['min'], lista['itens'], len(esquema['padrao']['produtos'])), (4, 6, 6))
+
+        _, pedido = json_de('POST', '/api/ofertas/pedidos', {'template': 'carne-variavel'})
+        dados = pedido['dados']
+        dados['produtos'] = dados['produtos'][:4]
+        _, salvo = json_de('POST', '/api/ofertas/pedido-salvar', {'id': pedido['id'], 'revision': pedido['revision'], 'titulo': 't', 'dados': dados})
+        self.assertEqual(salvo['validacao'], [])
+        dados['produtos'] = dados['produtos'][:3]
+        _, salvo = json_de('POST', '/api/ofertas/pedido-salvar', {'id': pedido['id'], 'revision': salvo['revision'], 'titulo': 't', 'dados': dados})
+        self.assertIn('de 4 a 6 itens', salvo['validacao'][0]['mensagem'])
+
+        _, enc = json_de('POST', '/api/ofertas/encarte?nome=Semana 13.pdf', raw=self.pdf_picanha())
+        self.esperar_encarte(enc['id'])
+        _, g = json_de('POST', '/api/ofertas/encarte-gerar-todos', {'encarte': enc['id'], 'template': 'carne-variavel'})
+        for v in g['videos']:
+            if v['render']: json_de('POST', '/api/ofertas/render-cancelar', {'id': v['render']})
+        self.assertEqual((len(g['videos']), g['completados'], g['videos'][0]['erros']), (1, 3, []))  # 1 produto: vídeo de 4, não de 6
+        lote = json_de('GET', f"/api/ofertas/pedido?id={g['videos'][0]['pedido']}")[1]
+        self.assertEqual(len(lote['dados']['produtos']), 4)
 
     def test_encarte_recusa_o_que_nao_e_pdf_nem_imagem(self):
         status, r = json_de('POST', '/api/ofertas/encarte?nome=x.pdf', raw=b'nao e pdf')
