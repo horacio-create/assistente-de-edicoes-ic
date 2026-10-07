@@ -148,28 +148,8 @@ Interface HTML/CSS/JavaScript, servidor Python com Waitress, processamento Pillo
 As logos e a identidade visual pertencem à Indoor Channel.
 
 
-## Executável portátil (validação pendente)
+## Executável portátil 1.8.0
 
-O código de empacotamento fica em `packaging/`. Consulte `packaging/LEIA-ME.md`. O executável único usa lançador C/MinGW, Python Windows embutido e Edge/Chrome em modo aplicativo com perfil temporário. Não usa PyInstaller. O fluxo completo e a remoção da pasta temporária ainda precisam ser confirmados em Windows real.
+Código de empacotamento em `packaging/`; consulte `packaging/LEIA-ME.md`. Arquivo único com lançador C/MinGW, Python Windows embutido, FFmpeg/FFprobe e janela Edge/Chrome em modo aplicativo. Sem PyInstaller.
 
-
-## Nomes e progresso
-O nome da edição aparece ao lado do título do programa. Clique no lápis para renomear;
-as edições recentes também têm um lápis. O nome escolhido é salvo e a exportação não
-o substitui pelo nome do arquivo exportado.
-
-Na primeira importação, a sugestão usa o nome do arquivo, sem extensão e sufixos de
-exportação. Para nomes genéricos, como “Telas Indoor Channel”, o programa tenta ler
-os textos visíveis da imagem ou de três quadros do vídeo usando o OCR local do Windows.
-Prioriza nome da empresa ou tema reconhecido, como clínica odontológica. Não interpreta
-fala nem identifica pessoas; sem texto legível ou OCR disponível, usa o nome do arquivo.
-Nenhuma mídia é enviada a serviços externos. Sugestões podem ser corrigidas pelo usuário.
-
-A janela “Exportando [nome do arquivo]” mostra o progresso real informado pelo FFmpeg,
-considerando as duas passagens da compressão. A estimativa de tempo aparece quando há
-dados suficientes. Os 100% só aparecem após conferir o tamanho e salvar o resultado.
-A prévia conserva o último quadro completo durante a busca, evitando flashes do pôster.
-
-O botão **Cancelar** interrompe o FFmpeg da exportação em curso e elimina seu arquivo
-temporário. Os originais e as exportações já concluídas permanecem. A revisão do
-destino é refeita para permitir tentar novamente sem reabrir a janela.
+Build Windows de 07/10/2026: 117 testes Python aprovados, 19 pulados, cinco testes JavaScript de desfazer e oito de contrato aprovados. O teste automatizado do executável confirmou imagens, vídeo com áudio, DXF, EAP e limpeza dos temporários. A janela do navegador, o seletor nativo e o fechamento pelo lockfile ainda precisam de validação manual. Ofertas mantém a dependência externa de Node.js e do motor instalado.

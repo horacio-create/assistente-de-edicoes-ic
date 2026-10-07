@@ -310,3 +310,10 @@ processamento: arquivos concluídos são mantidos, o incompleto é descartado e 
 pendentes continuam salvos na fila. A numeração dos pendentes é mantida para a próxima
 tentativa. Itens concluídos são retirados da fila pelo servidor. O executável antigo
 continua separado desta atualização da versão web.
+
+
+## Portátil 1.8.0 — build de 07/10/2026
+
+Executável único Windows x64 com FFmpeg/FFprobe embutidos. Corrigida a inclusão do código e templates de Ofertas no ZIP interno, coberta por test_packaging.py (falhou antes e passou após a correção). Ofertas continua dependente do Node.js/motor externo, conforme comportamento documentado.
+
+Suíte: 136 testes Python, 117 aprovados e 19 pulados por dependências/encartes indisponíveis; cinco testes JavaScript de desfazer e oito de contrato aprovados. No executável real, teste automatizado pelo gancho INDOOR_BROWSER_CMD confirmou PDF/PNG 16 bits/PNG comum, exportação de imagens, vídeo MP4 com áudio, DXF, três PNGs EAP e remoção do diretório temporário. Não verificados nesta build: interação manual da janela, seletor nativo, fechamento via lockfile real e geração de Ofertas.

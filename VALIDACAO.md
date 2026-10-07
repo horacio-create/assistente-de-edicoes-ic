@@ -232,3 +232,10 @@ Todos os dados e exportações de teste ficaram separados das edições reais.
 - 63 testes Python e cinco testes JavaScript aprovados. Testes de layout em cinco
   tamanhos de janela e fluxo completo de faixas/biblioteca/imagens/exportação aprovados.
 - Apenas versão web atualizada; executável original não foi reempacotado.
+
+
+## Portátil 1.8.0 — build de 07/10/2026
+
+Executável único Windows x64 com FFmpeg/FFprobe embutidos. Corrigida a inclusão do código e templates de Ofertas no ZIP interno, coberta por test_packaging.py (falhou antes e passou após a correção). Ofertas continua dependente do Node.js/motor externo, conforme comportamento documentado.
+
+Suíte: 136 testes Python, 117 aprovados e 19 pulados por dependências/encartes indisponíveis; cinco testes JavaScript de desfazer e oito de contrato aprovados. No executável real, teste automatizado pelo gancho INDOOR_BROWSER_CMD confirmou PDF/PNG 16 bits/PNG comum, exportação de imagens, vídeo MP4 com áudio, DXF, três PNGs EAP e remoção do diretório temporário. Não verificados nesta build: interação manual da janela, seletor nativo, fechamento via lockfile real e geração de Ofertas.

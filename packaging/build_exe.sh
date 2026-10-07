@@ -47,7 +47,9 @@ echo "6/7 Montando o conte√∫do embutido"
 mkdir -p stage/app && cp -r python stage/python
 cp "$APP"/*.py stage/app/ && cp "$APP/portable.py" stage/app/portable.py
 rm -f stage/app/test_*.py
-cp -r "$APP/modules" "$APP/static" stage/app/
+cp -r "$APP/modules" "$APP/static" "$APP/ofertas" stage/app/
+[ -f "$APP/tools/ffmpeg/ffmpeg.exe" ] && [ -f "$APP/tools/ffmpeg/ffprobe.exe" ] || { echo "Prepare os bin·rios Windows em tools/ffmpeg antes de empacotar."; exit 1; }
+mkdir -p stage/app/tools && cp -r "$APP/tools/ffmpeg" stage/app/tools/
 find stage -name __pycache__ -prune -exec rm -rf {} +
 ( cd stage && zip -q -r -9 -X ../payload.zip python app )
 

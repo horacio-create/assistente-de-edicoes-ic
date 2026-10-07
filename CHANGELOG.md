@@ -2,6 +2,11 @@
 
 ## 1.8.0 — versão oficial — 06/10/2026
 
+### Empacotamento Windows de 07/10/2026
+
+- Portátil atualizado com FFmpeg/FFprobe e inclusão do código/templates de Ofertas.
+- Teste de regressão do ZIP interno e validação automatizada do executável para imagens, vídeo, DXF, EAP e limpeza temporária.
+
 ### Melhorias de 07/10/2026
 
 - Ícones centralizados, distância menor até seus nomes e estado Áudio mantido em negrito na fila.
