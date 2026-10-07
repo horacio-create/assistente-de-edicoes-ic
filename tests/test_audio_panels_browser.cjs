@@ -14,7 +14,7 @@ const [url,video,music,output]=process.argv.slice(2);fs.mkdirSync(output,{recurs
   assert.equal(await page.locator('.audio-waveform path').count(),1);assert.ok((await page.locator('.audio-waveform path').getAttribute('d')).length>5000);
   assert.deepEqual(await page.locator('.media-type-badge').evaluateAll(els=>els.map(e=>e.getAttribute('aria-label'))),['Vídeo','Áudio']);
   assert.equal(await page.locator('.media-type-badge').first().evaluate(el=>getComputedStyle(el).backgroundColor),'rgb(129, 214, 128)');assert.equal(await page.locator('.media-type-badge').last().evaluate(el=>getComputedStyle(el).color),'rgb(45, 49, 68)');
-  assert.equal(await page.locator('#trim-start').isVisible(),true);assert.equal(await page.locator('#mode').isVisible(),false);
+  await page.locator('.audio-clip.selected').dblclick();assert.equal(await page.locator('#clip-trim-in').isVisible(),true);await page.locator('#clip-trim-dialog .close').click();assert.equal(await page.locator('#mode').isVisible(),false);
   await page.locator('.library-card').last().dblclick();await page.locator('#source-dialog').waitFor({state:'visible'});assert.ok(await page.locator('#source-video').getAttribute('src').then(s=>s.startsWith('/audio/')));await page.waitForFunction(()=>$('source-video').readyState>=1);await page.locator('[data-close="source-dialog"]').click();
   await page.locator('#montage-current-time').fill('1,50');await page.locator('#montage-current-time').press('Enter');await page.locator('#split-segment').click();assert.equal(await page.locator('.audio-clip').count(),2);
   await page.locator('.audio-track [data-property=muted]').click();assert.equal(await page.evaluate(()=>project().tracks.find(t=>t.kind==='audio').muted),true);

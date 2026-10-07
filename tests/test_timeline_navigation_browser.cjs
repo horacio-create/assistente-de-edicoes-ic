@@ -39,7 +39,7 @@ const [url,image,logo,output]=process.argv.slice(2);fs.mkdirSync(output,{recursi
   await page.evaluate(()=>change({x:0,y:0,zoom:.2}));
   await page.waitForFunction(()=>{const c=$('live-preview'),p=c.getContext('2d').getImageData(c.width/2,c.height/2,1,1).data;return p[0]>240&&p[1]>240&&p[2]>240;});
   const corner=await page.evaluate(()=>Array.from($('live-preview').getContext('2d').getImageData(20,20,1,1).data));assert.ok(corner[1]>100&&corner[0]<100,JSON.stringify(corner));
-  await page.locator('#clip-duration').fill('5');await page.locator('#clip-duration').press('Tab');assert.equal(await page.evaluate(()=>projectClip().duration),5);
+  await page.locator('.track-header .clip-clock').first().click();await page.locator('#clip-speed-duration').fill('5');await page.locator('#clip-speed-dialog .clip-time-apply').click();assert.equal(await page.evaluate(()=>projectClip().duration),5);
   await field.fill('6');await field.press('Enter');await page.waitForFunction(()=>{const c=$('live-preview'),p=c.getContext('2d').getImageData(c.width/2,c.height/2,1,1).data;return p[1]>100&&p[0]<100;});
   await page.locator('#save-composition').click();await page.waitForFunction(()=>!busy&&!dirty);const id=await page.evaluate(()=>job.id);
   await page.getByRole('button',{name:'Edições recentes',exact:true}).click();await page.locator(`.recent-card[data-job-id="${id}"]`).click();await page.waitForFunction(()=>!busy&&!$('studio').hidden);

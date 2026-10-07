@@ -380,3 +380,29 @@ body.video-workspace{height:100dvh;overflow:hidden}
 #reuse-timelines-dialog{width:min(620px,90vw)}
 #reuse-timelines-details{max-height:45vh;overflow:auto;overflow-wrap:anywhere}
 #reuse-timelines-details p{padding:8px 0;border-bottom:1px solid var(--line,#ddd)}
+
+.clip-time-dialog{width:min(520px,90vw)}
+.clip-time-dialog .two-columns{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.clip-time-dialog p{line-height:1.5;overflow-wrap:anywhere}
+.clip-time-name{font-weight:700}
+.clip-time-error{color:#a52a47}
+.clip-trim-sliders{display:grid;gap:12px;margin:18px 0}
+.clip-trim-sliders input{width:100%;accent-color:#81D680}
+.track-property.clip-clock{background:#81D680;color:#2d3144}
+.track-property.clip-clock svg{width:17px;height:17px}
+.track-property.clip-clock:disabled{opacity:.45}
+.composition-editor .legacy-geometry-field,.composition-editor .logo-settings{display:none}
+#pixel-geometry .two-columns{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+#pixel-geometry p{font-size:11px;color:var(--muted,#677088);line-height:1.4}
+.composition-editor #apply-all{width:100%;white-space:normal}
+.composition-editor #apply-all:only-child{grid-column:1/-1}
+
+.video-workspace.composition-editor .adjustments .legacy-geometry-field{display:none!important}
+.clip-time-dialog .clip-trim-track{height:26px;margin:20px 8px 8px}
+.clip-time-dialog .clip-trim-track input[type=range]{height:26px}
+.clip-time-dialog .clip-trim-track input::-webkit-slider-runnable-track{height:26px;background:transparent;border:0}
+.clip-time-dialog .clip-trim-track input::-webkit-slider-thumb{box-sizing:border-box;height:26px;margin-top:0}
+.clip-time-dialog .clip-trim-track input::-moz-range-track{height:26px;background:transparent;border:0}
+.clip-time-dialog .clip-trim-track input::-moz-range-thumb{box-sizing:border-box;height:26px}
+
+.composition-editor .timeline-model-action{display:block!important}

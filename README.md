@@ -179,3 +179,18 @@ as durações encurtadas/alongadas e os arquivos não processados. Para os exced
 importe-os em uma nova edição ou exclua as outras nove timelines e repita a operação.
 Timelines bloqueadas são preservadas. Itens já enfileirados das timelines afetadas são
 atualizados, mantendo seus nomes e números. **Ctrl+Z** desfaz a operação completa.
+
+### Cortes, velocidade e transformação
+
+Dê **dois cliques sobre o bloco da mídia na timeline** para abrir **Ajustar trecho**:
+a barra verde e suas duas alças definem início e fim, mantendo a velocidade do corte.
+O **relógio ao lado do olho/mudo** abre **Velocidade e duração**. A porcentagem indica
+quanto dura o trecho em relação ao seu corte a 100%: **50% = metade da duração (2×)**;
+**200% = dobro da duração (0,5×)**. Porcentagem e nova duração em segundos são ligados.
+O limite é de 25% a 400%, equivalente a velocidades entre 4× e 0,25×.
+
+Aplicar confirma; Cancelar ou Esc preserva o estado anterior. Bloqueios e Ctrl+Z/Ctrl+Y
+continuam funcionando. Imagens têm duração editável; áudios também aceitam velocidade.
+No painel direito, posição X/Y usa pixels a partir do centro (Y positivo para cima),
+rotação usa graus, e largura/altura usam pixels preservando a proporção. O tamanho
+máximo em MB fica na revisão da exportação. **T** abre duração; **P** abre exportação.

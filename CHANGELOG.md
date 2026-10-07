@@ -2,6 +2,19 @@
 
 ## 1.8.0 — versão oficial — 06/10/2026
 
+### Controles de tempo e medidas de 07/10/2026
+
+- Relógio ao lado do olho/mudo abre velocidade e duração do trecho, com porcentagem
+  de duração: abaixo de 100% acelera, acima desacelera. Porcentagem e segundos ligados.
+- Duplo clique no bloco da timeline abre Ajustar trecho, preservando a barra verde
+  e suas duas alças para início/fim. Aplicar confirma; Cancelar e Esc preservam o corte.
+- Painel direito concentra transformação: posição cartesiana X/Y em pixels,
+  rotação em graus e largura/altura proporcionais em pixels, além do modelo de timelines.
+- Tempo sai do painel direito; tamanho máximo continua editável na revisão da exportação.
+  Nas selecionadas deixa de aparecer em edições de vídeo. T abre duração; P abre exportação.
+- Mantidos desfazer/refazer, bloqueios e velocidades entre 0,25× e 4×; imagens e áudio
+  continuam com duração editável. Exportação real conferida com o novo tempo e geometria.
+
 ### Reutilização de timelines de 07/10/2026
 
 - Em todas utiliza a timeline aberta como modelo completo: saída, rotação, escala,
