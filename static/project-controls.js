@@ -145,7 +145,11 @@ request=async function(path,body,method){
  return result;
 };
 const projectSyncVideo=syncVideo;
-syncVideo=function(){if(editorKind==='video'&&job){ensureProject();resetTimelineView();}projectSyncVideo();if(editorKind==='video'){renderProjectPanels();if(!projectClip()&&activeTimeline())$('editing-name').textContent=activeTimeline().name;document.querySelector('.logo-settings h3').textContent='Logo na montagem';}else document.querySelector('.logo-settings h3').textContent='Logo sobre a imagem';};
+syncVideo=function(){
+ if(editorKind==='video'&&job){ensureProject();resetTimelineView();}projectSyncVideo();
+ const logoSection=document.querySelector('#editor .logo-settings');logoSection.hidden=editorKind==='video';logoSection.previousElementSibling.hidden=editorKind==='video';
+ if(editorKind==='video'){renderProjectPanels();if(!projectClip()&&activeTimeline())$('editing-name').textContent=activeTimeline().name;}
+};
 const projectSyncAudio=syncAudio;
 syncAudio=function(){projectSyncAudio();if(queueExportMode)$('export-audio-action').hidden=true;syncQueueControls();};
 const projectUpdateCounts=updateCounts;

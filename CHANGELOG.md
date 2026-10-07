@@ -9,6 +9,9 @@
 
 ### Melhorias de 07/10/2026
 
+- Seção redundante Logo na montagem removida do editor de vídeos: imagens e logos
+  usam a importação da biblioteca e faixas superiores. Transparência preservada
+  para imagens comuns na prévia e no MP4, com propriedade Escala.
 - Ícones centralizados, distância menor até seus nomes e estado Áudio mantido em negrito na fila.
 - Biblioteca Mídias/Edição e divisão entre prévia e timeline redimensionáveis, com limites,
   ajuste por teclado, restauração por duplo clique e preferência preservada neste navegador.

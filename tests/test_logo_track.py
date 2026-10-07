@@ -28,19 +28,31 @@ class LogoTrackTests(unittest.TestCase):
 
     @unittest.skipUnless(videos.available(),'FFmpeg required')
     def test_transparent_logo_exports_over_base_only_during_its_clip(self):
+        self.check_overlay(legacy=True)
+
+    @unittest.skipUnless(videos.available(),'FFmpeg required')
+    def test_library_image_exports_alpha_without_special_logo_role(self):
+        self.check_overlay(legacy=False)
+
+    @unittest.skipUnless(videos.available(),'FFmpeg required')
+    def test_library_image_explicit_background_remains_opaque(self):
+        self.check_overlay(legacy=False, background=True)
+
+    def check_overlay(self, legacy, background=False):
         job=api('/api/jobs',{'kind':'video'})
         base=io.BytesIO();Image.new('RGB',(320,180),'red').save(base,'PNG')
         job=api('/api/upload',query={'job':[job['id']],'revision':['0'],'name':['Cliente.png']},raw=base.getvalue())['job']
-        result=api('/api/logo',query={'job':[job['id']],'revision':[str(job['revision'])],'name':['Logo.png'],'composition':['1']},raw=self.logo());job=result['job']
+        result=api('/api/logo' if legacy else '/api/upload',query={'job':[job['id']],'revision':[str(job['revision'])],'name':['Logo.png'],'composition':['1']},raw=self.logo());job=result['job']
         bottom,top=uid(),uid();p=dict(version=1,settings=DEFAULT|dict(width=320,height=180,mute=True,targetMB=.4),tracks=[dict(id=t,locked=False,previewVisible=True) for t in (bottom,top)],clips=[])
         for m,track,at,length in [(job['media'][0],bottom,0,2),(job['media'][1],top,.5,1)]:
-            p['clips'].append(dict(id=uid(),mediaId=m['id'],track=track,at=at,duration=length,locked=False,settings=DEFAULT|dict(width=320,height=180,x=0,y=0,zoom=.2 if m['role']=='logo' else 1),**{'in':0,'out':length}))
+            p['clips'].append(dict(id=uid(),mediaId=m['id'],track=track,at=at,duration=length,locked=False,settings=DEFAULT|dict(width=320,height=180,x=0,y=0,zoom=.2 if track==top else 1,mode='background' if background and track==top else 'contain',color='#0000ff'),**{'in':0,'out':length}))
         with tempfile.TemporaryDirectory() as work:
             output=Path(work)/'logo.mp4';composition.export(job['media'],server.DATA/'midias',output,p,lambda s:None)
             for time,white in [(.25,False),(.75,True),(1.75,False)]:
                 data=videos.run([videos.tool('ffmpeg'),'-v','error','-ss',str(time),'-i',str(output),'-frames:v','1','-f','image2pipe','-vcodec','png','pipe:1'])
                 image=Image.open(io.BytesIO(data)).convert('RGB');center=image.getpixel((160,90));corner=image.getpixel((10,10))
-                self.assertGreater(corner[0],190);self.assertLess(corner[1],35)
+                if background and white:self.assertGreater(corner[2],190);self.assertLess(corner[0],35)
+                else:self.assertGreater(corner[0],190);self.assertLess(corner[1],35)
                 if white:self.assertTrue(all(value>190 for value in center),center)
                 else:self.assertGreater(center[0],190);self.assertLess(center[1],35)
 
