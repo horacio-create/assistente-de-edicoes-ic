@@ -1,7 +1,6 @@
 # Proxy só deste sistema (independente de outros projetos do servidor). HTTPS com certificado automático
 # (Let's Encrypt, renovado pelo Caddy) para o domínio abaixo, cujo registro A precisa apontar para o servidor.
-# O HTTP do domínio redireciona para o HTTPS sozinho. Sem login: o acesso é ABERTO a quem souber o endereço.
-# Para exigir senha, acrescente dentro do bloco do domínio:  basic_auth { usuario <hash de "caddy hash-password"> }
+# O HTTP do domínio redireciona para o HTTPS sozinho. O login é do próprio sistema (INDOOR_AUTH no compose.yaml).
 
 assistente-edicao.indoorchannel.com.br {
 	request_body {

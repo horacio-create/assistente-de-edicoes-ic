@@ -19,9 +19,9 @@ from version import VERSION
 from modules.images import DEFAULT, SUPPORTED, decode, dominant, encoded, render, settings
 from modules import ofertas
 from modules import videos, audio, composition, naming, export_progress, projects
-from modules import eap, vector
+from modules import eap, vector, auth
 from PIL import Image
-from storage import DATA, ROOT, connect, event, get_job, init, now, uid
+from storage import DATA, FERRAMENTA, ROOT, USUARIO, connect, event, get_job, init, mine, now, owner, uid
 
 LOCK = threading.RLock()
 PROCESS = threading.Semaphore(2)
@@ -55,6 +55,13 @@ def validate_host(host):
     except ValueError:
         raise ValueError('Host não autorizado.') from None
 MODULES = [{'id': 'images', 'name': 'Imagens', 'active': True}, {'id': 'video', 'name': 'Vídeos', 'active': True}, {'id': 'conteudos', 'name': 'Conteúdos Indoor', 'active': False}, {'id': 'offers', 'name': 'Ofertas de supermercados', 'active': True}, {'id': 'eap', 'name': 'Logo EAP', 'active': True}, {'id': 'ms6', 'name': 'Vetorização MS6', 'active': True}]
+
+# login só no servidor (deploy/compose.yaml); o app local/portátil continua aberto
+AUTH = os.environ.get('INDOOR_AUTH') == '1'
+PUBLIC = ('/login.html', '/login.js', '/style.css', '/acesso.css', '/favicon.svg', '/logo-indoor.png', '/api/info')
+# ferramenta exigida por prefixo; o resto do /api e as mídias são do editor (Imagens ou Vídeos)
+TOOLS = [(('/api/history',), None), (('/api/ofertas/', '/ofertas/'), {'offers'}), (('/api/vector/', '/vetor/'), {'ms6'}), (('/api/eap/', '/eap/'), {'eap'}),
+         (('/api/', '/media/', '/logo/', '/video/', '/audio/', '/entrega'), {'images', 'video'})]
 
 class Conflict(Exception): pass
 
@@ -198,15 +205,25 @@ def logo_path(value, job):
 def api(method, path, query, raw, environ=None):
     value = json.loads(raw) if raw and path not in ('/api/upload', '/api/logo', '/api/vector/upload', '/api/eap/upload') else {}
     if path == '/api/info':
-        return dict(host=socket.gethostname(), modules=MODULES, videoReady=videos.available(), defaultFolder=str(Path.home() / 'Pictures'), version=VERSION, portable=bool(os.environ.get('INDOOR_PORTABLE')), nativePicker=(os.name == 'nt' or sys.platform == 'darwin') and (environ or {}).get('REMOTE_ADDR') in ('127.0.0.1','::1'))
+        user = USUARIO.get()
+        if AUTH and not user: return dict(version=VERSION, auth=True, user=None)
+        tools = auth.allowed(user, MODULES) if user else None
+        return dict(user=user and auth.public(user), auth=AUTH, host=socket.gethostname(), modules=[m for m in MODULES if tools is None or m['id'] in tools], videoReady=videos.available(), defaultFolder=str(Path.home() / 'Pictures'), version=VERSION, portable=bool(os.environ.get('INDOOR_PORTABLE')), nativePicker=(os.name == 'nt' or sys.platform == 'darwin') and (environ or {}).get('REMOTE_ADDR') in ('127.0.0.1','::1'))
+    # cada usuário só vê e mexe nas próprias edições; o id vem em campos diferentes conforme a rota
+    with connect() as db:
+        ref = {'/api/job': query.get('id', [None])[0], '/api/logo': query.get('job', [None])[0], '/api/upload': query.get('job', [None])[0],
+               '/api/rename': value.get('id'), '/api/save': value.get('id'), '/api/reuse-timelines': value.get('job'), '/api/plan': value.get('job')}.get(path)
+        if path == '/api/preview': ref = (db.execute('SELECT job FROM media WHERE id=?', (value.get('id'),)).fetchone() or {'job': None})['job']
+        if path == '/api/export': ref = (db.execute('SELECT job FROM plans WHERE id=?', (value.get('token'),)).fetchone() or {'job': None})['job']
+        if ref is not None or path in ('/api/preview', '/api/export'): mine(db, 'jobs', ref)
     if path == '/api/jobs' and method == 'GET':
-        with connect() as db: return [dict(r) for r in db.execute('SELECT id,title,updated,revision,(SELECT count(*) FROM media WHERE job=jobs.id) AS count FROM jobs ORDER BY updated DESC LIMIT 100')]
+        with connect() as db: return [dict(r) for r in db.execute('SELECT id,title,updated,revision,(SELECT count(*) FROM media WHERE job=jobs.id) AS count FROM jobs WHERE ? IS NULL OR owner=? ORDER BY updated DESC LIMIT 100', (owner(), owner()))]
     if path == '/api/jobs' and method == 'POST':
         ident = uid()
         with connect() as db:
             kind = value.get('kind', 'image')
             if kind not in ('image', 'video'): raise ValueError('Tipo de edição inválido.')
-            db.execute('INSERT INTO jobs(id,title,updated,meta) VALUES(?,?,?,?)', (ident, 'Nova edição', now(), json.dumps({'editorKind': kind})))
+            db.execute('INSERT INTO jobs(id,title,updated,meta,owner) VALUES(?,?,?,?,?)', (ident, 'Nova edição', now(), json.dumps({'editorKind': kind}), owner()))
             event(db, ident, 'Trabalho criado', {})
         return get_job(ident)
     if path == '/api/job' and method == 'GET': return get_job(query['id'][0])
@@ -214,7 +231,7 @@ def api(method, path, query, raw, environ=None):
         return export_progress.get(query.get('token', [''])[0]) or {'state': 'waiting', 'percent': 0, 'remaining': None}
     if path == '/api/history':
         with connect() as db:
-            return [dict(r) | {'detail': json.loads(r['detail'])} for r in db.execute('SELECT events.*,jobs.title FROM events LEFT JOIN jobs ON events.job=jobs.id WHERE events.hidden=0 ORDER BY events.id DESC LIMIT 500')]
+            return [dict(r) | {'detail': json.loads(r['detail'])} for r in db.execute('SELECT events.*,jobs.title FROM events LEFT JOIN jobs ON events.job=jobs.id WHERE events.hidden=0 AND (? IS NULL OR events.owner=?) ORDER BY events.id DESC LIMIT 500', (owner(), owner()))]
     if path == '/api/entrega' and method == 'GET': return arquivos_entrega(query.get('token', [''])[0])
     if method != 'POST': raise ValueError('Operação não encontrada.')
     if path == '/api/entrega-limpar':
@@ -242,10 +259,10 @@ def api(method, path, query, raw, environ=None):
         with LOCK, connect() as db:
             restore = path.endswith('restore')
             if value.get('all') and not restore:
-                ids = [r['id'] for r in db.execute('SELECT id FROM events WHERE hidden=0')]
+                ids = [r['id'] for r in db.execute('SELECT id FROM events WHERE hidden=0 AND (? IS NULL OR owner=?)', (owner(), owner()))]
             else:
                 ids = list({int(i) for i in value.get('ids', [])})
-            db.executemany('UPDATE events SET hidden=? WHERE id=?', [(0 if restore else 1, i) for i in ids])
+            db.executemany('UPDATE events SET hidden=? WHERE id=? AND (? IS NULL OR owner=?)', [(0 if restore else 1, i, owner(), owner()) for i in ids])
         return {'ids': ids, 'count':len(ids)}
     if path == '/api/pick-folder':
         if (environ or {}).get('REMOTE_ADDR') not in ('127.0.0.1', '::1'):
@@ -635,6 +652,25 @@ def app(environ, start_response):
         # abrir a página por um link de outro site (WhatsApp, e-mail) é permitido; o resto vindo de fora, não
         if environ.get('HTTP_SEC_FETCH_SITE') == 'cross-site' and not (method == 'GET' and environ.get('HTTP_SEC_FETCH_MODE') == 'navigate'):
             raise ValueError('Origem não autorizada.')
+        user = auth.user_from(environ) if AUTH else None
+        USUARIO.set(user)  # a thread do waitress é reaproveitada: sempre redefinir
+        FERRAMENTA.set(next((t for prefix, t in (('/api/ofertas/', 'offers'), ('/api/vector/', 'ms6'), ('/api/eap/', 'eap')) if path.startswith(prefix)), None))
+        if AUTH and path.startswith(('/api/auth/', '/api/admin/')):
+            if method == 'POST' and environ.get('HTTP_X_INDOOR') != '1': raise ValueError('Requisição inválida.')
+            length = int(environ.get('CONTENT_LENGTH') or 0)
+            if length > 1024 * 1024: raise ValueError('Requisição grande demais.')
+            body = environ['wsgi.input'].read(length)
+            result, extra = auth.api(method, path, parse_qs(environ.get('QUERY_STRING', '')), json.loads(body) if body else {}, user, environ)
+            data = json.dumps(result, ensure_ascii=False).encode()
+            start_response(status, [('Content-Type', content_type), ('Content-Length', str(len(data))), ('Cache-Control', 'no-store'), *extra])
+            return [data]
+        if AUTH and not path.startswith(PUBLIC):
+            if not user:
+                if path in ('/', '/index.html'):
+                    start_response('302 Found', [('Location', '/login.html'), ('Content-Length', '0')]); return []
+                raise auth.Denied('Faça login.', '401 Unauthorized')
+            need = next((tools for prefixes, tools in TOOLS if path.startswith(prefixes)), None)
+            if need and not need & set(auth.allowed(user, MODULES)): raise auth.Denied('Seu cargo não tem acesso a esta ferramenta.')
         resposta = ofertas.handle(environ)  # /api/ofertas/* e /ofertas/*; o módulo trata os próprios erros
         if resposta:
             start_response(resposta[0], resposta[1])
@@ -697,11 +733,13 @@ def app(environ, start_response):
             content_type = 'image/png'
         else:
             name = 'index.html' if path == '/' else path.lstrip('/')
-            if name not in ('index.html','app.js','video-controls.js','composition-controls.js','project-controls.js','editor-layout.js','audio-panels.js','transform-controls.js','clip-dialogs.js','editing-tabs.js', 'edition-names.js','export-progress.js','undo-history.js','vector.js','eap.js','style.css','favicon.svg','logo-indoor.png','ofertas.js','ofertas.css','tarefas.js','tarefas.css'): raise FileNotFoundError()
+            if name not in ('index.html','app.js','video-controls.js','composition-controls.js','project-controls.js','editor-layout.js','audio-panels.js','transform-controls.js','clip-dialogs.js','editing-tabs.js', 'edition-names.js','export-progress.js','undo-history.js','vector.js','eap.js','style.css','favicon.svg','logo-indoor.png','ofertas.js','ofertas.css','tarefas.js','tarefas.css','login.html','login.js','admin.js','acesso.css','conta.js'): raise FileNotFoundError()
             data = (ROOT / 'static' / name).read_bytes()
             content_type = mimetypes.guess_type(name)[0] or 'application/octet-stream'
     except Conflict as exc:
         status, data = '409 Conflict', json.dumps({'error': str(exc)}).encode()
+    except auth.Denied as exc:
+        status, data = exc.status, json.dumps({'error': str(exc)}, ensure_ascii=False).encode()
     except FileNotFoundError:
         status, data = '404 Not Found', b'{"error":"Arquivo indisponivel."}'
     except Exception as exc:
@@ -711,6 +749,16 @@ def app(environ, start_response):
 
 if __name__ == '__main__':
     init()
+    auth.init()
+    if sys.argv[1:2] == ['criar-superadmin']:
+        if len(sys.argv) != 3: sys.exit('Uso: python server.py criar-superadmin email@exemplo.com')
+        host = os.environ.get('INDOOR_PUBLIC_URL', 'https://assistente-edicao.indoorchannel.com.br')
+        print(f'Convite de superadmin (vale {auth.CONVITE_DIAS} dias): {host}/login.html?convite={auth.create_invite(sys.argv[2], superadmin=True)}')
+        sys.exit()
+    if AUTH: ofertas.garantir()  # coluna owner das Ofertas existe antes do 1º cadastro (que herda os dados antigos)
     port = int(os.environ.get('INDOOR_PORT', '8080'))
     print(f'Indoor Channel: http://localhost:{port} | Rede: http://{socket.gethostname()}:{port}', flush=True)
-    serve(app, host=os.environ.get('INDOOR_HOST','0.0.0.0'), port=port, threads=6, max_request_body_size=MAX_UPLOAD, channel_timeout=300)
+    # atrás do proxy (deploy/): confia no X-Forwarded-Proto dele para saber que a conexão é https (cookie Secure)
+    proxy = os.environ.get('INDOOR_TRUSTED_PROXY')
+    serve(app, host=os.environ.get('INDOOR_HOST','0.0.0.0'), port=port, threads=6, max_request_body_size=MAX_UPLOAD, channel_timeout=300,
+          **({'trusted_proxy': proxy, 'trusted_proxy_headers': {'x-forwarded-proto'}} if proxy else {}))

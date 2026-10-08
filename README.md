@@ -134,6 +134,17 @@ A prévia mostra o enquadramento e a velocidade; confira a nitidez no arquivo co
 
 Imagens importadas, edições e histórico ficam na pasta `dados`, criada ao usar o sistema e excluída do Git. Os originais não são alterados. Preserve uma cópia dessa pasta para transportar as edições.
 
+## Usuários e acesso (servidor)
+
+No servidor (`deploy/`), `INDOOR_AUTH=1` liga o login; no PC e no executável portátil o sistema continua sem login.
+
+- **Primeiro superadmin:** `docker compose -f deploy/compose.yaml exec assistente python server.py criar-superadmin email@empresa.com.br` imprime um link de convite (vale 7 dias). Quem aceitar esse primeiro convite herda as edições, pedidos e histórico feitos antes do login existir.
+- **Cargos:** na tela **Usuários** (só superadmins), cada cargo libera um conjunto de ferramentas (Imagens, Vídeos, Ofertas, Logo EAP, Vetorização MS6). Superadmin é uma marcação do usuário, não um cargo, e só outro superadmin pode dar ou tirar.
+- **Convites:** o superadmin informa e-mail e cargo e copia o link gerado; a pessoa abre o link e completa o cadastro com nome e senha. O link vale 7 dias e uma vez. Não há envio de e-mail: o link é enviado por quem convidou.
+- **Dados por usuário:** edições, pedidos de Ofertas, encartes, vídeos gerados e histórico são de quem criou. A Biblioteca de imagens e os templates continuam compartilhados com a equipe.
+- **Esqueceu a senha:** na tela Usuários, **Redefinir senha** gera um link (7 dias, uso único) para a pessoa definir uma senha nova; ao usar, as sessões abertas em outros aparelhos são encerradas.
+- Desativar um usuário encerra as sessões dele na hora. Cinco senhas erradas seguidas bloqueiam o e-mail por 15 minutos.
+
 ## Testes
 
 ```powershell
