@@ -143,23 +143,45 @@ class ExportQueueTests(unittest.TestCase):
 
 
 class OfertasTests(unittest.TestCase):
-    def render(self, status, tentativas):
+    # Com o motor de Ofertas instalado (CI, servidor), a thread da fila roda de verdade neste processo. Os testes
+    # seguram ofertas.LOCK (a mesma trava dela) e apagam os registros falsos antes de soltar: ela nunca os vê.
+    def render(self, status, tentativas, dados=True, criado=None):
         ident = uid()
+        if dados:
+            (ofertas.PASTA / 'renders' / ident).mkdir(parents=True)
+            (ofertas.PASTA / 'renders' / ident / 'dados.json').write_text('{}')
         with connect() as db:
             db.execute("INSERT INTO ofertas_renders(id,pedido,template,titulo,revision,status,criado,tentativas) VALUES(?,?,?,?,0,?,?,?)",
-                       (ident, 'p', 't', 'Vídeo', status, now(), tentativas))
+                       (ident, 'p', 't', 'Vídeo', status, criado or now(), tentativas))
+        self.addCleanup(self.apagar, ident)
         return ident
+
+    def apagar(self, ident):
+        with connect() as db: db.execute('DELETE FROM ofertas_renders WHERE id=?', (ident,))
 
     def status(self, ident):
         with connect() as db: return tuple(db.execute('SELECT status, tentativas FROM ofertas_renders WHERE id=?', (ident,)).fetchone())
 
     def test_render_interrupted_by_restart_goes_back_to_queue_twice_at_most(self):
-        nova, ultima, esgotada = self.render('gerando', 0), self.render('gerando', 1), self.render('gerando', 2)
-        with patch.object(ofertas, 'status', return_value={'pronto': False, 'motivo': ''}), patch.object(ofertas, '_iniciado', False):
-            ofertas.garantir()  # o que roda ao subir o servidor
-        self.assertEqual(self.status(nova), ('na_fila', 1))
-        self.assertEqual(self.status(ultima), ('na_fila', 2))
-        self.assertEqual(self.status(esgotada), ('interrompido', 2))
+        with ofertas.LOCK:
+            nova, ultima, esgotada = self.render('gerando', 0), self.render('gerando', 1), self.render('gerando', 2)
+            sem_dados = self.render('gerando', 0, dados=False)
+            with patch.object(ofertas, 'status', return_value={'pronto': False, 'motivo': ''}), patch.object(ofertas, '_iniciado', False):
+                ofertas.garantir()  # o que roda ao subir o servidor
+            self.assertEqual(self.status(nova), ('na_fila', 1))
+            self.assertEqual(self.status(ultima), ('na_fila', 2))
+            self.assertEqual(self.status(esgotada), ('interrompido', 2))
+            self.assertEqual(self.status(sem_dados), ('interrompido', 0))
+            for ident in (nova, ultima, esgotada, sem_dados): self.apagar(ident)
+
+    def test_queue_thread_survives_a_render_that_cannot_start(self):
+        with ofertas.LOCK, patch.object(ofertas, 'RENDERS_SIMULTANEOS', 99):
+            quebrado = self.render('na_fila', 0, dados=False, criado='2000-01-01T00:00:00')  # o mais antigo: é o próximo
+            self.assertTrue(ofertas.iniciar_proximo())  # antes, a thread morria aqui com FileNotFoundError
+            with connect() as db: row = db.execute('SELECT status, erro FROM ofertas_renders WHERE id=?', (quebrado,)).fetchone()
+            self.assertEqual(row['status'], 'falhou')
+            self.assertIn('dados do pedido', row['erro'])
+            self.apagar(quebrado)
 
     def test_background_removal_runs_one_at_a_time(self):
         ident = uid()

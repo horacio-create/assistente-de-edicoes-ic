@@ -127,8 +127,11 @@ def garantir():
                 db.execute('ALTER TABLE ofertas_renders ADD COLUMN tentativas INTEGER NOT NULL DEFAULT 0')
             # vídeos que estavam sendo gerados quando o servidor parou (um deploy, por exemplo) voltam para o começo da
             # fila: os dados do pedido foram congelados em renders/<id>/dados.json e o vídeo é refeito do zero
-            db.execute("UPDATE ofertas_renders SET status='na_fila', iniciado=NULL, tentativas=tentativas+1 WHERE status='gerando' AND tentativas<?", (RETOMADAS,))
-            db.execute("UPDATE ofertas_renders SET status='interrompido', terminado=? WHERE status='gerando'", (now(),))
+            for r in db.execute("SELECT id, tentativas FROM ofertas_renders WHERE status='gerando'").fetchall():
+                if r['tentativas'] < RETOMADAS and (PASTA / 'renders' / r['id'] / 'dados.json').is_file():
+                    db.execute("UPDATE ofertas_renders SET status='na_fila', iniciado=NULL, tentativas=tentativas+1 WHERE id=?", (r['id'],))
+                else:
+                    db.execute("UPDATE ofertas_renders SET status='interrompido', terminado=? WHERE id=?", (now(), r['id']))
             pendentes = [r['id'] for r in db.execute("SELECT id FROM ofertas_encartes WHERE status='lendo'")]
         if status()['pronto']:
             threading.Thread(target=worker, daemon=True).start()
@@ -234,18 +237,31 @@ def worker():
     while True:
         FILA.wait(timeout=3)
         FILA.clear()
-        while True:
-            with LOCK, connect() as db:
-                if len(RODANDO) >= RENDERS_SIMULTANEOS: break
-                row = db.execute("SELECT * FROM ofertas_renders WHERE status='na_fila' ORDER BY criado LIMIT 1").fetchone()
-                if not row: break
-                db.execute("UPDATE ofertas_renders SET status='gerando', iniciado=? WHERE id=?", (now(), row['id']))
-                pasta = PASTA / 'renders' / row['id']
-                log = (pasta / 'log.txt').open('wb')
-                RODANDO[row['id']] = subprocess.Popen(
-                    [NODE, str(MOTOR / 'gerar.mjs'), str(TEMPLATES / row['template']), str(pasta / 'dados.json'), '-o', str(pasta / 'video.mp4')],
-                    stdout=log, stderr=subprocess.STDOUT, cwd=MOTOR, creationflags=SEM_JANELA)
-            threading.Thread(target=acompanhar, args=(row['id'], log), daemon=True).start()
+        while iniciar_proximo(): pass
+
+def iniciar_proximo():
+    """Começa o próximo vídeo da fila, se houver vaga. -> True se pegou um (começou ou falhou), False se não há o que fazer.
+    Um vídeo que não consegue começar vira 'falhou' com o motivo: a thread da fila nunca morre por causa de um pedido."""
+    with LOCK, connect() as db:
+        if len(RODANDO) >= RENDERS_SIMULTANEOS: return False
+        row = db.execute("SELECT * FROM ofertas_renders WHERE status='na_fila' ORDER BY criado LIMIT 1").fetchone()
+        if not row: return False
+        db.execute("UPDATE ofertas_renders SET status='gerando', iniciado=? WHERE id=?", (now(), row['id']))
+        pasta = PASTA / 'renders' / row['id']
+        log = None
+        try:
+            if not (pasta / 'dados.json').is_file(): raise FileNotFoundError('os dados do pedido não foram encontrados; gere o vídeo de novo')
+            log = (pasta / 'log.txt').open('wb')
+            RODANDO[row['id']] = subprocess.Popen(
+                [NODE, str(MOTOR / 'gerar.mjs'), str(TEMPLATES / row['template']), str(pasta / 'dados.json'), '-o', str(pasta / 'video.mp4')],
+                stdout=log, stderr=subprocess.STDOUT, cwd=MOTOR, creationflags=SEM_JANELA)
+        except Exception as exc:
+            if log: log.close()
+            db.execute("UPDATE ofertas_renders SET status='falhou', terminado=?, erro=? WHERE id=?", (now(), f'Não foi possível começar: {exc}', row['id']))
+            registrar(db, 'Falha ao gerar vídeo', row['titulo'], row['owner'], render=row['id'], motivo=str(exc))
+            return True
+    threading.Thread(target=acompanhar, args=(row['id'], log), daemon=True).start()
+    return True
 
 def acompanhar(ident, log):
     proc = RODANDO[ident]
