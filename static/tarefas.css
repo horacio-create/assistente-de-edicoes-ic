@@ -28,3 +28,9 @@
 body.com-tarefas main{padding-bottom:var(--tarefas-altura,0px)}
 @media(min-width:651px){body.com-tarefas .export-bar{padding-right:392px}}
 @media(max-width:650px){.tarefas{right:16px;left:16px;bottom:16px;width:auto}}
+
+/* Hallmark · task header and status symbols share their text axis. */
+.tarefas header{margin:0;gap:var(--ui-gap-tight,4px)}
+.tarefas header strong{min-width:0;line-height:1.3}
+.tarefas header button{flex:none}
+.tarefas .t-icone{align-self:center;justify-self:center}

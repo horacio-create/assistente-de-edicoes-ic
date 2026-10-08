@@ -216,3 +216,34 @@ body.acesso{margin:0;min-height:100dvh;background:var(--ac-paper);color:var(--ac
 .ac-facts dt{font-size:var(--ac-text-xs);font-weight:650;color:var(--ac-muted)}
 .ac-facts dd{margin:0;font-size:var(--ac-text-md);font-weight:600;color:var(--ac-ink)}
 @media(max-width:900px){.ac-account{grid-template-columns:minmax(0,1fr)}}
+
+/* Hallmark · alignment refinement of existing access and account components. */
+.ac-menu-item svg{display:block}
+.ac-box-head{align-items:center;flex-wrap:wrap}
+.ac-box-head>div{min-width:0}
+.ac-person-row .ac-select,.ac-person-row .ac-switch{min-height:40px}
+.ac-role-head{align-items:center}
+.ac-role-head .ac-btn{min-height:40px}
+.ac-input,.ac-select{margin-top:0}
+.ac-field .ac-input,.ac-field .ac-select{margin:0}
+.ac-switch.is-wrap{align-items:flex-start}
+.ac-switch.is-wrap input{margin-top:2px}
+.ac-linkbox>div{align-items:center}
+.ac-linkbox>div>.ac-input{min-width:0;margin:0}
+.ac-linkbox>div>.ac-btn{flex:none}
+.ac-account .ac-facts dd{overflow-wrap:anywhere}
+@media(max-width:480px){
+  .ac-person-row{grid-template-columns:minmax(0,1fr) auto}
+  .ac-person-row .ac-who{grid-column:1/-1}
+  .ac-person-row>.ac-select{grid-column:1/-1}
+  .ac-linkbox>div{flex-wrap:wrap}
+  .ac-linkbox>div>.ac-input{flex-basis:100%}
+}
+
+input.ac-input:not([type=checkbox]):not([type=range]):not([type=color]),select.ac-select{
+  margin:0;min-height:44px;padding:0 var(--ac-space-xs);font-size:var(--ac-text-md);font-weight:500;
+}
+.ac-person-row select.ac-select{min-height:40px;font-size:var(--ac-text-sm)}
+.ac-password input.ac-input{padding-right:5.5rem!important}
+.ac-linkbox input.ac-input{min-height:40px;font-size:var(--ac-text-sm)}
+.ac-box-head{margin:0}

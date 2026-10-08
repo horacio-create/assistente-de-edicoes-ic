@@ -81,7 +81,7 @@ function renderProjectPanels(){
   const remove=document.createElement('button');remove.type='button';remove.className='timeline-delete';remove.innerHTML=trashIcon;remove.setAttribute('aria-label','Excluir '+t.name);remove.dataset.help='Excluir esta timeline. As mídias e os itens da fila são preservados; Ctrl + Z desfaz.';remove.onclick=()=>deleteTimeline(t.id);row.append(button,remove);list.append(row);
   const tab=document.createElement('button');tab.type='button';tab.className='timeline-tab';tab.setAttribute('role','tab');tab.setAttribute('aria-selected',String(t.id===job.meta.activeTimeline));tab.dataset.timelineId=t.id;tab.innerHTML=timelineIcon;const text=document.createElement('span');text.textContent=t.name;tab.append(text);tab.dataset.help='Abrir '+t.name+'. Dois cliques para renomear.';tab.onclick=()=>switchTimeline(t.id);tab.ondblclick=()=>renameTimeline(t.id);timelineTabs.append(tab);
  }
- const add=document.createElement('button');add.type='button';add.id='timeline-tab-add';add.textContent='+';add.setAttribute('aria-label','Criar timeline');add.dataset.help='Criar uma timeline vazia.';add.onclick=createTimeline;timelineTabs.append(add);
+ const add=document.createElement('button');add.type='button';add.id='timeline-tab-add';add.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14m-7-7v14"/></svg>';add.setAttribute('aria-label','Criar timeline');add.dataset.help='Criar uma timeline vazia.';add.onclick=createTimeline;timelineTabs.append(add);
  $('new-timeline').disabled=busy||timelines().length>=TIMELINE_LIMIT;syncQueueControls();
 }
 

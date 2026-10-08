@@ -1,5 +1,18 @@
 # Histórico de versões
 
+## 1.8.1 — refinamentos de interface — 08/10/2026
+
+- Alinhamento e espaçamentos dos menus, campos, ícones e ações de Imagens, Vídeos,
+  Ofertas, Usuários e Tarefas; ajustes responsivos em janelas menores.
+- Guias de edição, título e botão + compartilham o centro vertical; adicionar e
+  fechar usam vetores. Preservadas as curvas da guia ativa e o limite de cinco guias.
+- Ferramentas laterais alinhadas à régua da timeline, com botões de mesmo tamanho
+  e recuos iguais aos da biblioteca de mídias.
+- Chaves de início/fim em vetores espelhados e centralizados. Ícone Fila menor,
+  alinhado ao texto e com espaçamento regular; mantido o desenho de mídias empilhadas.
+- Mantidos os cortes, cancelamento de importação, login e fila de exportação em
+  segundo plano da main, sem alterações nas edições ou mídias dos usuários.
+
 ## 1.8.0 — versão oficial — 06/10/2026
 
 ### Guias e transformação de 08/10/2026
