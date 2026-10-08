@@ -88,3 +88,16 @@ class ImportCancelTests(unittest.TestCase):
     def test_completed_task_registry_stays_bounded(self):
         for i in range(150): import_tasks.start(uid(), 'test').finish()
         self.assertLessEqual(len(import_tasks.TASKS), 100)
+
+    def test_authenticated_user_cannot_cancel_another_users_import(self):
+        context = server.USUARIO.set({'id':uid()})
+        try:
+            job, token = api('/api/jobs'), uid()
+        finally:
+            server.USUARIO.reset(context)
+        context = server.USUARIO.set({'id':uid()})
+        try:
+            with self.assertRaises(ValueError): self.cancel(job, token)
+            self.assertNotIn(token, import_tasks.TASKS)
+        finally:
+            server.USUARIO.reset(context)

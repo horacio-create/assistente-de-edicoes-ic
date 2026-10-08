@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Entrar · Assistente de Edições</title><link rel="icon" href="/favicon.svg?v=13"><link rel="stylesheet" href="/style.css"><link rel="stylesheet" href="/acesso.css"></head>
+<body class="acesso">
+<main class="ac-panel">
+  <section class="ac-card" id="card-form" aria-labelledby="titulo">
+    <div class="ac-app"><img src="/favicon.svg?v=13" alt="">Assistente de Edições</div>
+    <header class="ac-head"><h1 id="titulo">Entrar</h1><p id="sub" hidden></p></header>
+    <div class="ac-invite" id="convite-info" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0M16 4.5a3.5 3.5 0 0 1 0 7M18 14a5.5 5.5 0 0 1 3.5 6"/></svg><span id="convite-texto"></span></div>
+    <form id="form" class="ac-form" novalidate>
+      <div class="ac-field" id="campo-nome" hidden><label for="nome">Seu nome</label><input class="ac-input" id="nome" autocomplete="name" maxlength="90" aria-describedby="nome-dica"><p class="ac-hint" id="nome-dica">Como a equipe vai ver você no sistema.</p></div>
+      <div class="ac-field" id="campo-email"><label for="email">E-mail</label><input class="ac-input" id="email" type="email" autocomplete="username" inputmode="email" placeholder="nome@indoorchannel.com.br" required></div>
+      <div class="ac-field"><label for="senha" id="senha-label">Senha</label>
+        <div class="ac-password"><input class="ac-input" id="senha" type="password" autocomplete="current-password" required aria-describedby="senha-dica"><button type="button" class="ac-btn ac-btn-text" id="ver-senha" aria-pressed="false" aria-controls="senha">Mostrar</button></div>
+        <p class="ac-hint" id="senha-dica" hidden>Pelo menos 8 caracteres.</p></div>
+      <div class="ac-field" id="campo-confirmar" hidden><label for="confirmar">Repita a senha</label><input class="ac-input" id="confirmar" type="password" autocomplete="new-password" aria-describedby="confirmar-dica"><p class="ac-hint" id="confirmar-dica" hidden></p></div>
+      <p class="ac-alert" id="erro" role="alert" hidden></p>
+      <button id="enviar" class="ac-btn ac-btn-primary" type="submit">Entrar</button>
+    </form>
+    <p class="ac-foot" id="rodape">Sem acesso ou esqueceu a senha? Fale com um administrador.</p>
+  </section>
+
+  <section class="ac-card ac-dead" id="card-invalido" aria-labelledby="invalido-titulo" hidden>
+    <div class="ac-app"><img src="/favicon.svg?v=13" alt="">Assistente de Edições</div>
+    <header class="ac-head"><h1 id="invalido-titulo">Este link não vale mais</h1><p>Links de convite e de nova senha valem 7 dias e funcionam uma vez só. Peça um link novo a quem enviou este.</p></header>
+    <a class="ac-btn ac-btn-quiet" href="/login.html">Ir para o login</a>
+  </section>
+</main>
+<script src="/login.js"></script></body></html>

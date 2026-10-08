@@ -231,7 +231,7 @@ class FluxoTests(unittest.TestCase):
         pasta.mkdir(parents=True)
         subprocess.run(['ffmpeg', '-v', 'error', '-f', 'lavfi', '-i', 'color=c=red:s=320x180:d=3', '-pix_fmt', 'yuv420p', str(pasta / 'video.mp4')], check=True)
         with connect() as db:
-            db.execute("INSERT INTO ofertas_renders VALUES(?,?,?,?,?,'pronto',?,?,?,NULL)", (ident, 'p', MODELO.name, 'Teste', 0, now(), now(), now()))
+            db.execute("INSERT INTO ofertas_renders(id,pedido,template,titulo,revision,status,criado,iniciado,terminado) VALUES(?,?,?,?,?,'pronto',?,?,?)", (ident, 'p', MODELO.name, 'Teste', 0, now(), now(), now()))
         status, data, headers = chamar('GET', f'/ofertas/video/{ident}.jpg')
         self.assertEqual(status, 200)
         self.assertEqual(headers['Content-Type'], 'image/jpeg')

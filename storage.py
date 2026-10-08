@@ -1,3 +1,4 @@
+import contextvars
 import json
 import os
 import sqlite3
@@ -8,6 +9,15 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
 DATA = Path(os.environ.get('INDOOR_DATA', ROOT / 'dados')).resolve()
+
+# usuário logado da requisição (None no modo local, sem login): grava e filtra o dono dos registros
+USUARIO = contextvars.ContextVar('usuario', default=None)
+
+def owner(): return (USUARIO.get() or {}).get('id')
+
+# ferramenta da requisição (ofertas, ms6, eap), definida pelo caminho em server.app; eventos do editor usam o tipo da edição
+FERRAMENTA = contextvars.ContextVar('ferramenta', default=None)
+EDITOR = {'image': 'images', 'video': 'video', None: 'images'}
 
 def now(): return datetime.now(timezone.utc).isoformat()
 def uid(): return uuid.uuid4().hex
@@ -48,9 +58,30 @@ def init():
                 db.execute(f'ALTER TABLE media ADD COLUMN {name} {definition}')
         if 'role' not in columns:
             db.execute("ALTER TABLE media ADD COLUMN role TEXT NOT NULL DEFAULT 'media'")
+        for table in ('jobs', 'events'):
+            if 'owner' not in {r[1] for r in db.execute(f'PRAGMA table_info({table})')}:
+                db.execute(f'ALTER TABLE {table} ADD COLUMN owner TEXT')
+        # relatórios: quem fez o quê, em qual ferramenta e quando. "Apagar" no Histórico só esconde (hidden=1); o registro fica
+        if 'module' not in {r[1] for r in db.execute('PRAGMA table_info(events)')}:
+            db.execute('ALTER TABLE events ADD COLUMN module TEXT')
+            db.execute("""UPDATE events SET module=CASE COALESCE((SELECT json_extract(meta,'$.editorKind') FROM jobs WHERE jobs.id=events.job),'image')
+                          WHEN 'video' THEN 'video' ELSE 'images' END WHERE job IS NOT NULL""")
+            db.execute("UPDATE events SET module='offers' WHERE job IS NULL AND json_extract(detail,'$.módulo') IS NOT NULL")
+            db.execute("UPDATE events SET module='ms6' WHERE job IS NULL AND action IN ('Logo para vetorização','DXF exportado','Falha na exportação DXF')")
+            db.execute("UPDATE events SET module='eap' WHERE job IS NULL AND action IN ('Logo EAP recebida','Logo EAP exportada','Falha na exportação da logo EAP')")
+        db.execute('CREATE INDEX IF NOT EXISTS events_owner_time ON events(owner, time)')
 
-def event(db, job, action, detail):
-    db.execute('INSERT INTO events(job,time,action,detail) VALUES(?,?,?,?)', (job, now(), action, json.dumps(detail, ensure_ascii=False)))
+def event(db, job, action, detail, dono=None, module=None):
+    if not module and job:
+        row = db.execute("SELECT json_extract(meta,'$.editorKind') FROM jobs WHERE id=?", (job,)).fetchone()
+        module = EDITOR.get(row[0], 'images') if row else None
+    db.execute('INSERT INTO events(job,time,action,detail,owner,module) VALUES(?,?,?,?,?,?)',
+               (job, now(), action, json.dumps(detail, ensure_ascii=False), dono or owner(), module or FERRAMENTA.get()))
+
+def mine(db, table, ident):
+    """Recusa registro de outro usuário como se não existisse. Sem login (modo local), tudo é de todos."""
+    if owner() and not db.execute(f'SELECT 1 FROM {table} WHERE id=? AND owner=?', (ident, owner())).fetchone():
+        raise ValueError('Não encontrado.')
 
 def get_job(job):
     with connect() as db:

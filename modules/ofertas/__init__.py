@@ -18,7 +18,7 @@ import zipfile
 from datetime import datetime
 from pathlib import Path
 from urllib.parse import parse_qs, quote
-from storage import DATA, ROOT, connect, event, now, uid
+from storage import DATA, ROOT, connect, event, mine, now, owner, uid
 
 BASE = ROOT / 'ofertas'                      # motor, templates de fábrica, kit, contrato (versionados)
 MOTOR = BASE / 'motor'
@@ -115,6 +115,10 @@ def garantir():
             # hash do arquivo enviado: o mesmo encarte importado de novo não duplica a biblioteca
             if 'hash' not in {c['name'] for c in db.execute('PRAGMA table_info(ofertas_imagens)')}:
                 db.execute('ALTER TABLE ofertas_imagens ADD COLUMN hash TEXT')
+            # dono (login no servidor): pedidos, vídeos e encartes são de quem criou; biblioteca e templates são da equipe
+            for tabela in ('ofertas_pedidos', 'ofertas_renders', 'ofertas_encartes'):
+                if 'owner' not in {c['name'] for c in db.execute(f'PRAGMA table_info({tabela})')}:
+                    db.execute(f'ALTER TABLE {tabela} ADD COLUMN owner TEXT')
             # renders que estavam em andamento quando o servidor caiu não vão terminar sozinhos
             db.execute("UPDATE ofertas_renders SET status='interrompido', terminado=? WHERE status='gerando'", (now(),))
             pendentes = [r['id'] for r in db.execute("SELECT id FROM ofertas_encartes WHERE status='lendo'")]
@@ -136,9 +140,10 @@ def marcar_removido(ident, removido):
     f.parent.mkdir(parents=True, exist_ok=True)
     f.write_text('\n'.join(sorted(removidos() - {ident} | ({ident} if removido else set()))), 'utf-8')
 
-def registrar(db, acao, resumo, **detalhe):
-    """Evento no Histórico do toolkit; 'arquivo' é o texto que a lista mostra."""
-    event(db, None, acao, {'módulo': MODULO, 'arquivo': resumo, **detalhe})
+def registrar(db, acao, resumo, dono=None, **detalhe):
+    """Evento no Histórico do toolkit; 'arquivo' é o texto que a lista mostra. `dono`: fora da requisição
+    (fila, leitura de encarte) o usuário vem do registro."""
+    event(db, None, acao, {'módulo': MODULO, 'arquivo': resumo, **detalhe}, dono, 'offers')
 
 # ---------- motor ----------
 
@@ -171,7 +176,7 @@ def preparar(template, dados):
 
 def get_pedido(ident):
     with connect() as db:
-        row = db.execute('SELECT * FROM ofertas_pedidos WHERE id=?', (ident,)).fetchone()
+        row = db.execute('SELECT * FROM ofertas_pedidos WHERE id=? AND (? IS NULL OR owner=?)', (ident, owner(), owner())).fetchone()
         if not row: raise ValueError('Pedido não encontrado.')
         result = dict(row)
         result['dados'] = json.loads(result['dados'])
@@ -240,17 +245,17 @@ def acompanhar(ident, log):
     pasta = PASTA / 'renders' / ident
     with LOCK, connect() as db:
         del RODANDO[ident]
-        atual = db.execute('SELECT status, titulo FROM ofertas_renders WHERE id=?', (ident,)).fetchone()
+        atual = db.execute('SELECT status, titulo, owner FROM ofertas_renders WHERE id=?', (ident,)).fetchone()
         if atual['status'] == 'cancelado': pass
         elif proc.returncode == 0 and (pasta / 'video.mp4').exists():
             db.execute("UPDATE ofertas_renders SET status='pronto', terminado=? WHERE id=?", (now(), ident))
-            registrar(db, 'Vídeo gerado', atual['titulo'], render=ident)
+            registrar(db, 'Vídeo gerado', atual['titulo'], atual['owner'], render=ident)
         else:
             texto = (pasta / 'log.txt').read_text('utf-8', 'replace')
             linhas = [l.strip() for l in texto.splitlines() if l.strip().startswith(('✗', '-', 'Error'))]
             erro = '\n'.join(linhas[-6:]) or texto[-600:]
             db.execute("UPDATE ofertas_renders SET status='falhou', terminado=?, erro=? WHERE id=?", (now(), erro, ident))
-            registrar(db, 'Falha ao gerar vídeo', atual['titulo'], render=ident, motivo=erro)
+            registrar(db, 'Falha ao gerar vídeo', atual['titulo'], atual['owner'], render=ident, motivo=erro)
     FILA.set()
     try: miniatura_video(ident)  # pronta antes de alguém abrir o card
     except (FileNotFoundError, OSError, subprocess.SubprocessError): pass
@@ -290,13 +295,13 @@ def ler_encarte(ident):
     pode fechar a janela; o resultado fica na aba Encartes e no modal do editor."""
     from modules.ofertas.encarte import extrair
     with LEITURA:
-        with connect() as db: nome = db.execute('SELECT nome FROM ofertas_encartes WHERE id=?', (ident,)).fetchone()['nome']
+        with connect() as db: nome, dono = db.execute('SELECT nome, owner FROM ofertas_encartes WHERE id=?', (ident,)).fetchone()
         try:
             itens = extrair((PASTA / 'encartes' / f'{ident}.pdf').read_bytes())
             result = [item | {'imagem': salvar_imagem(item.pop('png'), item['nome'], f'encarte: {nome}')['id']} for item in itens]
             with connect() as db:
                 db.execute("UPDATE ofertas_encartes SET status='pronto', terminado=?, itens=? WHERE id=?", (now(), json.dumps(result, ensure_ascii=False), ident))
-                registrar(db, 'Encarte importado', nome, produtos=len(result))
+                registrar(db, 'Encarte importado', nome, dono, produtos=len(result))
         except Exception as exc:
             with connect() as db:
                 db.execute("UPDATE ofertas_encartes SET status='falhou', terminado=?, erro=? WHERE id=?", (now(), f'Não foi possível ler {nome}: {exc}', ident))
@@ -414,8 +419,8 @@ def enfileirar(pedido):
     pasta.mkdir(parents=True)
     (pasta / 'dados.json').write_text(json.dumps(resolver_imagens(pedido['dados']), ensure_ascii=False), 'utf-8')
     with connect() as db:
-        db.execute("INSERT INTO ofertas_renders VALUES(?,?,?,?,?,'na_fila',?,NULL,NULL,NULL)",
-                   (ident, pedido['id'], pedido['template'], pedido['titulo'], pedido['revision'], now()))
+        db.execute("INSERT INTO ofertas_renders(id,pedido,template,titulo,revision,status,criado,owner) VALUES(?,?,?,?,?,'na_fila',?,?)",
+                   (ident, pedido['id'], pedido['template'], pedido['titulo'], pedido['revision'], now(), owner()))
     FILA.set()
     return ident
 
@@ -468,8 +473,8 @@ def gerar_todos(value):
         titulo = f'{base} ({g + 1})' if total > 1 else base
         pedido = {'id': uid(), 'template': schema['id'], 'titulo': titulo, 'dados': dados, 'revision': 1}
         with connect() as db:
-            db.execute('INSERT INTO ofertas_pedidos VALUES(?,?,?,?,?,?,?)', (pedido['id'], pedido['template'], pedido['titulo'],
-                       json.dumps(dados, ensure_ascii=False), 1, now(), now()))
+            db.execute('INSERT INTO ofertas_pedidos VALUES(?,?,?,?,?,?,?,?)', (pedido['id'], pedido['template'], pedido['titulo'],
+                       json.dumps(dados, ensure_ascii=False), 1, now(), now(), owner()))
         erros = preparar(schema['id'], dados)['erros']
         videos.append({'pedido': pedido['id'], 'titulo': pedido['titulo'], 'render': None if erros else enfileirar(pedido), 'erros': erros[:3]})
     with connect() as db: registrar(db, 'Vídeos do encarte enviados para a fila', row['nome'], videos=total)
@@ -584,6 +589,13 @@ def api(method, path, query, raw):
     value = json.loads(raw) if raw and path not in ('/imagem', '/encarte', '/templates-publicar') else {}
     q = lambda k: query.get(k, [''])[0]
     if path == '/status': return status()
+    # o id de pedido, vídeo ou encarte só vale para o dono (login no servidor)
+    tabela = {'/pedido': 'ofertas_pedidos', '/pedido-salvar': 'ofertas_pedidos', '/pedido-excluir': 'ofertas_pedidos', '/gerar': 'ofertas_pedidos',
+              '/render-cancelar': 'ofertas_renders', '/encarte-paginas': 'ofertas_encartes', '/encarte-item-salvar': 'ofertas_encartes',
+              '/encarte-item-excluir': 'ofertas_encartes', '/encarte-recortar': 'ofertas_encartes', '/encarte-excluir': 'ofertas_encartes',
+              '/encarte-gerar-todos': 'ofertas_encartes'}.get(path)
+    if tabela:
+        with connect() as db: mine(db, tabela, q('id') or str(value.get('encarte' if path == '/encarte-gerar-todos' else 'id', '')))
     if not status()['pronto'] and path not in ('/imagens',): raise ValueError(status()['motivo'])
     if path == '/templates': return motor('catalogo', TEMPLATES)
     if path == '/esquema': return esquema(q('template'))
@@ -591,7 +603,7 @@ def api(method, path, query, raw):
         with connect() as db:
             return [dict(r) for r in db.execute('''SELECT p.id, p.titulo, p.template, p.atualizado,
                 (SELECT status FROM ofertas_renders WHERE pedido=p.id ORDER BY criado DESC LIMIT 1) AS ultimo
-                FROM ofertas_pedidos p ORDER BY p.atualizado DESC LIMIT 100''')]
+                FROM ofertas_pedidos p WHERE ? IS NULL OR p.owner=? ORDER BY p.atualizado DESC LIMIT 100''', (owner(), owner()))]
     if path == '/pedido' and method == 'GET':
         pedido = get_pedido(q('id'))
         pedido['validacao'] = preparar(pedido['template'], pedido['dados'])['detalhes']
@@ -612,13 +624,13 @@ def api(method, path, query, raw):
             return {'itens': itens, 'total': total, 'pagina': pagina, 'paginas': paginas}
     if path == '/encartes':
         with connect() as db:
-            rows = [dict(r) for r in db.execute('SELECT * FROM ofertas_encartes ORDER BY criado DESC LIMIT 50')]
+            rows = [dict(r) for r in db.execute('SELECT * FROM ofertas_encartes WHERE ? IS NULL OR owner=? ORDER BY criado DESC LIMIT 50', (owner(), owner()))]
         for r in rows: r['itens'] = json.loads(r['itens'] or '[]')
         return rows
     if path == '/encarte-paginas': return paginas_encarte(q('id'))
     if path == '/renders':
         with connect() as db:
-            rows = [dict(r) for r in db.execute('SELECT * FROM ofertas_renders ORDER BY criado DESC LIMIT 60')]
+            rows = [dict(r) for r in db.execute('SELECT * FROM ofertas_renders WHERE ? IS NULL OR owner=? ORDER BY criado DESC LIMIT 60', (owner(), owner()))]
         for r in rows: r['capaEm'] = capa_em(r['template'])  # o player do vídeo pronto abre no momento da capa
         return {'renders': rows, 'mediaSegundos': duracao_media()}
     if method != 'POST': raise ValueError('Operação não encontrada.')
@@ -635,14 +647,14 @@ def api(method, path, query, raw):
         with LOCK, connect() as db:
             # rascunho nunca salvo (revision 0) e nunca gerado = só os valores padrão: reabre em vez de empilhar cópias
             intocados = [r['id'] for r in db.execute('''SELECT id FROM ofertas_pedidos p WHERE template=? AND revision=0
-                AND NOT EXISTS (SELECT 1 FROM ofertas_renders WHERE pedido=p.id) ORDER BY criado DESC''', (schema['id'],))]
+                AND NOT EXISTS (SELECT 1 FROM ofertas_renders WHERE pedido=p.id) AND (? IS NULL OR owner=?) ORDER BY criado DESC''', (schema['id'], owner(), owner()))]
             if intocados:
                 ident = intocados[0]
                 db.execute('UPDATE ofertas_pedidos SET titulo=?, dados=?, atualizado=? WHERE id=?', (titulo, padrao, now(), ident))
                 db.executemany('DELETE FROM ofertas_pedidos WHERE id=?', [(i,) for i in intocados[1:]])
             else:
                 ident = uid()
-                db.execute('INSERT INTO ofertas_pedidos VALUES(?,?,?,?,?,?,?)', (ident, schema['id'], titulo, padrao, 0, now(), now()))
+                db.execute('INSERT INTO ofertas_pedidos VALUES(?,?,?,?,?,?,?,?)', (ident, schema['id'], titulo, padrao, 0, now(), now(), owner()))
         return api('GET', '/pedido', {'id': [ident]}, b'')
     if path == '/pedido-salvar':
         ident = value['id']
@@ -686,11 +698,11 @@ def api(method, path, query, raw):
             except ValueError: raise
             except Exception: raise ValueError(f'{nome} não é um PDF, PNG ou JPG.') from None
             with connect() as db:
-                db.execute("INSERT INTO ofertas_encartes(id,nome,status,criado,terminado) VALUES(?,?,'pronto',?,?)", (ident, nome, now(), now()))
+                db.execute("INSERT INTO ofertas_encartes(id,nome,status,criado,terminado,owner) VALUES(?,?,'pronto',?,?,?)", (ident, nome, now(), now(), owner()))
                 registrar(db, 'Encarte importado', nome, produtos=0)
             return {'id': ident, 'nome': nome, 'status': 'pronto'}
         (PASTA / 'encartes' / f'{ident}.pdf').write_bytes(raw)
-        with connect() as db: db.execute("INSERT INTO ofertas_encartes(id,nome,status,criado) VALUES(?,?,'lendo',?)", (ident, nome, now()))
+        with connect() as db: db.execute("INSERT INTO ofertas_encartes(id,nome,status,criado,owner) VALUES(?,?,'lendo',?,?)", (ident, nome, now(), owner()))
         threading.Thread(target=ler_encarte, args=(ident,), daemon=True).start()
         return {'id': ident, 'nome': nome, 'status': 'lendo'}
     if path == '/imagem-excluir': return apagar_imagem(str(value.get('id', '')))

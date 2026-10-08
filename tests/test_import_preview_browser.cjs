@@ -8,7 +8,7 @@ async function cancelledBatch(file,extension,mimeType){
  let requests=0,unblock,heldResolve;const held=new Promise(resolve=>heldResolve=resolve),release=new Promise(resolve=>unblock=resolve);
  await page.route('**/api/upload?**',async route=>{requests++;if(requests===2){heldResolve();await release;}try{await route.continue();}catch{};});
  const data=fs.readFileSync(file);await page.locator('#files').setInputFiles([1,2,3].map(n=>({name:'Batch-'+n+extension,mimeType,buffer:data})));
- await held;const cancelled=page.waitForResponse(r=>r.url().includes('/api/import-cancel'));await page.locator('#import-cancel').click();await cancelled;unblock();await page.waitForFunction(()=>!busy&&!document.querySelector('#media-import-dialog').open);
+ await held;await Promise.all([page.waitForResponse(r=>r.url().includes('/api/import-cancel')),page.locator('#import-cancel').click()]);unblock();await page.waitForFunction(()=>!busy&&!document.querySelector('#media-import-dialog').open);
  assert.equal(requests,2);assert.equal(await page.evaluate(()=>job.media.length),1);assert.equal(await page.locator('#unsupported').isVisible(),false);await page.unroute('**/api/upload?**');
 }
 await cancelledBatch(video,'.mp4','video/mp4');
@@ -28,7 +28,7 @@ await page.evaluate(async()=>await save());await page.reload({waitUntil:'network
 await page.locator('#editing-tab-add').click();await page.waitForFunction(()=>!busy&&job&&job.media.length===0);
 let releaseSingle,arrivedSingle;const singleHeld=new Promise(resolve=>arrivedSingle=resolve),singleRelease=new Promise(resolve=>releaseSingle=resolve);
 await page.route('**/api/upload?**',async route=>{arrivedSingle();await singleRelease;try{await route.continue();}catch{}});
-await page.locator('#files').setInputFiles(video);await singleHeld;const singleCancel=page.waitForResponse(r=>r.url().includes('/api/import-cancel'));await page.locator('#import-cancel').click();await singleCancel;releaseSingle();await page.waitForFunction(()=>!busy&&!document.querySelector('#media-import-dialog').open);assert.equal(await page.evaluate(()=>job.media.length),0);await page.unroute('**/api/upload?**');
+await page.locator('#files').setInputFiles(video);await singleHeld;await Promise.all([page.waitForResponse(r=>r.url().includes('/api/import-cancel')),page.locator('#import-cancel').click()]);releaseSingle();await page.waitForFunction(()=>!busy&&!document.querySelector('#media-import-dialog').open);assert.equal(await page.evaluate(()=>job.media.length),0);await page.unroute('**/api/upload?**');
 await page.getByRole('button',{name:'Imagens',exact:true}).click();await page.waitForFunction(()=>!busy&&editorKind==='image');await cancelledBatch(image,'.png','image/png');assert.deepEqual(errors,[]);
 console.log(JSON.stringify({cancelSingleAndBatchBothEditors:true,completedMediaKept:true,timeLeftOfTimelineTabs:true,twoDecimals:true,nativeKeyboardSeek:true,trimInOut:true,speedAndClipOffset:true,undo:true,lockedClip:true,persistence:true,errors}));
 }finally{await browser.close();}})().catch(e=>{console.error(e);process.exitCode=1});
