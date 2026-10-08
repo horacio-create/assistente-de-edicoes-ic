@@ -32,8 +32,25 @@ jobs:
           node-version: '22'
           cache: npm
           cache-dependency-path: ofertas/motor/package-lock.json
-      - name: FFmpeg (sem ele os testes de vídeo são pulados)
-        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends ffmpeg
+      # FFmpeg estático fixo, guardado em cache entre execuções. Pelo apt levava ~10 min (apt-get update + dezenas de
+      # dependências). Sem FFmpeg os testes de vídeo são pulados. O hash garante que o arquivo é o mesmo conferido.
+      - name: FFmpeg em cache
+        id: ffmpeg
+        uses: actions/cache@v4
+        with:
+          path: ~/ffmpeg
+          key: ffmpeg-6.0.1-amd64-static
+      - name: Baixar FFmpeg 6.0.1 estático (só sem cache)
+        if: steps.ffmpeg.outputs.cache-hit != 'true'
+        run: |
+          mkdir -p ~/ffmpeg && cd ~/ffmpeg
+          curl -fsSL --retry 3 -o ff.tar.xz https://johnvansickle.com/ffmpeg/old-releases/ffmpeg-6.0.1-amd64-static.tar.xz
+          echo "28268bf402f1083833ea269331587f60a242848880073be8016501d864bd07a5  ff.tar.xz" | sha256sum -c -
+          tar -xJf ff.tar.xz --strip-components=1 --wildcards '*/ffmpeg' '*/ffprobe' && rm ff.tar.xz
+      - name: FFmpeg no PATH
+        run: |
+          echo "$HOME/ffmpeg" >> "$GITHUB_PATH"
+          "$HOME/ffmpeg/ffmpeg" -hide_banner -version | head -1
       - name: Dependências Python
         run: pip install -r requirements.txt
       - name: Motor de Ofertas (sem ele os testes de Ofertas são pulados)
