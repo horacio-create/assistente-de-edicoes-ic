@@ -223,3 +223,22 @@ body:not(.sidebar-collapsed) .sidebar .nav[data-view=ofertas].active,.sidebar-co
 #of-trocar-dialog .image-grid{max-height:52vh;overflow-y:auto}
 #of-trocar-dialog .image-grid .card{position:relative}
 #of-trocar-dialog .image-grid .card:hover{border-color:var(--green)}
+
+/* Hallmark · shared axes and compact action rhythm; existing Ofertas design. */
+#ofertas .abas{align-items:center;gap:var(--ui-gap)}
+#ofertas .aba{min-height:var(--ui-control);line-height:1.3;gap:var(--ui-gap)}
+#ofertas .aba .line-icon{display:block;flex:none}
+#ofertas .contador{display:inline-flex;align-items:center;justify-content:center;min-height:20px;margin:0;line-height:1}
+#ofertas .dupla{grid-template-columns:repeat(2,minmax(0,1fr));align-items:start;gap:var(--ui-gap-wide)}
+#ofertas .campo{min-width:0}
+#ofertas .campo>label{line-height:1.4}
+#ofertas .preco>span{margin-top:0;line-height:1}
+#ofertas .grupo>header{margin-inline:0;gap:var(--ui-gap)}
+#ofertas .item-titulo{gap:var(--ui-gap);align-items:center}
+#ofertas .gerar-video{align-items:center;gap:var(--ui-gap-wide)}
+#ofertas .gerar-video .primary{display:inline-flex;align-items:center;justify-content:center;gap:var(--ui-gap);min-height:44px;white-space:nowrap}
+#ofertas .gerar-video .primary span{margin-left:0}
+#ofertas .template-grid{grid-template-columns:repeat(auto-fill,minmax(min(100%,300px),1fr))}
+#ofertas .barra-lista{align-items:center;flex-wrap:wrap;gap:var(--ui-gap-wide)}
+#of-conferir-dialog .dupla{grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--ui-gap-wide)}
+#of-conferir-dialog .preco>span{margin-top:0;line-height:1}
