@@ -480,6 +480,27 @@ main>header>div{flex:1;min-width:0}
 .video-workspace main>header>.save-status{position:static;order:2;flex:none;margin:0;max-width:150px;font-size:10px}
 main>header>#new-job{order:3}
 
+/* Preview ruler and clip in/out marks; current time belongs beside timeline tabs. */
+.video-workspace .composition-position{grid-template-columns:30px minmax(0,1fr) auto}
+.video-workspace .composition-position .preview-ruler{grid-row:1;grid-column:2;position:relative;height:26px;min-width:0}
+.preview-ruler canvas{display:block;width:100%;height:24px;pointer-events:none}
+.video-workspace .composition-position #montage-scrub{position:absolute;inset:0;width:100%;height:26px;margin:0;appearance:none;-webkit-appearance:none;background:transparent;border:0;border-radius:0;cursor:crosshair;opacity:1}
+#montage-scrub::-webkit-slider-runnable-track{height:26px;background:transparent;border:0}
+#montage-scrub::-webkit-slider-thumb{appearance:none;-webkit-appearance:none;width:1px;height:26px;background:transparent;border:0;box-shadow:none}
+#montage-scrub::-moz-range-track{height:26px;background:transparent;border:0}
+#montage-scrub::-moz-range-thumb{width:1px;height:26px;background:transparent;border:0;border-radius:0}
+.preview-ruler-cursor{position:absolute;top:1px;bottom:2px;width:1px;background:#4d9561;pointer-events:none}
+.preview-ruler-cursor::before{content:"";position:absolute;left:-4px;top:0;width:9px;height:8px;background:#4d9561;clip-path:polygon(0 0,100% 0,100% 55%,50% 100%,0 55%)}
+.preview-cut-marks{grid-row:1;grid-column:3;display:flex;gap:3px}
+.video-workspace .preview-cut-marks button{width:25px;height:28px;padding:0;font-size:20px;line-height:25px;font-weight:500}
+.video-workspace #montage-position{display:flex;align-items:center;gap:2px;flex:none;font-size:11px;color:#4d9561;font-variant-numeric:tabular-nums}
+.video-workspace #montage-current-time{width:61px;min-height:0;height:28px;margin:0;padding:3px 1px;border:0;border-radius:0;background:transparent;font-size:11px;font-weight:700;color:#4d9561;text-align:right;box-shadow:none}
+.video-workspace #montage-current-time:focus-visible{outline:2px solid var(--purple);outline-offset:1px}
+.video-workspace #playhead-time{display:none}
+.video-workspace .composition-position.narrow-preview{grid-template-columns:30px minmax(0,1fr) auto;justify-content:normal}
+.video-workspace .composition-position.narrow-preview .preview-ruler #montage-scrub{display:block}
+#media-import-dialog #import-cancel{margin-top:8px;min-width:110px}
+
 /* Barra lateral em grupos (Ferramentas · Geral · Em breve) e a bolinha do usuário acima da versão.
    A barra fica sempre recolhida e abre ao passar o mouse ou com foco de teclado. */
 .sidebar nav,.sidebar-collapsed .sidebar nav{margin-top:96px}
