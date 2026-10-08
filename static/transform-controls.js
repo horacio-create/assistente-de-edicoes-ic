@@ -8,7 +8,7 @@ const transformBox=document.createElement('div');transformBox.id='media-transfor
 for(const [handle,label] of [['nw','canto superior esquerdo'],['n','borda superior'],['ne','canto superior direito'],['e','borda direita'],['se','canto inferior direito'],['s','borda inferior'],['sw','canto inferior esquerdo'],['w','borda esquerda'],['rotate','rotação']]){
  const button=document.createElement('button');button.type='button';button.className='media-transform-handle '+handle;button.dataset.transformHandle=handle;button.setAttribute('aria-label',handle==='rotate'?'Girar mídia selecionada':'Redimensionar '+label);button.dataset.help=handle==='rotate'?'Arraste para girar. Shift encaixa em passos de 15°. As setas ajustam 1° por vez.':'Arraste para ajustar a escala mantendo a proporção. As setas também ajustam a escala.';
  if(handle==='rotate')button.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 10a8 8 0 1 0-2 8M20 4v6h-6"/></svg>';
- button.onkeydown=e=>{if(!['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(e.key))return;e.preventDefault();e.stopPropagation();const m=transformMedia();if(!m||transformLocked())return;const sign=['ArrowLeft','ArrowDown'].includes(e.key)?-1:1;if(handle==='rotate')change({rotation:(m.settings.rotation+sign*(e.shiftKey?15:1)+360)%360});else if(!m.settings.lockSize)change({zoom:Math.max(.1,Math.min(5,m.settings.zoom+sign*.01))});};transformBox.append(button);
+ button.onkeydown=e=>{if(!['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(e.key))return;e.preventDefault();e.stopPropagation();const m=transformMedia();if(!m||transformLocked())return;const sign=['ArrowLeft','ArrowDown'].includes(e.key)?-1:1;if(handle==='rotate')change({rotation:(m.settings.rotation+sign*(e.shiftKey?15:1)+360)%360});else if(!m.settings.lockSize){const key=editorKind==='video'&&m.settings.proportionLocked===false?(handle==='n'||handle==='s'?'scaleY':'scaleX'):'zoom';change({[key]:Math.max(.1,Math.min(5,(m.settings[key]??1)+sign*.01))});}};transformBox.append(button);
 }
 transformOverlay.append(transformBox);transformShell.append(transformOverlay);
 const transformToggle=document.createElement('button');transformToggle.id='toggle-transform-controls';transformToggle.type='button';transformToggle.className='transform-visibility-toggle';transformToggle.setAttribute('aria-label','Mostrar ou ocultar controles de transformação');transformToggle.dataset.help='Mostrar ou ocultar a caixa e as alças de posição, escala e rotação da mídia selecionada.';transformToggle.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="5" width="14" height="14"/><path d="M3 3h4v4H3zM17 3h4v4h-4zM3 17h4v4H3zM17 17h4v4h-4z"/></svg>';transformShell.append(transformToggle);
@@ -28,7 +28,7 @@ function syncTransformBox(){
  const s=m.settings,g=mediaGeometry(m),stage=$('stage').getBoundingClientRect(),shell=transformShell.getBoundingClientRect(),scale=stage.width/s.width;
  Object.assign(transformBox.style,{left:(stage.left-shell.left+(g.x+g.rw/2)*scale)+'px',top:(stage.top-shell.top+(g.y+g.rh/2)*scale)+'px',width:g.drawW*scale+'px',height:g.drawH*scale+'px',transform:`translate(-50%,-50%) rotate(${s.rotation}deg)`,pointerEvents:editorKind!=='video'&&s.logoId?'none':'auto'});
  transformBox.setAttribute('aria-label','Transformar '+m.name);transformBox.classList.toggle('locked',!!transformLocked());
- for(const button of transformBox.children)button.disabled=!!transformLocked()||(button.dataset.transformHandle!=='rotate'&&!!s.lockSize);
+ for(const button of transformBox.children){if(button.dataset.transformHandle!=='rotate')button.dataset.help=s.proportionLocked===false?'Arraste para esticar a mídia. A corrente liga largura e altura.':'Arraste para ajustar a escala mantendo a proporção.';button.disabled=!!transformLocked()||(button.dataset.transformHandle!=='rotate'&&!!s.lockSize);}
 }
 // Pick the visible layer under the pointer, including transparent logo pixels.
 const transformHitCanvas=document.createElement('canvas');transformHitCanvas.width=transformHitCanvas.height=1;
@@ -57,7 +57,7 @@ function pointerOnSelectedMedia(e){const m=transformMedia();if(!m)return false;c
 window.addEventListener('keydown',e=>{
  if(e.key!=='Home'||e.ctrlKey||e.metaKey||e.altKey||e.shiftKey||e.isComposing||busy||$('studio').hidden||document.querySelector('dialog[open]')||e.target.closest?.('input,select,textarea,[contenteditable]:not([contenteditable="false"]),[role="separator"]'))return;
  const m=transformMedia();if(!m||m.kind==='audio'||transformLocked())return;e.preventDefault();e.stopImmediatePropagation();if(editorKind==='video')stopComposition();
- const source=editorKind==='video'?projectMedia():m;change({x:0,y:0,rotation:0,zoom:m.role==='logo'?(source.settings.zoom??.12):1,flipH:false,flipV:false,lockSize:false});toast('Posição, rotação e escala restauradas.');
+ const source=editorKind==='video'?projectMedia():m;change({x:0,y:0,rotation:0,zoom:m.role==='logo'?(source.settings.zoom??.12):1,flipH:false,flipV:false,scaleX:1,scaleY:1,proportionLocked:true,lockSize:false});toast('Posição, rotação e escala restauradas.');
 },true);
 window.addEventListener('pointermove',e=>{
  const d=transformDrag;if(!d||e.pointerId!==d.pointer)return;
@@ -70,8 +70,11 @@ window.addEventListener('pointermove',e=>{
  }else{
   const hx=d.handle.includes('e')?1:d.handle.includes('w')?-1:0,hy=d.handle.includes('s')?1:d.handle.includes('n')?-1:0,a=s.rotation*Math.PI/180,k=d.stage.width/s.width,lx=(dx*Math.cos(a)+dy*Math.sin(a))/k,ly=(-dx*Math.sin(a)+dy*Math.cos(a))/k,vx=hx*d.g.drawW,vy=hy*d.g.drawH;
   const ratio=Math.max(.1/s.zoom,Math.min(5/s.zoom,1+(lx*vx+ly*vy)/(vx*vx+vy*vy)));
-  const shiftX=hx*d.g.drawW*(ratio-1)/2,shiftY=hy*d.g.drawH*(ratio-1)/2;
-  patch={zoom:s.zoom*ratio,x:s.lockX?0:Math.max(-1,Math.min(1,s.x+(shiftX*Math.cos(a)-shiftY*Math.sin(a))/s.width)),y:s.lockY?0:Math.max(-1,Math.min(1,s.y+(shiftX*Math.sin(a)+shiftY*Math.cos(a))/s.height))};
+  let rx=ratio,ry=ratio;
+  if(editorKind==='video'&&s.proportionLocked===false){rx=hx?Math.max(.1/(s.scaleX??1),Math.min(5/(s.scaleX??1),1+hx*lx/d.g.drawW)):1;ry=hy?Math.max(.1/(s.scaleY??1),Math.min(5/(s.scaleY??1),1+hy*ly/d.g.drawH)):1;}
+  const shiftX=hx*d.g.drawW*(rx-1)/2,shiftY=hy*d.g.drawH*(ry-1)/2;
+  patch={...(editorKind==='video'&&s.proportionLocked===false?{scaleX:(s.scaleX??1)*rx,scaleY:(s.scaleY??1)*ry}:{zoom:s.zoom*ratio}),x:s.lockX?0:Math.max(-1,Math.min(1,s.x+(shiftX*Math.cos(a)-shiftY*Math.sin(a))/s.width)),y:s.lockY?0:Math.max(-1,Math.min(1,s.y+(shiftX*Math.sin(a)+shiftY*Math.cos(a))/s.height))};
+  const next=mediaGeometry({...m,settings:{...s,...patch}});if(((s.scaleX??1)!==1||(s.scaleY??1)!==1||s.proportionLocked===false)&&(next.drawW*next.drawH>20000000||next.rw*next.rh>20000000))return;
  }change(patch);
 });
 function finishTransformDrag(){const d=transformDrag;if(!d)return;transformDrag=null;transformBox.classList.remove('dragging');if(d.capture.hasPointerCapture(d.pointer))d.capture.releasePointerCapture(d.pointer);undoGesture=null;syncTransformBox();}

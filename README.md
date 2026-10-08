@@ -38,21 +38,30 @@ Remover áudio continua controlando toda a montagem. A duração inicial da mús
 o fim do vídeo, quando houver, e o original completo continua disponível na biblioteca.
 Para exportar é necessário ter vídeo ou imagem cobrindo toda a montagem.
 
+- Até cinco guias de edição por seção, com + para abrir e × para fechar.
+  Fechar salva a edição e a mantém em Edições recentes. O aviso do limite permite voltar
+  às guias ou iniciar outro conjunto de edições. Guias reaparecem ao recarregar a página
+  na mesma aba do navegador; desfazer/refazer permanece separado enquanto a sessão está aberta.
+  Só a guia ativa mantém os reprodutores de prévia.
 - Editor compacto dentro da janela: formatos, biblioteca, prévia, timeline e exportação sempre visíveis.
 - Reprodução compacta com a largura da prévia; timeline logo abaixo, sem rolar a página.
 - Arraste as divisórias para alterar a largura de Mídias/Edição e a altura da timeline.
   Dois cliques restauram o tamanho; as setas do teclado também ajustam a divisória selecionada.
-- Campos de corte e duração no painel Ajustes; sua rolagem alcança a base da timeline.
+- Duplo clique no bloco da timeline abre Ajustar trecho; o relógio abre velocidade e duração.
 - Explicações por dicas após três segundos com o mouse parado. Textos das caixas de seleção permanecem visíveis.
 - Mesmos ajustes de enquadramento, cor, tamanho, rotação, espelhamento e logo das imagens.
-- A mídia visível selecionada tem caixa e alças para posição, escala proporcional e rotação livre.
+- A mídia visível selecionada tem caixa e alças para posição, escala e rotação livre.
+  A corrente liga ou libera largura e altura; destravada, permite esticar o objeto.
+  O esticamento fica salvo e vale também na exportação. Rotação aceita ângulos negativos
+  (sentido anti-horário) e normaliza voltas completas. Espelhamentos ficam ao lado da rotação.
+  As medidas da tela exportada ficam em Personalizado, sem campos duplicados no topo.
   O arraste começa apenas sobre o objeto ou suas alças. O botão na prévia mostra/oculta os controles.
   Home restaura posição, rotação e escala sem alterar cortes ou duração; Shift encaixa o giro em 15°.
   As alças respeitam cadeados e os bloqueios de tamanho/posição e não aparecem na exportação.
   Logos mostram Escala nas propriedades e recuperam sua escala inicial com Home.
 - Biblioteca de vídeos, imagens, áudios e páginas de PDF, com ícones que identificam o tipo.
 - Arraste arquivos do computador para a biblioteca ou área do editor durante a edição.
-- Mídias e Edição em abas separadas; biblioteca compartilhada e até vinte timelines
+- Mídias e Edição em abas separadas; biblioteca compartilhada e até dez timelines
   com cortes e ajustes independentes. Crie pelo +, renomeie com duplo clique e exclua em Edição.
 - Ctrl+C copia o corte selecionado e Ctrl+V cola nesta ou em outra timeline da edição.
 - Ícones de corte/remoção na lateral da timeline, em verde, com dicas após três segundos.

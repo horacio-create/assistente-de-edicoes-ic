@@ -16,7 +16,7 @@ class TransformTests(unittest.TestCase):
                     self.assertEqual(rotated_size(*size, angle), expected)
 
     def test_rotation_normalizes_and_rejects_nonfinite(self):
-        self.assertEqual(settings({'rotation': -22.5})['rotation'], 337.5)
+        self.assertEqual(settings({'rotation': -22.5})['rotation'], -22.5)
         self.assertEqual(settings({'rotation': 382.5})['rotation'], 22.5)
         for angle in [float('inf'), float('-inf'), float('nan')]:
             with self.assertRaises(ValueError): settings({'rotation': angle})

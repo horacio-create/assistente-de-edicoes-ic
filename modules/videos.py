@@ -10,7 +10,7 @@ import threading
 from pathlib import Path
 from functools import lru_cache
 from PIL import Image
-from modules.images import DEFAULT, settings as image_settings, render as render_image, rotated_size
+from modules.images import DEFAULT, settings as image_settings, render as render_image, rotated_size, geometry
 
 ROOT = Path(__file__).resolve().parents[1]
 SUPPORTED = {'.mp4', '.mov', '.m4v', '.mkv', '.avi', '.webm', '.wmv', '.mpeg', '.mpg'}
@@ -212,17 +212,20 @@ def filters(info, s, logo=None, include_audio=True):
     chain = ['setsar=1']
     if s['flipH']: chain.append('hflip')
     if s['flipV']: chain.append('vflip')
-    rotation = s['rotation']
+    rotation = s['rotation'] % 360
+    g = geometry(info['width'], info['height'], s)
+    stretched = s.get('scaleX', 1) != 1 or s.get('scaleY', 1) != 1
+    if stretched:
+        chain.append(f"scale={g['drawW']}:{g['drawH']}:flags=lanczos")
     if rotation == 90: chain.append('transpose=clock')
     elif rotation == 180: chain.extend(['hflip', 'vflip'])
     elif rotation == 270: chain.append('transpose=cclock')
-    iw, ih = rotated_size(info['width'], info['height'], rotation)
+    iw, ih = (g['rw'],g['rh']) if stretched else rotated_size(info['width'], info['height'], rotation)
     if rotation % 90:
         chain.extend(['format=rgba', f'rotate={math.radians(rotation)}:ow={iw}:oh={ih}:c=none'])
     w, h = s['width'], s['height']
-    factor = 1 if s['lockSize'] else (max if s['mode'] == 'cover' else min)(w / iw, h / ih) * s['zoom']
-    rw, rh = max(1, round(iw * factor)), max(1, round(ih * factor))
-    x, y = round((w - rw) / 2 + s['x'] * w), round((h - rh) / 2 + s['y'] * h)
+    factor = 1 if stretched else g['factor']
+    rw, rh, x, y = (g[k] for k in ('rw','rh','x','y'))
     # Crop in source coordinates first at extreme zooms to bound intermediate memory.
     crop_x, crop_y = max(0, -x), max(0, -y)
     cw, ch = min(rw - crop_x, w - max(0, x)), min(rh - crop_y, h - max(0, y))
