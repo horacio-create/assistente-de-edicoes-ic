@@ -1,0 +1,100 @@
+# CI: testes Python, testes JS, contrato do motor de Ofertas e build da imagem, em todo PR e push.
+# CD: push na main com tudo verde → deploy na VM (deploy/deploy-vm.sh), com backup, checagem de saúde e volta
+# automática. Configuração única (chave, secrets, VM): README, seção "Deploy automático".
+name: CI/CD
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:  # um PR novo cancela a CI antiga do mesmo PR; na main, nada é cancelado
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  testes:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'  # a mesma do deploy/Dockerfile
+          cache: pip
+          cache-dependency-path: requirements.txt
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: ofertas/motor/package-lock.json
+      - name: FFmpeg (sem ele os testes de vídeo são pulados)
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends ffmpeg
+      - name: Dependências Python
+        run: pip install -r requirements.txt
+      - name: Motor de Ofertas (sem ele os testes de Ofertas são pulados)
+        working-directory: ofertas/motor
+        run: |
+          npm ci --no-audit --no-fund
+          node node_modules/hyperframes/bin/hyperframes.mjs browser ensure
+      - name: Contrato dos templates de Ofertas
+        working-directory: ofertas/motor
+        run: npm test
+      - name: Testes JavaScript
+        run: node tests/test_undo.cjs
+      - name: Testes Python
+        run: python -m unittest discover -s tests
+
+  imagem:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - name: Build da imagem do servidor (não publica; o deploy constrói na VM)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: deploy/Dockerfile
+          push: false
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  deploy:
+    needs: [testes, imagem]
+    # pulado (não falha) até a configuração única do README existir: variável DEPLOY_HOST e secrets
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.DEPLOY_HOST != ''
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment:
+      name: production
+      url: https://assistente-edicao.indoorchannel.com.br
+    concurrency:  # dois pushes seguidos: o segundo espera o primeiro terminar
+      group: deploy-production
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+      - name: Chave SSH do deploy
+        env:
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$DEPLOY_SSH_KEY" > ~/.ssh/deploy && chmod 600 ~/.ssh/deploy
+          printf '%s\n' "$DEPLOY_KNOWN_HOSTS" > ~/.ssh/known_hosts  # host fixo: sem ssh-keyscan às cegas
+      - name: Enviar o código e publicar
+        env:
+          DEPLOY_HOST: ${{ vars.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ vars.DEPLOY_USER }}
+        # o script na VM recebe o código pelo stdin; a chave só tem permissão de rodar ele (command= no authorized_keys)
+        run: |
+          git archive --format=tar.gz HEAD |
+            ssh -i ~/.ssh/deploy -o BatchMode=yes -o StrictHostKeyChecking=yes -o ConnectTimeout=20 \
+              "$DEPLOY_USER@$DEPLOY_HOST" deploy "$GITHUB_SHA"
+      - name: Conferir pelo endereço público
+        run: |
+          curl -fsS --retry 5 --retry-delay 5 https://assistente-edicao.indoorchannel.com.br/api/info | tee /dev/stderr | grep -q '"auth": true'
