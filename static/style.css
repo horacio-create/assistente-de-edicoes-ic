@@ -443,9 +443,14 @@ main{transition:margin-left .24s var(--motion)}
 #pixel-geometry .proportion-link{padding:0;border:0;border-radius:5px;cursor:pointer}
 #pixel-geometry .proportion-link[aria-pressed=false]{color:#6967c9}
 #editing-tabbar{display:flex;align-items:end;gap:5px;flex:1;min-width:0;height:36px}
-#editing-tabs{display:flex;align-items:end;gap:3px;overflow-x:auto;scrollbar-width:thin;min-width:0;max-width:100%;height:36px}
-.editing-tab{display:flex;align-items:center;flex:0 1 200px;min-width:95px;max-width:220px;height:32px;padding:0 4px 0 8px;border:1px solid #dedee9;border-bottom:0;border-radius:12px 12px 0 0;background:#ececf6;color:#626276}
-.editing-tab.active{height:35px;background:white;border-color:#aaa8d4;color:#4b49b5;box-shadow:inset 0 2px 0 #81d680}
+#editing-tabs{display:flex;align-items:end;gap:0;overflow-x:auto;scrollbar-width:thin;min-width:0;max-width:100%;height:36px;padding:0 8px}
+.editing-tab{position:relative;display:flex;align-items:center;width:150px;flex:0 1 150px;min-width:90px;max-width:150px;height:32px;padding:0 4px 0 8px;border:0;border-radius:0;background:transparent;color:#626276}
+.editing-tab:not(.active):not(:last-child)::after{content:"";position:absolute;right:0;top:9px;width:1px;height:15px;background:#c9cadb}
+.editing-tab:has(+.active)::after{display:none}
+.editing-tab.active{height:35px;border-radius:11px 11px 0 0;background:white;color:#4b49b5;z-index:1}
+.editing-tab.active::before,.editing-tab.active::after{content:"";position:absolute;bottom:0;width:8px;height:8px;pointer-events:none}
+.editing-tab.active::before{left:-8px;background:radial-gradient(circle at 0 0,transparent 8px,#fff 8.5px)}
+.editing-tab.active::after{right:-8px;background:radial-gradient(circle at 100% 0,transparent 8px,#fff 8.5px)}
 .editing-tab-select{border:0;border-radius:0;background:transparent!important;box-shadow:none;min-width:0;padding:6px 2px;font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;color:inherit}
 .editing-tab-close{flex:none;background:transparent;border:0;padding:3px 5px;font-size:17px;line-height:20px;border-radius:5px;color:inherit}
 .editing-tab .edition-name{margin:0;padding:4px;flex:none;width:22px;min-width:0}
@@ -454,16 +459,20 @@ main{transition:margin-left .24s var(--motion)}
 #editing-tab-add{flex:none;align-self:center;width:29px;height:29px;padding:0;font-size:24px;line-height:25px;border-radius:7px}
 main>header>div{flex:1;min-width:0}
 .video-workspace main>header>div{gap:10px}
-.video-workspace #editing-tabbar{margin-bottom:-5px}
+.video-workspace main>header{position:relative}
+.video-workspace main>header::after{content:"";position:absolute;left:0;right:0;bottom:-6px;height:6px;background:#fff;pointer-events:none}
+.video-workspace #editing-tabbar{margin-bottom:-6px}
+.video-workspace .presetbar{border-top-color:#fff;border-top-left-radius:0;border-top-right-radius:0}
 @media(max-width:1100px){.video-workspace #page-title{font-size:16px}.video-workspace #new-job{display:none}.video-workspace .save-status{display:none}}
 
-.editing-tab{width:220px;min-width:140px;flex:0 1 220px}
 
-#pixel-geometry .rotation-field{flex:1;max-width:85px;padding-right:6px;gap:2px}
-#pixel-geometry .rotation-field input{flex:none;width:49px;appearance:textfield;-moz-appearance:textfield}
+
+#pixel-geometry .rotation-field{flex:none;width:64px;max-width:64px;padding-right:6px;gap:2px}
+#pixel-geometry .rotation-field input{flex:none;width:35px;text-align:right;appearance:textfield;-moz-appearance:textfield}
 #pixel-geometry .rotation-field input::-webkit-inner-spin-button,#pixel-geometry .rotation-field input::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
-#pixel-geometry .rotation-actions{display:flex;gap:5px;flex:none;margin-left:auto}
-#pixel-geometry .rotation-actions button{width:32px;height:32px;padding:4px;border-radius:7px}
+#pixel-geometry .rotation-actions{display:flex;gap:4px;flex:none;margin-left:0}
+#pixel-geometry .rotation-actions button{width:26px;height:28px;padding:4px;border-radius:6px}
+#pixel-geometry .rotation-actions svg{width:16px;height:16px}
 .composition-editor .four-buttons{grid-template-columns:repeat(2,minmax(0,1fr))}
 
 .video-workspace main>header>.save-status{position:static;order:2;flex:none;margin:0;max-width:150px;font-size:10px}
