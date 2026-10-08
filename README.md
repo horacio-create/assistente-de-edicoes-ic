@@ -154,23 +154,24 @@ confere `/api/info` e `/login.html` e, se a checagem falhar, volta a versão ant
 `~/deploys` (5 últimos) e `/dados/backups` no volume (10 últimos). Até a configuração abaixo existir, o deploy aparece
 como pulado.
 
-**Configuração única** (comandos para quem administra a VM e o GitHub; a chave é exclusiva da CI):
+**Configuração única** (comandos para quem administra a VM e o GitHub; a chave é exclusiva da CI). Troque `<nome-da-vm>`,
+`<zona>`, `<ip-do-servidor>` e `<usuario-da-vm>` pelos dados do servidor, que ficam fora do repositório:
 
 1. Gere a chave da CI, sem senha, fora do repositório:
    `ssh-keygen -t ed25519 -N "" -C github-actions-deploy -f ~/deploy_ci_key`
 2. Instale o script na VM (fora da pasta do código, para um deploy não reescrever o próprio script):
-   `gcloud compute ssh [vps_name] --[vps-region] --command 'mkdir -p ~/bin'` e
-   `gcloud compute scp deploy/deploy-vm.sh observability-vps:~/bin/deploy-assistente.sh --zone=us-central1-a`
+   `gcloud compute ssh <nome-da-vm> --zone=<zona> --command 'mkdir -p ~/bin'` e
+   `gcloud compute scp deploy/deploy-vm.sh <nome-da-vm>:~/bin/deploy-assistente.sh --zone=<zona>`
 3. Autorize a chave só para esse script, acrescentando uma linha em `~/.ssh/authorized_keys` do usuário da VM:
-   `command="/home/devindoorchannel/bin/deploy-assistente.sh",no-port-forwarding,no-X11-forwarding,no-agent-forwarding,no-pty <conteúdo de ~/deploy_ci_key.pub>`
+   `command="/home/<usuario-da-vm>/bin/deploy-assistente.sh",no-port-forwarding,no-X11-forwarding,no-agent-forwarding,no-pty <conteúdo de ~/deploy_ci_key.pub>`
    Com OS Login ativo na VM, o `authorized_keys` pode ser ignorado: confira com o passo 5 antes de seguir.
 4. No GitHub (Settings → Secrets and variables → Actions):
    - secret `DEPLOY_SSH_KEY`: conteúdo de `~/deploy_ci_key` (a chave privada);
-   - secret `DEPLOY_KNOWN_HOSTS`: saída de `ssh-keyscan -t ed25519 136.114.119.96`, depois de conferir a impressão
+   - secret `DEPLOY_KNOWN_HOSTS`: saída de `ssh-keyscan -t ed25519 <ip-do-servidor>`, depois de conferir a impressão
      digital com a da própria VM (`ssh-keygen -lf /etc/ssh/ssh_host_ed25519_key.pub`, rodado lá);
-   - variables `DEPLOY_HOST` = `136.114.119.96` e `DEPLOY_USER` = `devindoorchannel`.
+   - variables `DEPLOY_HOST` = `<ip-do-servidor>` e `DEPLOY_USER` = `<usuario-da-vm>`.
 5. Teste do seu computador (publica o commit atual, como a CI faria):
-   `git archive --format=tar.gz HEAD | ssh -i ~/deploy_ci_key devindoorchannel@136.114.119.96 deploy $(git rev-parse HEAD)`
+   `git archive --format=tar.gz HEAD | ssh -i ~/deploy_ci_key <usuario-da-vm>@<ip-do-servidor> deploy $(git rev-parse HEAD)`
 6. Apague `~/deploy_ci_key` do computador. Para revogar a CI, remova a linha do `authorized_keys`.
 
 Mudou `deploy/deploy-vm.sh`? Repita o passo 2: o script da VM não se atualiza sozinho.
