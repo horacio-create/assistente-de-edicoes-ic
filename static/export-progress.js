@@ -20,7 +20,7 @@ request=async function(path,body,method){
   $('export-progress-detail').textContent=state.detail||'';
  }catch(error){/* The export response reports failures; a missed poll keeps its last value. */}if(polling)await new Promise(resolve=>setTimeout(resolve,500));}};
  const pollingTask=poll();
- try{let result=await progressRequest(path,body,method);
+ try{let result=await progressRequest(path,{...body,fila:1},method);// fila=1: este navegador sabe esperar o resultado da fila
   // na fila (servidor): espera o fim aqui; a exportação continua mesmo se esta aba fechar
   if(result.queued){result=await queuedResult(token);if(planTarget)await deliver(planTarget);}
   if(!result.cancelled&&result.results.length&&result.results.every(r=>r.ok)){$('export-progress-bar').value=100;$('export-percent').textContent='100%';$('export-time').textContent='Exportação concluída';await new Promise(resolve=>setTimeout(resolve,250));}return result;}

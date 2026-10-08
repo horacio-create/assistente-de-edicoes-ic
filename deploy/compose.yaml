@@ -22,6 +22,7 @@ services:
       INDOOR_LEVES: "6"                   # prévias, logos de MS6/EAP e vetorização em paralelo (4)
       OFERTAS_RENDERS: "2"                # vídeos de Ofertas gerados ao mesmo tempo (1)
       OFERTAS_FUNDO: "1"                  # remoções de fundo ao mesmo tempo; usa um modelo de IA pesado (1)
+      INDOOR_THREADS: "24"                # requisições ao mesmo tempo; bem acima das vagas acima para nada esperar na porta (6)
     restart: unless-stopped
     ports:
       - "127.0.0.1:8080:8080"

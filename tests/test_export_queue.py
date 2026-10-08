@@ -21,7 +21,8 @@ init()
 ofertas.garantir()
 
 
-def api(path, data=None, method='POST', query=None, raw=None, background=False):
+def api(path, data=None, method='POST', query=None, raw=None, background=False, fila=True):
+    if background and fila and path == '/api/export': data = {**(data or {}), 'fila': 1}  # como o navegador atual
     return server.api(method, path, query or {}, raw if raw is not None else json.dumps(data or {}).encode(), background=background)
 
 
@@ -95,6 +96,32 @@ class ExportQueueTests(unittest.TestCase):
         with connect() as db:
             owners = {r['owner'] for r in db.execute("SELECT owner FROM events WHERE job=? AND action='Exportado'", (self.job['id'],))}
         self.assertEqual(owners, {'dono-da-exportacao'})
+
+    def test_tab_opened_before_the_queue_is_told_to_reload(self):
+        plan = self.plan()
+        with self.assertRaises(server.Conflict) as erro:
+            api('/api/export', {'token': plan['token']}, background=True, fila=False)
+        self.assertIn('Recarregue a página', str(erro.exception))
+        # o plano não foi consumido: depois de recarregar, exportar funciona
+        api('/api/export', {'token': plan['token']}, background=True)
+        self.assertEqual(wait_result(plan['token'])['state'], 'complete')
+
+    def test_network_delivery_folder_is_not_deleted_while_export_runs(self):
+        entrega = uid()
+        plan = api('/api/plan', dict(job=self.job['id'], ids=[m['id'] for m in self.job['media']], client='Cliente',
+                                     campaign='Entrega', date='2026-10-08', format='jpg', folder='navegador:' + entrega))
+        gate = threading.Event()
+        original = server.run_export
+        with patch.object(server, 'run_export', lambda *a: (gate.wait(10), original(*a))[1]):
+            api('/api/export', {'token': plan['token']}, background=True)
+            # o que a aba antiga fazia: limpar a pasta logo depois da resposta "na fila"
+            self.assertEqual(api('/api/entrega-limpar', {'token': entrega}), {'ok': True, 'adiada': True})
+            gate.set()
+            state = wait_result(plan['token'])
+        self.assertEqual([r['ok'] for r in state['result']['results']], [True])
+        self.assertEqual(api('/api/entrega', method='GET', query={'token': [entrega]}), [plan['files'][0]['name']])
+        self.assertEqual(api('/api/entrega-limpar', {'token': entrega}), {'ok': True})  # terminou: agora limpa
+        self.assertFalse((server.ENTREGAS / entrega).exists())
 
     def test_unexpected_error_reaches_the_browser(self):
         plan = self.plan()

@@ -137,6 +137,17 @@ async function queuedResult(token){
 
 O resultado que sai daqui tem o **mesmo formato** do `/api/export` antigo (`{results, cancelled, job?}`). Por isso a terceira camada e a tela de exportação (`app.js`, "Processando e salvando os arquivos…") não mudaram. Enquanto espera, a janela mostra `waitingText(position)`: "Na fila: N exportações antes desta" ou "Aguardando uma vaga para começar…".
 
+### 7.1 Abas abertas antes do deploy (correção de 08/10)
+
+O primeiro deploy da fila quebrou a exportação **pela rede** para quem estava com a aba aberta desde antes dele. O JavaScript antigo tratava a resposta "na fila" como o fim da exportação: baixava a pasta de entrega (ainda vazia) e mandava apagá-la (`/api/entrega-limpar`). Uns 4 s depois, o vídeo tentava gravar o resultado e falhava com `/dados/entregas/<token>/.indoor-….tmp: No such file or directory`. Foram 8 falhas seguidas em produção.
+
+Duas proteções no servidor:
+
+- **O navegador atual declara que entende a fila** (`fila: 1` no corpo do `/api/export`). Um pedido pela web sem isso recebe `409 "O sistema foi atualizado. Recarregue a página (Ctrl+Shift+R) e exporte de novo."`, **antes** de consumir o plano. Depois de recarregar, o mesmo plano ainda exporta.
+- **Pasta de entrega em uso não é apagada.** `entregas_em_uso` conta as exportações na fila ou rodando por pasta; o `/api/entrega-limpar` responde `{"ok": true, "adiada": true}` sem apagar enquanto o contador não zera. A limpeza por idade (1 dia) cuida da pasta depois.
+
+Junto, o servidor web passou a ter as threads configuráveis (`INDOOR_THREADS`, 24 na produção, 6 no app local). O log da produção mostrava até 13 requisições esperando: com 6 threads e 6 vagas de prévia, prévias de vídeo podiam ocupar todas as threads e travar até o acompanhamento do progresso.
+
 ## 8. Ofertas
 
 **Remover fundo, um por vez** (`OFERTAS_FUNDO`, padrão 1):

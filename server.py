@@ -1,4 +1,5 @@
 """Servidor WSGI local. Novos módulos registram processadores sem alterar o histórico."""
+import collections
 import hashlib
 import io
 import json
@@ -185,6 +186,14 @@ def entrega(token, criar=False):
             if velha.stat().st_mtime < time.time() - 86400: shutil.rmtree(velha, ignore_errors=True)
         (ENTREGAS / token).mkdir(parents=True, exist_ok=True)
     return ENTREGAS / token
+
+EM_USO, EM_USO_LOCK = collections.Counter(), threading.Lock()  # pastas de entrega com exportação na fila ou rodando
+
+def entregas_em_uso(pastas, delta):
+    with EM_USO_LOCK:
+        for pasta in pastas:
+            EM_USO[pasta] += delta
+            if EM_USO[pasta] <= 0: del EM_USO[pasta]
 
 def arquivos_entrega(token):
     pasta = entrega(token)
@@ -381,7 +390,10 @@ def api(method, path, query, raw, environ=None, background=False):
     if path == '/api/entrega' and method == 'GET': return arquivos_entrega(query.get('token', [''])[0])
     if method != 'POST': raise ValueError('Operação não encontrada.')
     if path == '/api/entrega-limpar':
-        shutil.rmtree(entrega(value.get('token')), ignore_errors=True)
+        pasta = entrega(value.get('token'))
+        with EM_USO_LOCK:  # exportação na fila ou rodando grava nela: a limpeza por idade cuida depois
+            if EM_USO[pasta]: return {'ok': True, 'adiada': True}
+            shutil.rmtree(pasta, ignore_errors=True)
         return {'ok': True}
     if path == '/api/export-cancel':
         token = value.get('token', '')
@@ -571,9 +583,18 @@ def api(method, path, query, raw, environ=None, background=False):
             db.execute('DELETE FROM plans WHERE created<?', (time.time()-3600,))
         return {'token': token, **plan}
     if path == '/api/export':
+        # aba aberta antes da fila existir: ela trata a resposta "na fila" como fim, apaga a pasta de entrega e a
+        # exportação falha. O navegador atual avisa que entende a fila (fila=1); o antigo é mandado recarregar.
+        if background and not value.get('fila'):
+            raise Conflict('O sistema foi atualizado. Recarregue a página (Ctrl+Shift+R) e exporte de novo.')
         row, plan = prepare_export(value)
-        if background: return export_queue.submit(value['token'], plan['files'][0]['name'], lambda: run_export(value['token'], row, plan))
-        return run_export(value['token'], row, plan)
+        if not background: return run_export(value['token'], row, plan)
+        pastas = {Path(f['path']).parent for f in plan['files'] if ENTREGAS in Path(f['path']).parents}
+        def rodar():
+            try: return run_export(value['token'], row, plan)
+            finally: entregas_em_uso(pastas, -1)
+        entregas_em_uso(pastas, +1)
+        return export_queue.submit(value['token'], plan['files'][0]['name'], rodar)
     if path.startswith('/api/vector/'):
         return vector_api(path, query, value, raw)
     if path.startswith('/api/eap/'):
@@ -803,5 +824,7 @@ if __name__ == '__main__':
     print(f'Indoor Channel: http://localhost:{port} | Rede: http://{socket.gethostname()}:{port}', flush=True)
     # atrás do proxy (deploy/): confia no X-Forwarded-Proto dele para saber que a conexão é https (cookie Secure)
     proxy = os.environ.get('INDOOR_TRUSTED_PROXY')
-    serve(app, host=os.environ.get('INDOOR_HOST','0.0.0.0'), port=port, threads=6, max_request_body_size=MAX_UPLOAD, channel_timeout=300,
+    # INDOOR_THREADS: requisições atendidas ao mesmo tempo; precisa sobrar além das vagas de trabalho pesado (prévias,
+    # importações), senão elas ocupam todas e até o acompanhamento do progresso espera na fila do waitress
+    serve(app, host=os.environ.get('INDOOR_HOST','0.0.0.0'), port=port, threads=int(os.environ.get('INDOOR_THREADS', '6')), max_request_body_size=MAX_UPLOAD, channel_timeout=300,
           **({'trusted_proxy': proxy, 'trusted_proxy_headers': {'x-forwarded-proto'}} if proxy else {}))
