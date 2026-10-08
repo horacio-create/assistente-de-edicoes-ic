@@ -159,7 +159,7 @@ como pulado.
 1. Gere a chave da CI, sem senha, fora do repositório:
    `ssh-keygen -t ed25519 -N "" -C github-actions-deploy -f ~/deploy_ci_key`
 2. Instale o script na VM (fora da pasta do código, para um deploy não reescrever o próprio script):
-   `gcloud compute ssh observability-vps --zone=us-central1-a --command 'mkdir -p ~/bin'` e
+   `gcloud compute ssh [vps_name] --[vps-region] --command 'mkdir -p ~/bin'` e
    `gcloud compute scp deploy/deploy-vm.sh observability-vps:~/bin/deploy-assistente.sh --zone=us-central1-a`
 3. Autorize a chave só para esse script, acrescentando uma linha em `~/.ssh/authorized_keys` do usuário da VM:
    `command="/home/devindoorchannel/bin/deploy-assistente.sh",no-port-forwarding,no-X11-forwarding,no-agent-forwarding,no-pty <conteúdo de ~/deploy_ci_key.pub>`
