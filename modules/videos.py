@@ -7,6 +7,7 @@ import shutil
 import subprocess
 import tempfile
 import threading
+import time
 from pathlib import Path
 from functools import lru_cache
 from PIL import Image
@@ -31,7 +32,30 @@ def available():
     except ValueError:
         return False
 
-def run(args, timeout=300):
+def run(args, timeout=300, cancelled=None):
+    if cancelled is not None:
+        if cancelled(): raise ExportCancelled('Importação cancelada.')
+        with subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                              creationflags=getattr(subprocess, 'CREATE_NO_WINDOW', 0)) as process:
+            deadline = time.monotonic() + timeout
+            try:
+                while True:
+                    if cancelled(): raise ExportCancelled('Importação cancelada.')
+                    if time.monotonic() >= deadline:
+                        raise ValueError('O vídeo demorou demais para processar. Tente um trecho menor.')
+                    try:
+                        output, error = process.communicate(timeout=.1)
+                        break
+                    except subprocess.TimeoutExpired:
+                        pass
+                if cancelled(): raise ExportCancelled('Importação cancelada.')
+                if process.returncode:
+                    raise ValueError('Não foi possível processar o vídeo. ' + error.decode('utf-8', errors='replace')[-1200:])
+                return output
+            finally:
+                if process.poll() is None:
+                    process.kill()
+                    process.communicate()
     try:
         result = subprocess.run(args, capture_output=True, timeout=timeout,
                                 creationflags=getattr(subprocess, 'CREATE_NO_WINDOW', 0))
@@ -93,9 +117,9 @@ def run_progress(args, duration, progress, timeout=3600, cancelled=None):
             finished.set();watcher.join(timeout=1);timer.cancel();process.stdout.close()
             if process.poll() is None: process.kill();process.wait()
 
-def probe(source):
+def probe(source, cancelled=None):
     data = json.loads(run([tool('ffprobe'), '-v', 'error', '-show_streams', '-show_format',
-                           '-of', 'json', str(source)], timeout=60))
+                           '-of', 'json', str(source)], timeout=60, cancelled=cancelled))
     streams = data.get('streams', [])
     stream = next((s for s in streams if s.get('codec_type') == 'video'
                    and not s.get('disposition', {}).get('attached_pic')), None)
@@ -174,23 +198,23 @@ def frame_counts(s):
 def output_duration(s):
     return sum(frame_counts(s)) / 30
 
-def frame(source, at=0):
+def frame(source, at=0, cancelled=None):
     data = run([tool('ffmpeg'), '-hide_banner', '-loglevel', 'error', '-nostdin',
                 '-ss', str(max(0, at)), '-i', str(source), '-map', '0:v:0',
-                '-frames:v', '1', '-f', 'image2pipe', '-c:v', 'png', 'pipe:1'], timeout=90)
+                '-frames:v', '1', '-f', 'image2pipe', '-c:v', 'png', 'pipe:1'], timeout=90, cancelled=cancelled)
     with Image.open(io.BytesIO(data)) as image:
         return image.convert('RGBA')
 
-def import_video(source, proxy, poster):
-    info = probe(source)
-    image = frame(source)
+def import_video(source, proxy, poster, cancelled=None):
+    info = probe(source, cancelled=cancelled)
+    image = frame(source, cancelled=cancelled)
     image.save(poster)
     # A browser-compatible copy preserves source time; audio changes remain an explicit choice.
     run([tool('ffmpeg'), '-hide_banner', '-loglevel', 'error', '-nostdin', '-y',
          '-i', str(source), '-map', '0:v:0', '-map', '0:a:0?',
          '-vf', 'scale=1280:1280:force_original_aspect_ratio=decrease:force_divisible_by=2,setsar=1',
          '-c:v', 'libx264', '-preset', 'veryfast', '-crf', '23', '-pix_fmt', 'yuv420p',
-         '-c:a', 'aac', '-b:a', '128k', '-movflags', '+faststart', str(proxy)], timeout=1800)
+         '-c:a', 'aac', '-b:a', '128k', '-movflags', '+faststart', str(proxy)], timeout=1800, cancelled=cancelled)
     return info, image
 
 def preview(source, value, duration, logo=None, at=None):

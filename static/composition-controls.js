@@ -97,7 +97,7 @@ function toggleTrack(trackId,property){const t=project()?.tracks.find(t=>t.id===
 function setClipRange(which,value){
  const c=projectClip(),m=projectMedia();if(!c||!timedMedia(m)||clipLocked(c)||!Number.isFinite(value))return;
  const rate=(c.out-c.in)/c.duration;
- editProject(()=>{if(which==='in')c.in=Math.max(0,Math.min(c.out-.1,value));else c.out=Math.min(m.duration,Math.max(c.in+.1,value));resizeClip(c,snapFrame((c.out-c.in)/rate));});
+ return editProject(()=>{if(which==='in')c.in=Math.max(0,Math.min(c.out-.1,value));else c.out=Math.min(m.duration,Math.max(c.in+.1,value));resizeClip(c,snapFrame((c.out-c.in)/rate));});
 }
 function resizeClip(c,value){
  const delta=value-c.duration;
@@ -375,19 +375,32 @@ $('duration-final').onchange=()=>{
 $('video-size').onchange=()=>{const value=Number($('video-size').value);if(Number.isFinite(value)&&value>=.1&&value<=1000)editProject(()=>project().settings.targetMB=value);else syncVideo();};
 $('audio-action').onclick=$('export-audio-action').onclick=()=>toggleAudio().catch(e=>toast(e.message));
 
+let mediaImportSession=null;
+function beginMediaImport(){mediaImportSession={cancelled:false,token:null};$('import-cancel').disabled=false;$('import-cancel').textContent='Cancelar';return mediaImportSession;}
+async function fetchImportFile(file){
+ const session=mediaImportSession;if(session?.cancelled)return {cancelled:true,job};
+ const token=freshId(),controller=new AbortController();if(session){session.token=token;session.controller=controller;}
+ try{const response=await fetch(`/api/upload?job=${job.id}&revision=${job.revision}&name=${encodeURIComponent(file.name)}&token=${token}`,{method:'POST',headers:{'X-Indoor':'1','Content-Type':'application/octet-stream'},body:file,signal:controller.signal});const data=await response.json();if(!response.ok)throw new Error(data.error);return data;}catch(error){if(error.name==='AbortError'&&session?.cancelled)return {cancelled:true,job};throw error;}finally{if(session){session.token=null;session.controller=null;}}
+}
+async function cancelMediaImport(){
+ const session=mediaImportSession;if(!session)return;session.cancelled=true;$('import-cancel').disabled=true;$('import-cancel').textContent='Cancelando…';$('import-modal-detail').textContent='Cancelando a importação…';
+ if(session.token&&job)try{const controller=session.controller;const result=await request('/api/import-cancel',{token:session.token,job:job.id});if(result.accepted)controller?.abort();}catch(error){toast('Não foi possível interromper este arquivo. O restante do lote foi cancelado. '+error.message);}
+}
+$('import-cancel').onclick=cancelMediaImport;
 upload=async function(files){
+ if(!files.length||busy)return;const session=beginMediaImport();
  if(editorKind!=='video'){
-  if(!files.length)return;const modal=$('media-import-dialog');$('import-modal-detail').textContent=files.length+' arquivo(s)';modal.showModal();try{await compositionLegacy.upload(files);}finally{modal.close();}return;
+  const modal=$('media-import-dialog');$('import-modal-detail').textContent=files.length+' arquivo(s)';modal.showModal();try{await compositionLegacy.upload(files);}finally{modal.close();mediaImportSession=null;}return;
  }
  if(!files.length||busy)return;const modal=$('media-import-dialog');$('import-modal-detail').textContent='Preparando '+files.length+' arquivo(s)…';modal.showModal();
  try{await guard(async()=>{
   if(!job)job=await request('/api/jobs',{kind:'video'});ensureProject();markDirty();await save();const failures=[];let firstAdded=false;
   for(let i=0;i<files.length;i++){
-   const f=files[i];$('import-modal-detail').textContent=`${i+1} de ${files.length}: ${f.name}`;
+   if(session.cancelled)break;const f=files[i];$('import-modal-detail').textContent=`${i+1} de ${files.length}: ${f.name}`;
    if(f.size>100*1024*1024){failures.push(f.name+': acima de 100 MB.');continue;}
    const known=new Set(job.media.map(m=>m.id));
    try{
-    const response=await fetch(`/api/upload?job=${job.id}&revision=${job.revision}&name=${encodeURIComponent(f.name)}`,{method:'POST',headers:{'X-Indoor':'1','Content-Type':'application/octet-stream'},body:f});const data=await response.json();if(!response.ok)throw new Error(data.error);job=data.job;
+    const data=await fetchImportFile(f);job=data.job;if(data.cancelled)break;
     if(data.unsupported){failures.push(f.name+': formato não suportado.');continue;}
     const imported=job.media.filter(m=>!known.has(m.id));
     for(const m of imported){if(m.kind==='audio'||(!project().clips.some(c=>projectMedia(c)?.kind!=='audio')&&!firstAdded&&m.kind!=='audio')){if(project().clips.length>=100)throw new Error('A biblioteca recebeu o arquivo; libere um trecho para colocá-lo na timeline.');const t=trackForMedia(m,null,m.kind==='audio'),c=defaultClip(m,t.id);project().clips.push(c);compositionSelected=c.id;active=m.id;selected=new Set([m.id]);if(m.kind!=='audio')firstAdded=true;}}
@@ -395,10 +408,10 @@ upload=async function(files){
    }catch(error){failures.push(f.name+': '+error.message);}
   }
   ensureProject();if(projectClip())activate(projectClip().mediaId);renderGrid();$('unsupported').hidden=!failures.length;$('unsupported').textContent=failures.join('\n');
-  if(failures.length)toast(failures.join('\n'));else toast('Mídias adicionadas à biblioteca. Arraste para a timeline ou dê dois cliques para preparar.');
- });}finally{modal.close();$('files').value='';}
+  if(session.cancelled)toast('Importação cancelada. Os arquivos já adicionados foram mantidos.');else if(failures.length)toast(failures.join('\n'));else toast('Mídias adicionadas à biblioteca. Arraste para a timeline ou dê dois cliques para preparar.');
+ });}finally{modal.close();mediaImportSession=null;$('files').value='';}
 };
-$('media-import-dialog').addEventListener('cancel',e=>e.preventDefault());
+$('media-import-dialog').addEventListener('cancel',e=>{e.preventDefault();cancelMediaImport();});
 function openSource(id){
  const m=job?.media.find(m=>m.id===id);if(!m||busy)return;stopComposition();sourceMediaId=id;const video=timedMedia(m),range=sourceSelections.get(id);
  $('source-video').classList.toggle('source-audio',m.kind==='audio');

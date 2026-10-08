@@ -1,0 +1,34 @@
+const {chromium}=require(process.env.INDOOR_PLAYWRIGHT||'playwright');
+const assert=require('node:assert/strict'),fs=require('node:fs');
+const [url,video,image,output]=process.argv.slice(2);fs.mkdirSync(output,{recursive:true});
+(async()=>{const browser=await chromium.launch({channel:'msedge',headless:true}),page=await browser.newPage({viewport:{width:1366,height:900}}),errors=[];
+page.on('pageerror',e=>errors.push(e.message));
+try{await page.emulateMedia({reducedMotion:'reduce'});await page.goto(url,{waitUntil:'networkidle'});await page.getByRole('button',{name:'Vídeos',exact:true}).click();await page.waitForFunction(()=>!busy&&editorKind==='video');
+async function cancelledBatch(file,extension,mimeType){
+ let requests=0,unblock,heldResolve;const held=new Promise(resolve=>heldResolve=resolve),release=new Promise(resolve=>unblock=resolve);
+ await page.route('**/api/upload?**',async route=>{requests++;if(requests===2){heldResolve();await release;}try{await route.continue();}catch{};});
+ const data=fs.readFileSync(file);await page.locator('#files').setInputFiles([1,2,3].map(n=>({name:'Batch-'+n+extension,mimeType,buffer:data})));
+ await held;const cancelled=page.waitForResponse(r=>r.url().includes('/api/import-cancel'));await page.locator('#import-cancel').click();await cancelled;unblock();await page.waitForFunction(()=>!busy&&!document.querySelector('#media-import-dialog').open);
+ assert.equal(requests,2);assert.equal(await page.evaluate(()=>job.media.length),1);assert.equal(await page.locator('#unsupported').isVisible(),false);await page.unroute('**/api/upload?**');
+}
+await cancelledBatch(video,'.mp4','video/mp4');
+await page.evaluate(()=>seekComposition(1.2));const time=await page.locator('#montage-position').boundingBox(),tabs=await page.locator('#timeline-tabs').boundingBox();assert(time.x+time.width<=tabs.x);assert.equal(await page.locator('#montage-current-time').inputValue(),'1,20');assert.equal(await page.locator('#montage-total-time').isVisible(),false);assert.equal(await page.locator('#playhead-time').isVisible(),false);
+await page.locator('#preview-mark-in').click();assert(Math.abs(await page.evaluate(()=>projectClip().in)-1.2)<.001);assert(Math.abs(await page.evaluate(()=>projectClip().duration)-3.8)<.001);
+await page.locator('#montage-playhead').focus();await page.keyboard.press('Control+z');assert.equal(await page.evaluate(()=>projectClip().in),0);
+await page.evaluate(()=>seekComposition(2.28));await page.locator('#preview-mark-out').click();assert(Math.abs(await page.evaluate(()=>projectClip().out)-2.28)<.001);
+await page.locator('#montage-playhead').focus();await page.keyboard.press('Control+z');
+await page.evaluate(()=>{editProject(()=>resizeClip(projectClip(),2.5));seekComposition(.5);});await page.locator('#preview-mark-in').click();assert.equal(await page.evaluate(()=>projectClip().in),1);assert.equal(await page.evaluate(()=>projectClip().duration),2);
+await page.locator('#montage-playhead').focus();await page.keyboard.press('Control+z');await page.keyboard.press('Control+z');
+await page.evaluate(()=>{addProjectClip(job.media[0].id);seekComposition(5.5);});await page.locator('#preview-mark-in').click();assert.equal(await page.evaluate(()=>projectClip().in),.5);assert.equal(await page.evaluate(()=>project().clips[0].in),0);
+await page.evaluate(()=>editProject(()=>projectClip().locked=true));assert.equal(await page.locator('#preview-mark-in').isDisabled(),true);assert.equal(await page.locator('#preview-mark-out').isDisabled(),true);
+await page.evaluate(()=>{editProject(()=>{projectClip().locked=false;resizeClip(project().clips[0],20);});seekComposition(2.28);});
+await page.locator('#montage-scrub').focus();await page.keyboard.press('End');assert.equal(await page.evaluate(()=>compositionCursor),await page.evaluate(()=>projectDuration()));await page.keyboard.press('Home');assert.equal(await page.evaluate(()=>compositionCursor),0);
+await page.evaluate(()=>{selectProjectClip(project().clips[0].id,false);seekComposition(2.28);document.activeElement?.blur();});await page.mouse.move(500,110);await page.waitForTimeout(4500);await page.screenshot({path:output+'/preview-ruler.png',animations:'disabled'});
+await page.evaluate(async()=>await save());await page.reload({waitUntil:'networkidle'});await page.getByRole('button',{name:'Vídeos',exact:true}).click();await page.waitForFunction(()=>!busy&&project()?.clips.length===2);assert.equal(await page.evaluate(()=>project().clips[1].in),.5);
+await page.locator('#editing-tab-add').click();await page.waitForFunction(()=>!busy&&job&&job.media.length===0);
+let releaseSingle,arrivedSingle;const singleHeld=new Promise(resolve=>arrivedSingle=resolve),singleRelease=new Promise(resolve=>releaseSingle=resolve);
+await page.route('**/api/upload?**',async route=>{arrivedSingle();await singleRelease;try{await route.continue();}catch{}});
+await page.locator('#files').setInputFiles(video);await singleHeld;const singleCancel=page.waitForResponse(r=>r.url().includes('/api/import-cancel'));await page.locator('#import-cancel').click();await singleCancel;releaseSingle();await page.waitForFunction(()=>!busy&&!document.querySelector('#media-import-dialog').open);assert.equal(await page.evaluate(()=>job.media.length),0);await page.unroute('**/api/upload?**');
+await page.getByRole('button',{name:'Imagens',exact:true}).click();await page.waitForFunction(()=>!busy&&editorKind==='image');await cancelledBatch(image,'.png','image/png');assert.deepEqual(errors,[]);
+console.log(JSON.stringify({cancelSingleAndBatchBothEditors:true,completedMediaKept:true,timeLeftOfTimelineTabs:true,twoDecimals:true,nativeKeyboardSeek:true,trimInOut:true,speedAndClipOffset:true,undo:true,lockedClip:true,persistence:true,errors}));
+}finally{await browser.close();}})().catch(e=>{console.error(e);process.exitCode=1});

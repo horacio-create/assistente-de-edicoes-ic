@@ -12,9 +12,9 @@ SUPPORTED = {'.mp3', '.wav', '.m4a', '.aac', '.ogg', '.oga', '.flac', '.opus', '
 PEAKS = 2048
 
 
-def probe(source):
+def probe(source, cancelled=None):
     value = json.loads(videos.run([videos.tool('ffprobe'), '-v', 'error', '-show_streams',
-                                  '-show_format', '-of', 'json', str(source)]))
+                                  '-show_format', '-of', 'json', str(source)], cancelled=cancelled))
     stream = next((s for s in value.get('streams', []) if s.get('codec_type') == 'audio'), None)
     if stream is None:
         raise ValueError('Este arquivo não contém uma faixa de áudio.')
@@ -27,16 +27,16 @@ def probe(source):
     return dict(duration=duration, hasAudio=True, bytes=Path(source).stat().st_size)
 
 
-def import_audio(source, proxy, poster):
-    info = probe(source)
+def import_audio(source, proxy, poster, cancelled=None):
+    info = probe(source, cancelled=cancelled)
     videos.run([videos.tool('ffmpeg'), '-v', 'error', '-nostdin', '-y', '-i', str(source),
                 '-map', '0:a:0', '-vn', '-ac', '2', '-ar', '48000', '-c:a', 'aac',
-                '-b:a', '160k', '-movflags', '+faststart', str(proxy)])
+                '-b:a', '160k', '-movflags', '+faststart', str(proxy)], cancelled=cancelled)
     # At most 14.4 MB even for a one-hour source. Downsampling keeps import cheap;
     # each displayed bucket retains the maximum absolute sample in that interval.
     raw = videos.run([videos.tool('ffmpeg'), '-v', 'error', '-nostdin', '-i', str(source),
                       '-map', '0:a:0', '-vn', '-ac', '1', '-ar', '2000', '-t', '3600',
-                      '-f', 's16le', 'pipe:1'])
+                      '-f', 's16le', 'pipe:1'], cancelled=cancelled)
     samples = array.array('h', raw)
     if sys.byteorder != 'little':
         samples.byteswap()

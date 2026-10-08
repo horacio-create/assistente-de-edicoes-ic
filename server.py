@@ -18,7 +18,7 @@ from waitress import serve
 from version import VERSION
 from modules.images import DEFAULT, SUPPORTED, decode, dominant, encoded, render, settings
 from modules import ofertas
-from modules import videos, audio, composition, naming, export_progress, projects
+from modules import videos, audio, composition, naming, export_progress, projects, import_tasks
 from modules import eap, vector
 from PIL import Image
 from storage import DATA, ROOT, connect, event, get_job, init, now, uid
@@ -76,7 +76,9 @@ def name_first_import(db, job, suggestion, added=1):
         meta.update(titleOrigin=suggestion['origin'], titleSuggestion=suggestion['title'])
         db.execute('UPDATE jobs SET title=?,meta=? WHERE id=?', (suggestion['title'], json.dumps(meta), job))
 
-def import_video(job, name, revision, raw):
+def import_video(job, name, revision, raw, task=None):
+    task = task or import_tasks.Task(job)
+    task.check()
     with LOCK, connect() as db:
         check_revision(db, job, revision)
         first = not db.execute('SELECT 1 FROM media WHERE job=? LIMIT 1', (job,)).fetchone()
@@ -85,11 +87,12 @@ def import_video(job, name, revision, raw):
     try:
         source.write_bytes(raw)
         with PROCESS:
-            info, image = videos.import_video(source, proxy, poster)
+            task.check()
+            info, image = videos.import_video(source, proxy, poster, cancelled=task.cancelled)
         color = dominant(image)
         value = videos.settings(DEFAULT | videos.DEFAULT_VIDEO | {'color': color, 'trimEnd': info['duration']}, info['duration'])
         suggestion = naming.suggest(name, poster, source, info['duration']) if first else None
-        with LOCK, connect() as db:
+        with LOCK, task.commit(), connect() as db:
             check_revision(db, job, revision)
             db.execute('INSERT INTO media(id,job,name,page,width,height,color,settings,notes,kind,duration,has_audio,original_bytes,fps) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)',
                        (ident, job, name, None, info['width'], info['height'], color, json.dumps(value), '[]',
@@ -102,7 +105,9 @@ def import_video(job, name, revision, raw):
         for path in (source, proxy, poster): path.unlink(missing_ok=True)
         raise
 
-def import_audio(job, name, revision, raw):
+def import_audio(job, name, revision, raw, task=None):
+    task = task or import_tasks.Task(job)
+    task.check()
     with LOCK, connect() as db:
         check_revision(db, job, revision)
         row = db.execute('SELECT meta FROM jobs WHERE id=?', (job,)).fetchone()
@@ -113,9 +118,10 @@ def import_audio(job, name, revision, raw):
     try:
         source.write_bytes(raw)
         with PROCESS:
-            info, peaks = audio.import_audio(source, proxy, poster)
+            task.check()
+            info, peaks = audio.import_audio(source, proxy, poster, cancelled=task.cancelled)
         value = settings(DEFAULT | {'color': '#6a67ce'})
-        with LOCK, connect() as db:
+        with LOCK, task.commit(), connect() as db:
             check_revision(db, job, revision)
             db.execute('INSERT INTO media(id,job,name,page,width,height,color,settings,notes,kind,duration,has_audio,original_bytes,waveform) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)',
                        (ident, job, name, None, 400, 100, '#6a67ce', json.dumps(value), '[]',
@@ -194,6 +200,45 @@ def logo_path(value, job):
         row = db.execute('SELECT id FROM logos WHERE id=? AND job=?', (ident, job)).fetchone()
     if not row: raise ValueError('Logo não pertence a esta edição.')
     return DATA / 'logos' / (ident + '.png')
+
+def upload_media(job, name, revision, raw, task):
+    ext = Path(name).suffix.lower()
+    if ext in videos.SUPPORTED:
+        return import_video(job, name, revision, raw, task)
+    if ext in audio.SUPPORTED:
+        return import_audio(job, name, revision, raw, task)
+    task.check()
+    with LOCK:
+        with connect() as db:
+            check_revision(db, job, revision)
+            first = not db.execute('SELECT 1 FROM media WHERE job=? LIMIT 1', (job,)).fetchone()
+        if ext not in SUPPORTED:
+            with connect() as db: event(db, job, 'Formato não suportado', {'arquivo': name})
+            return {'unsupported': name, 'job': get_job(job)}
+        added = []
+        try:
+            with PROCESS:
+                for page, im, notes in decode(raw, ext):
+                    task.check()
+                    ident = uid()
+                    color = dominant(im)
+                    im.save(DATA / 'midias' / f'{ident}.png')
+                    added.append((ident, job, name, page, im.width, im.height, color, json.dumps(DEFAULT | {'color': color}), json.dumps(notes)))
+            suggestion = naming.suggest(name, DATA / 'midias' / f'{added[0][0]}.png') if first and added else None
+            with task.commit(), connect() as db:
+                db.executemany('INSERT INTO media(id,job,name,page,width,height,color,settings,notes) VALUES(?,?,?,?,?,?,?,?,?)', added)
+                name_first_import(db, job, suggestion, len(added))
+                db.execute('UPDATE jobs SET updated=?, revision=revision+1 WHERE id=?', (now(), job))
+                event(db, job, 'Importação', {'arquivo': name, 'midias': len(added)})
+        except import_tasks.Cancelled:
+            for row in added: (DATA / 'midias' / f'{row[0]}.png').unlink(missing_ok=True)
+            raise
+        except Exception as exc:
+            for row in added: (DATA / 'midias' / f'{row[0]}.png').unlink(missing_ok=True)
+            with connect() as db: event(db, job, 'Falha na importação', {'arquivo': name, 'motivo': str(exc)})
+            raise ValueError(f'Não foi possível abrir {name}: {exc}') from exc
+    return {'job': get_job(job)}
+
 
 def api(method, path, query, raw, environ=None):
     value = json.loads(raw) if raw and path not in ('/api/upload', '/api/logo', '/api/vector/upload', '/api/eap/upload') else {}
@@ -297,41 +342,22 @@ def api(method, path, query, raw, environ=None):
                 db.execute('UPDATE jobs SET updated=?, revision=revision+1 WHERE id=?', (now(), job))
                 event(db, job, 'Logo adicionada', {'logo': ident})
         return {'job': get_job(job), 'logoId': ident, 'mediaId': ident if as_clip else None}
+    if path == '/api/import-cancel':
+        job = value.get('job', '')
+        get_job(job)
+        return {'accepted': import_tasks.cancel(value.get('token', ''), job)}
     if path == '/api/upload':
         job, name = query['job'][0], query['name'][0]
         revision = int(query['revision'][0])
         name = name.replace('\\', '/').split('/')[-1][:180]
-        ext = Path(name).suffix.lower()
-        if ext in videos.SUPPORTED:
-            return import_video(job, name, revision, raw)
-        if ext in audio.SUPPORTED:
-            return import_audio(job, name, revision, raw)
-        with LOCK:
-            with connect() as db:
-                check_revision(db, job, revision)
-                first = not db.execute('SELECT 1 FROM media WHERE job=? LIMIT 1', (job,)).fetchone()
-            if ext not in SUPPORTED:
-                with connect() as db: event(db, job, 'Formato não suportado', {'arquivo': name})
-                return {'unsupported': name, 'job': get_job(job)}
-            added = []
-            try:
-                with PROCESS:
-                    for page, im, notes in decode(raw, ext):
-                        ident = uid()
-                        color = dominant(im)
-                        im.save(DATA / 'midias' / f'{ident}.png')
-                        added.append((ident, job, name, page, im.width, im.height, color, json.dumps(DEFAULT | {'color': color}), json.dumps(notes)))
-                suggestion = naming.suggest(name, DATA / 'midias' / f'{added[0][0]}.png') if first and added else None
-                with connect() as db:
-                    db.executemany('INSERT INTO media(id,job,name,page,width,height,color,settings,notes) VALUES(?,?,?,?,?,?,?,?,?)', added)
-                    name_first_import(db, job, suggestion, len(added))
-                    db.execute('UPDATE jobs SET updated=?, revision=revision+1 WHERE id=?', (now(), job))
-                    event(db, job, 'Importação', {'arquivo': name, 'midias': len(added)})
-            except Exception as exc:
-                for row in added: (DATA / 'midias' / f'{row[0]}.png').unlink(missing_ok=True)
-                with connect() as db: event(db, job, 'Falha na importação', {'arquivo': name, 'motivo': str(exc)})
-                raise ValueError(f'Não foi possível abrir {name}: {exc}') from exc
-        return {'job': get_job(job)}
+        task = import_tasks.start(query.get('token', [''])[0], job)
+        try:
+            task.check()
+            return upload_media(job, name, revision, raw, task)
+        except (import_tasks.Cancelled, videos.ExportCancelled):
+            return {'cancelled': True, 'job': get_job(job)}
+        finally:
+            task.finish()
     if path == '/api/save':
         job = value['id']
         with LOCK, connect() as db:
@@ -697,7 +723,7 @@ def app(environ, start_response):
             content_type = 'image/png'
         else:
             name = 'index.html' if path == '/' else path.lstrip('/')
-            if name not in ('index.html','app.js','video-controls.js','composition-controls.js','project-controls.js','editor-layout.js','audio-panels.js','transform-controls.js','clip-dialogs.js','editing-tabs.js', 'edition-names.js','export-progress.js','undo-history.js','vector.js','eap.js','style.css','favicon.svg','logo-indoor.png','ofertas.js','ofertas.css','tarefas.js','tarefas.css'): raise FileNotFoundError()
+            if name not in ('index.html','app.js','video-controls.js','composition-controls.js','project-controls.js','editor-layout.js','audio-panels.js','transform-controls.js','clip-dialogs.js','editing-tabs.js','preview-ruler.js', 'edition-names.js','export-progress.js','undo-history.js','vector.js','eap.js','style.css','favicon.svg','logo-indoor.png','ofertas.js','ofertas.css','tarefas.js','tarefas.css'): raise FileNotFoundError()
             data = (ROOT / 'static' / name).read_bytes()
             content_type = mimetypes.guess_type(name)[0] or 'application/octet-stream'
     except Conflict as exc:
