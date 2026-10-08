@@ -44,7 +44,8 @@ async function request(path, body, method) {
   if(target)body={...body,folder:'navegador:'+target.token};
   if(path==='/api/plan')planTarget=target||null;
   const data=await baseRequest(path,body,method);
-  const delivery=path==='/api/export'?planTarget:['/api/vector/export','/api/eap/export'].includes(path)?target:null;
+  // exportação na fila: os arquivos só existem no fim; quem entrega é export-progress.js, depois do resultado
+  const delivery=path==='/api/export'?(data.queued?null:planTarget):['/api/vector/export','/api/eap/export'].includes(path)?target:null;
   if(delivery){await deliver(delivery);if(data.path)data.path=delivery.label;}
   return data;
 }

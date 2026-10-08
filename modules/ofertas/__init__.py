@@ -27,6 +27,9 @@ TEMPLATES = Path(os.environ.get('OFERTAS_TEMPLATES', PASTA / 'templates')).resol
 NODE = os.environ.get('OFERTAS_NODE') or shutil.which('node') or 'node'
 HF_CLI = MOTOR / 'node_modules' / 'hyperframes' / 'bin' / 'hyperframes.mjs'
 RENDERS_SIMULTANEOS = int(os.environ.get('OFERTAS_RENDERS', '1'))
+# remover fundo roda um modelo de IA pesado por pedido: sem limite, vários pedidos juntos esgotavam CPU e memória
+FUNDO = threading.Semaphore(int(os.environ.get('OFERTAS_FUNDO', '1')))
+RETOMADAS = 2  # vídeo interrompido por reinício volta à fila até 2 vezes; um que derruba o servidor não fica em laço
 MAX_UPLOAD = 100 * 1024 * 1024
 SEM_JANELA = getattr(subprocess, 'CREATE_NO_WINDOW', 0)
 MODULO = 'Ofertas de supermercados'
@@ -120,6 +123,11 @@ def garantir():
                 if 'owner' not in {c['name'] for c in db.execute(f'PRAGMA table_info({tabela})')}:
                     db.execute(f'ALTER TABLE {tabela} ADD COLUMN owner TEXT')
             # renders que estavam em andamento quando o servidor caiu não vão terminar sozinhos
+            if 'tentativas' not in {c['name'] for c in db.execute('PRAGMA table_info(ofertas_renders)')}:
+                db.execute('ALTER TABLE ofertas_renders ADD COLUMN tentativas INTEGER NOT NULL DEFAULT 0')
+            # vídeos que estavam sendo gerados quando o servidor parou (um deploy, por exemplo) voltam para o começo da
+            # fila: os dados do pedido foram congelados em renders/<id>/dados.json e o vídeo é refeito do zero
+            db.execute("UPDATE ofertas_renders SET status='na_fila', iniciado=NULL, tentativas=tentativas+1 WHERE status='gerando' AND tentativas<?", (RETOMADAS,))
             db.execute("UPDATE ofertas_renders SET status='interrompido', terminado=? WHERE status='gerando'", (now(),))
             pendentes = [r['id'] for r in db.execute("SELECT id FROM ofertas_encartes WHERE status='lendo'")]
         if status()['pronto']:
@@ -211,8 +219,9 @@ def remover_fundo(ident):
     if not row: raise ValueError('Imagem não encontrada.')
     saida = PASTA / 'renders' / f'fundo-{uid()}.png'
     try:
-        r = subprocess.run([NODE, str(HF_CLI), 'remove-background', str(PASTA / 'imagens' / f'{ident}.png'), '-o', str(saida)],
-                           capture_output=True, timeout=600, cwd=MOTOR, creationflags=SEM_JANELA)
+        with FUNDO:  # um por vez (OFERTAS_FUNDO): quem pede durante outro espera a vez
+            r = subprocess.run([NODE, str(HF_CLI), 'remove-background', str(PASTA / 'imagens' / f'{ident}.png'), '-o', str(saida)],
+                               capture_output=True, timeout=600, cwd=MOTOR, creationflags=SEM_JANELA)
         if r.returncode or not saida.exists():
             raise ValueError('Não foi possível remover o fundo: ' + r.stderr.decode('utf-8', 'replace')[-300:])
         return salvar_imagem(saida.read_bytes(), row['nome'] + ' (sem fundo)', 'fundo removido')

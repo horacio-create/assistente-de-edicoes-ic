@@ -1,4 +1,4 @@
-"""Thread-safe, ephemeral progress for the synchronous local export endpoint."""
+"""Thread-safe, ephemeral progress (and final result) of each export, queued or running."""
 import threading
 import time
 
@@ -6,12 +6,23 @@ LOCK = threading.Lock()
 STATES = {}
 
 
+def _trim():
+    expired = [key for key, value in STATES.items() if time.monotonic()-value['started'] > 7200]
+    for key in expired: del STATES[key]
+    if len(STATES) >= 100:
+        oldest = min(STATES, key=lambda key: STATES[key]['started']);del STATES[oldest]
+
+
+def queued(token, name):
+    """Na fila, esperando vaga (state 'waiting'); pode ser cancelada antes de começar."""
+    with LOCK:
+        _trim()
+        STATES[token] = dict(percent=0, name=name, remaining=None, state='waiting', detail='', started=time.monotonic(), cancelRequested=False)
+
+
 def start(token, name):
     with LOCK:
-        expired = [key for key, value in STATES.items() if time.monotonic()-value['started'] > 7200]
-        for key in expired: del STATES[key]
-        if len(STATES) >= 100:
-            oldest = min(STATES, key=lambda key: STATES[key]['started']);del STATES[oldest]
+        _trim()
         cancelled = STATES.get(token, {}).get('cancelRequested', False)
         STATES[token] = dict(percent=0, name=name, remaining=None, state='running', detail='', started=time.monotonic(), cancelRequested=cancelled)
 
@@ -30,6 +41,18 @@ def finish(token, success, cancelled=False):
     with LOCK:
         STATES[token].update(percent=100 if success and not cancelled else STATES[token]['percent'], remaining=0,
                              state='cancelled' if cancelled else 'complete' if success else 'failed')
+
+
+def result(token, value):
+    """Resultado final (o mesmo do /api/export síncrono): o navegador o lê no /api/export-progress."""
+    with LOCK:
+        STATES[token]['result'] = value
+
+
+def fail(token, message):
+    with LOCK:
+        STATES.setdefault(token, dict(percent=0, name='', detail='', started=time.monotonic()))
+        STATES[token].update(state='failed', remaining=0, result={'error': message})
 
 
 def cancel(token, pending=False):

@@ -15,6 +15,13 @@ services:
       INDOOR_ALLOWED_HOSTS: "*"           # qualquer nome que chegue pelo proxy (a 8080 não é exposta)
       INDOOR_AUTH: "1"                    # login, cargos e convites (ver README, "Usuários e acesso")
       INDOOR_TRUSTED_PROXY: "*"           # confia no X-Forwarded-Proto do Caddy: cookie de sessão só em HTTPS
+      # Trabalhos simultâneos, dimensionados para uma e2-standard-4 (4 vCPU, 16 GB). Ao trocar de máquina, ajuste
+      # estes números junto com cpus/mem_limit abaixo. Sem eles (app local), valem os padrões entre parênteses.
+      INDOOR_EXPORTS: "3"                 # exportações do editor em paralelo; as demais esperam na fila (2)
+      INDOOR_IMPORTS: "2"                 # importações de vídeo/áudio/PDF em paralelo (2)
+      INDOOR_LEVES: "6"                   # prévias, logos de MS6/EAP e vetorização em paralelo (4)
+      OFERTAS_RENDERS: "2"                # vídeos de Ofertas gerados ao mesmo tempo (1)
+      OFERTAS_FUNDO: "1"                  # remoções de fundo ao mesmo tempo; usa um modelo de IA pesado (1)
     restart: unless-stopped
     ports:
       - "127.0.0.1:8080:8080"
@@ -22,9 +29,9 @@ services:
       - dados:/dados                     # banco, mídias, vídeos e templates publicados
       - exportacoes:/exportacoes         # pasta de exportação de Imagens (use /exportacoes)
       - cache:/home/indoor/.cache        # Chrome e modelo de remoção de fundo (baixados uma vez)
-    shm_size: 512m                       # o Chrome usa /dev/shm; o padrão de 64 MB derruba renders
-    mem_limit: 2g                        # protege as outras aplicações do servidor durante um render
-    cpus: 1.5
+    shm_size: 1g                         # o Chrome usa /dev/shm; o padrão de 64 MB derruba renders (2 renders juntos)
+    mem_limit: 12g                       # dos 16 GB: sobra folga para o sistema, o Docker e o Caddy
+    cpus: 3.5                            # das 4 vCPUs: meia fica para o sistema e o Caddy responderem durante renders
   acesso:
     image: caddy:2-alpine
     container_name: assistente-edicoes-acesso

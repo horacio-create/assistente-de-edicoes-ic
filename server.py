@@ -18,13 +18,17 @@ from waitress import serve
 from version import VERSION
 from modules.images import DEFAULT, SUPPORTED, decode, dominant, encoded, render, settings
 from modules import ofertas
-from modules import videos, audio, composition, naming, export_progress, projects, import_tasks
+from modules import videos, audio, composition, naming, export_progress, export_queue, projects, import_tasks
 from modules import eap, vector, auth
 from PIL import Image
 from storage import DATA, FERRAMENTA, ROOT, USUARIO, connect, event, get_job, init, mine, now, owner, uid
 
 LOCK = threading.RLock()
-PROCESS = threading.Semaphore(2)
+# vagas por tipo de trabalho, para uma exportação longa não travar a prévia nem a importação de ninguém.
+# Os números vêm do deploy/compose.yaml (dimensionados para a máquina); os padrões servem ao app local.
+EXPORTAR = threading.Semaphore(export_queue.WORKERS)                   # exportar (fila de fundo): pesado e longo
+IMPORTAR = threading.Semaphore(int(os.environ.get('INDOOR_IMPORTS', '2')))  # importar: recodifica o vídeo enviado
+LEVE = threading.Semaphore(int(os.environ.get('INDOOR_LEVES', '4')))       # prévia, logos de MS6/EAP, vetorização
 PICKER = threading.Lock()
 MAX_UPLOAD = 100 * 1024 * 1024
 
@@ -67,13 +71,13 @@ class Conflict(Exception): pass
 
 @contextmanager
 def export_slot(cancelled):
-    while not PROCESS.acquire(timeout=.1):
+    while not EXPORTAR.acquire(timeout=.1):
         if cancelled(): raise videos.ExportCancelled('Exportação cancelada.')
     try:
         if cancelled(): raise videos.ExportCancelled('Exportação cancelada.')
         yield
     finally:
-        PROCESS.release()
+        EXPORTAR.release()
 
 def name_first_import(db, job, suggestion, added=1):
     row = db.execute('SELECT title,meta FROM jobs WHERE id=?', (job,)).fetchone()
@@ -93,7 +97,7 @@ def import_video(job, name, revision, raw, task=None):
     source, proxy, poster = (DATA / 'midias' / (ident + ext) for ext in ('.source', '.mp4', '.png'))
     try:
         source.write_bytes(raw)
-        with PROCESS:
+        with IMPORTAR:
             task.check()
             info, image = videos.import_video(source, proxy, poster, cancelled=task.cancelled)
         color = dominant(image)
@@ -124,7 +128,7 @@ def import_audio(job, name, revision, raw, task=None):
     source, proxy, poster = (DATA / 'midias' / (ident + ext) for ext in ('.source', '.m4a', '.png'))
     try:
         source.write_bytes(raw)
-        with PROCESS:
+        with IMPORTAR:
             task.check()
             info, peaks = audio.import_audio(source, proxy, poster, cancelled=task.cancelled)
         value = settings(DEFAULT | {'color': '#6a67ce'})
@@ -224,7 +228,7 @@ def upload_media(job, name, revision, raw, task):
             return {'unsupported': name, 'job': get_job(job)}
         added = []
         try:
-            with PROCESS:
+            with IMPORTAR:
                 for page, im, notes in decode(raw, ext):
                     task.check()
                     ident = uid()
@@ -247,7 +251,101 @@ def upload_media(job, name, revision, raw, task):
     return {'job': get_job(job)}
 
 
-def api(method, path, query, raw, environ=None):
+def prepare_export(value):
+    """Valida o plano e o consome na hora: conflito ou confirmação vencida voltam como erro ao navegador."""
+    with LOCK, connect() as db:
+        row = db.execute('SELECT * FROM plans WHERE id=?', (value['token'],)).fetchone()
+        if not row or time.time()-row['created'] > 3600: raise ValueError('Confirmação expirada. Revise os nomes novamente.')
+        check_revision(db, row['job'], row['revision'])
+        plan = json.loads(row['payload'])
+        if any(f['existing'] for f in plan['files']) and not value.get('overwrite'):
+            raise Conflict('Confirme a substituição das exportações existentes.')
+        for f in plan['files']:
+            if digest(Path(f['path'])) != f['existing']: raise Conflict('A pasta mudou depois da revisão. Revise os nomes novamente.')
+        db.execute('DELETE FROM plans WHERE id=?', (value['token'],))
+        event(db, row['job'], 'Exportação iniciada', {'arquivos': [f['path'] for f in plan['files']]})
+        db.commit()
+    return row, plan
+
+def run_export(token, row, plan):
+    """Processa os arquivos do plano. Pela web roda na fila de fundo (modules/export_queue); direto nos testes."""
+    export_progress.start(token, plan['files'][0]['name'])
+    cancelled = lambda: export_progress.is_cancelled(token)
+    results = []
+    was_cancelled = False
+    for index, f in enumerate(plan['files']):
+        if cancelled():
+            was_cancelled = True
+            break
+        def progress(fraction, retry=0):
+            export_progress.update(token, (index+fraction*.97)/len(plan['files']), f['name'], retry,
+                                   f"Arquivo {index+1} de {len(plan['files'])}" if len(plan['files']) > 1 else '')
+        progress(0)
+        dest = Path(f['path'])
+        temp = dest.parent / ('.indoor-' + uid() + '.tmp')
+        try:
+            with export_slot(cancelled):
+                logo = logo_path(f['settings'], row['job'])
+                if f.get('kind') == 'composition':
+                    report = composition.export(f['sources'], DATA / 'midias', temp, f['settings'],
+                                                lambda s: logo_path(s, row['job']), progress=progress, cancelled=cancelled)
+                    notes, data = report['notes'], None
+                    dims = [report['width'], report['height']]
+                elif f.get('kind') == 'video':
+                    report = videos.export(DATA / 'midias' / f"{f['id']}.source", temp, f['settings'], logo, progress=progress, cancelled=cancelled)
+                    notes = report['notes']
+                    data = None
+                    dims = [report['width'], report['height']]
+                else:
+                    im, notes = render(DATA / 'midias' / f"{f['id']}.png", f['settings'], logo)
+                    data = encoded(im, plan['format'])
+                    dims = [im.width, im.height]
+            if cancelled(): raise videos.ExportCancelled('Exportação cancelada.')
+            with LOCK, connect() as validation_db:
+                check_revision(validation_db, row['job'], row['revision'])
+            if data is not None:
+                with temp.open('xb') as out:
+                    out.write(data)
+                    out.flush()
+                    os.fsync(out.fileno())
+            if f['existing']:
+                if digest(dest) != f['existing']: raise Conflict('O arquivo mudou durante o processamento; não foi substituído.')
+                os.replace(temp, dest)
+            else:
+                publish_new(temp, dest)
+            with LOCK, connect() as db:
+                db.execute('INSERT OR REPLACE INTO exports VALUES(?,?,?)', (str(dest).casefold(), digest(dest), f['id']))
+                detail = dict(arquivo=str(dest), bytes=dest.stat().st_size, dimensoes=dims, ajustes=f['settings'], avisos=notes)
+                event(db, row['job'], 'Exportado', detail)
+            results.append({'name': dest.name, 'ok': True, **({'queueId': f['queueId']} if f.get('queueId') else {})})
+        except videos.ExportCancelled:
+            was_cancelled = True
+            break
+        except Exception as exc:
+            with LOCK, connect() as db:
+                event(db, row['job'], 'Falha na exportação', {'arquivo': str(dest), 'motivo': str(exc)})
+            results.append({'name': dest.name, 'ok': False, 'error': str(exc)})
+        finally:
+            temp.unlink(missing_ok=True)
+        export_progress.update(token, (index+1)/len(plan['files']), f['name'])
+    export_progress.finish(token, all(result['ok'] for result in results), was_cancelled)
+    if was_cancelled:
+        with LOCK, connect() as db:
+            event(db, row['job'], 'Exportação cancelada', {'concluidos': len(results)})
+    response = {'results': results, 'cancelled': was_cancelled}
+    if any(f.get('queueId') for f in plan['files']):
+        completed = {result['queueId'] for result in results if result.get('queueId') and result['ok']}
+        with LOCK, connect() as db:
+            current = db.execute('SELECT meta,revision FROM jobs WHERE id=?', (row['job'],)).fetchone()
+            if completed and current['revision'] == row['revision']:
+                meta = json.loads(current['meta'])
+                meta['exportQueue'] = [item for item in meta.get('exportQueue', []) if item['id'] not in completed]
+                db.execute('UPDATE jobs SET meta=?,updated=?,revision=revision+1 WHERE id=?', (json.dumps(meta), now(), row['job']))
+                event(db, row['job'], 'Fila atualizada', {'concluidos': len(completed)})
+        response['job'] = get_job(row['job'])
+    return response
+
+def api(method, path, query, raw, environ=None, background=False):
     value = json.loads(raw) if raw and path not in ('/api/upload', '/api/logo', '/api/vector/upload', '/api/eap/upload') else {}
     if path == '/api/info':
         user = USUARIO.get()
@@ -273,7 +371,10 @@ def api(method, path, query, raw, environ=None):
         return get_job(ident)
     if path == '/api/job' and method == 'GET': return get_job(query['id'][0])
     if path == '/api/export-progress' and method == 'GET':
-        return export_progress.get(query.get('token', [''])[0]) or {'state': 'waiting', 'percent': 0, 'remaining': None}
+        token = query.get('token', [''])[0]
+        state = export_progress.get(token) or {'state': 'waiting', 'percent': 0, 'remaining': None}
+        if state['state'] == 'waiting': state['position'] = export_queue.position(token)
+        return state
     if path == '/api/history':
         with connect() as db:
             return [dict(r) | {'detail': json.loads(r['detail'])} for r in db.execute('SELECT events.*,jobs.title FROM events LEFT JOIN jobs ON events.job=jobs.id WHERE events.hidden=0 AND (? IS NULL OR events.owner=?) ORDER BY events.id DESC LIMIT 500', (owner(), owner()))]
@@ -332,7 +433,7 @@ def api(method, path, query, raw, environ=None):
                 check_revision(db, job, revision)
                 meta = json.loads(db.execute('SELECT meta FROM jobs WHERE id=?', (job,)).fetchone()['meta'])
                 if as_clip and meta.get('editorKind') != 'video': raise ValueError('Faixas de logo estão disponíveis na edição de vídeos.')
-            with PROCESS:
+            with IMPORTAR:
                 from PIL import Image
                 try:
                     decoded = subprocess.run([sys.executable, str(ROOT/'modules'/'logo_decode.py')], input=raw, capture_output=True, timeout=90, creationflags=getattr(subprocess, 'CREATE_NO_WINDOW', 0))
@@ -405,7 +506,7 @@ def api(method, path, query, raw, environ=None):
     if path == '/api/preview':
         with connect() as db: row = db.execute('SELECT * FROM media WHERE id=?', (value['id'],)).fetchone()
         if not row: raise ValueError('Mídia não encontrada.')
-        with PROCESS:
+        with LEVE:
             logo = logo_path(value['settings'], row['job'])
             if row['kind'] == 'video':
                 im, notes = videos.preview(DATA / 'midias' / f"{row['id']}.source", value['settings'], row['duration'], logo, value.get('time'))
@@ -470,93 +571,9 @@ def api(method, path, query, raw, environ=None):
             db.execute('DELETE FROM plans WHERE created<?', (time.time()-3600,))
         return {'token': token, **plan}
     if path == '/api/export':
-        with LOCK, connect() as db:
-            row = db.execute('SELECT * FROM plans WHERE id=?', (value['token'],)).fetchone()
-            if not row or time.time()-row['created'] > 3600: raise ValueError('Confirmação expirada. Revise os nomes novamente.')
-            check_revision(db, row['job'], row['revision'])
-            plan = json.loads(row['payload'])
-            if any(f['existing'] for f in plan['files']) and not value.get('overwrite'):
-                raise Conflict('Confirme a substituição das exportações existentes.')
-            for f in plan['files']:
-                if digest(Path(f['path'])) != f['existing']: raise Conflict('A pasta mudou depois da revisão. Revise os nomes novamente.')
-            db.execute('DELETE FROM plans WHERE id=?', (value['token'],))
-            event(db, row['job'], 'Exportação iniciada', {'arquivos': [f['path'] for f in plan['files']]})
-            db.commit()
-        export_progress.start(value['token'], plan['files'][0]['name'])
-        cancelled = lambda: export_progress.is_cancelled(value['token'])
-        results = []
-        was_cancelled = False
-        for index, f in enumerate(plan['files']):
-            if cancelled():
-                was_cancelled = True
-                break
-            def progress(fraction, retry=0):
-                export_progress.update(value['token'], (index+fraction*.97)/len(plan['files']), f['name'], retry,
-                                       f"Arquivo {index+1} de {len(plan['files'])}" if len(plan['files']) > 1 else '')
-            progress(0)
-            dest = Path(f['path'])
-            temp = dest.parent / ('.indoor-' + uid() + '.tmp')
-            try:
-                with export_slot(cancelled):
-                    logo = logo_path(f['settings'], row['job'])
-                    if f.get('kind') == 'composition':
-                        report = composition.export(f['sources'], DATA / 'midias', temp, f['settings'],
-                                                    lambda s: logo_path(s, row['job']), progress=progress, cancelled=cancelled)
-                        notes, data = report['notes'], None
-                        dims = [report['width'], report['height']]
-                    elif f.get('kind') == 'video':
-                        report = videos.export(DATA / 'midias' / f"{f['id']}.source", temp, f['settings'], logo, progress=progress, cancelled=cancelled)
-                        notes = report['notes']
-                        data = None
-                        dims = [report['width'], report['height']]
-                    else:
-                        im, notes = render(DATA / 'midias' / f"{f['id']}.png", f['settings'], logo)
-                        data = encoded(im, plan['format'])
-                        dims = [im.width, im.height]
-                if cancelled(): raise videos.ExportCancelled('Exportação cancelada.')
-                with LOCK, connect() as validation_db:
-                    check_revision(validation_db, row['job'], row['revision'])
-                if data is not None:
-                    with temp.open('xb') as out:
-                        out.write(data)
-                        out.flush()
-                        os.fsync(out.fileno())
-                if f['existing']:
-                    if digest(dest) != f['existing']: raise Conflict('O arquivo mudou durante o processamento; não foi substituído.')
-                    os.replace(temp, dest)
-                else:
-                    publish_new(temp, dest)
-                with LOCK, connect() as db:
-                    db.execute('INSERT OR REPLACE INTO exports VALUES(?,?,?)', (str(dest).casefold(), digest(dest), f['id']))
-                    detail = dict(arquivo=str(dest), bytes=dest.stat().st_size, dimensoes=dims, ajustes=f['settings'], avisos=notes)
-                    event(db, row['job'], 'Exportado', detail)
-                results.append({'name': dest.name, 'ok': True, **({'queueId': f['queueId']} if f.get('queueId') else {})})
-            except videos.ExportCancelled:
-                was_cancelled = True
-                break
-            except Exception as exc:
-                with LOCK, connect() as db:
-                    event(db, row['job'], 'Falha na exportação', {'arquivo': str(dest), 'motivo': str(exc)})
-                results.append({'name': dest.name, 'ok': False, 'error': str(exc)})
-            finally:
-                temp.unlink(missing_ok=True)
-            export_progress.update(value['token'], (index+1)/len(plan['files']), f['name'])
-        export_progress.finish(value['token'], all(result['ok'] for result in results), was_cancelled)
-        if was_cancelled:
-            with LOCK, connect() as db:
-                event(db, row['job'], 'Exportação cancelada', {'concluidos': len(results)})
-        response = {'results': results, 'cancelled': was_cancelled}
-        if any(f.get('queueId') for f in plan['files']):
-            completed = {result['queueId'] for result in results if result.get('queueId') and result['ok']}
-            with LOCK, connect() as db:
-                current = db.execute('SELECT meta,revision FROM jobs WHERE id=?', (row['job'],)).fetchone()
-                if completed and current['revision'] == row['revision']:
-                    meta = json.loads(current['meta'])
-                    meta['exportQueue'] = [item for item in meta.get('exportQueue', []) if item['id'] not in completed]
-                    db.execute('UPDATE jobs SET meta=?,updated=?,revision=revision+1 WHERE id=?', (json.dumps(meta), now(), row['job']))
-                    event(db, row['job'], 'Fila atualizada', {'concluidos': len(completed)})
-            response['job'] = get_job(row['job'])
-        return response
+        row, plan = prepare_export(value)
+        if background: return export_queue.submit(value['token'], plan['files'][0]['name'], lambda: run_export(value['token'], row, plan))
+        return run_export(value['token'], row, plan)
     if path.startswith('/api/vector/'):
         return vector_api(path, query, value, raw)
     if path.startswith('/api/eap/'):
@@ -574,7 +591,7 @@ def receive_logo(folder, query, raw, supported, action):
     name = query['name'][0].replace('\\', '/').split('/')[-1][:180]
     ext = Path(name).suffix.lower()
     if ext not in supported: raise ValueError('Formato não suportado. Use PNG, JPG, WebP, BMP, TIFF, PDF, AI ou SVG.')
-    with PROCESS:
+    with LEVE:
         try: im = vector.load(raw, ext)
         except ValueError: raise
         except Exception as exc: raise ValueError(f'Não foi possível abrir {name}.') from exc
@@ -603,13 +620,13 @@ def vector_api(path, query, value, raw):
         ident, name, im = receive_logo('vetores', query, raw, vector.SUPPORTED, 'Logo para vetorização')
         return {'id': ident, 'name': name, 'width': im.width, 'height': im.height}
     if path == '/api/vector/trace':
-        with PROCESS: result = vector.trace(stored('vetores', value.get('id')), value.get('settings'))
+        with LEVE: result = vector.trace(stored('vetores', value.get('id')), value.get('settings'))
         return {k: result[k] for k in ('width', 'height', 'threshold', 'points', 'notes')} | {'contours': len(result['contours']), 'path': vector.svg_path(result['contours'])}
     if path == '/api/vector/export':
         folder, name = directory(value['folder']), clean(value['name'])
         dest = folder / (name + '.dxf')
         refuse_existing([dest])
-        with PROCESS:
+        with LEVE:
             result = vector.trace(stored('vetores', value.get('id')), value.get('settings'))
             data = vector.dxf(result['contours'])
         try: write_new(dest, data)
@@ -630,14 +647,14 @@ def eap_api(path, query, value, raw):
         ident, name, im = receive_logo('eap', query, raw, eap.SUPPORTED, 'Logo EAP recebida')
         quality = eap.jpeg_quality(raw)
         (DATA / 'eap' / (ident + '.json')).write_text(json.dumps({'name': name, 'quality': quality}))
-        with PROCESS:
+        with LEVE:
             cut, info = eap.matte(im, eap.settings({}))
             try: assessment = eap.assess(eap.crop_art(cut), quality, eap.DEFAULT['margin'])
             except ValueError: assessment = eap.assess(im, quality, eap.DEFAULT['margin'])
         return {'id': ident, 'name': name, 'width': im.width, 'height': im.height, 'assessment': assessment, 'flatBackground': info['flatBackground']}
     if path == '/api/eap/preview':
         import base64
-        with PROCESS:
+        with LEVE:
             result = eap.compose(stored('eap', value.get('id')), value.get('settings'), eap_quality(value['id']))
             previews = {}
             for key, im in result['images'].items():
@@ -652,7 +669,7 @@ def eap_api(path, query, value, raw):
         if value.get('svg') and s['mode'] == 'vector': files.append((folder / f'{name}.svg', 'svg'))
         if not files: raise ValueError('Escolha ao menos uma versão para exportar.')
         refuse_existing([f for f, _ in files])
-        with PROCESS:
+        with LEVE:
             result = eap.compose(stored('eap', value.get('id')), s, eap_quality(value['id']))
             payload = [(dest, result['svg'].encode() if kind == 'svg' else eap.png(result['images'][kind])) for dest, kind in files]
         saved = []
@@ -706,7 +723,7 @@ def app(environ, start_response):
             length = int(environ.get('CONTENT_LENGTH') or 0)
             if length > MAX_UPLOAD: raise ValueError('Limite de 100 MB por arquivo.')
             body = environ['wsgi.input'].read(length)
-            result = api(method, path, parse_qs(environ.get('QUERY_STRING', '')), body, environ)
+            result = api(method, path, parse_qs(environ.get('QUERY_STRING', '')), body, environ, background=True)
             data = json.dumps(result, ensure_ascii=False).encode()
         elif path.startswith(('/video/', '/audio/')):
             ident = path.split('/')[-1]
