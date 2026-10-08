@@ -1,13 +1,16 @@
 'use strict';
 const $ = id => document.getElementById(id);
 let job = null, active = null, selected = new Set(), dirty = false, busy = false, plan = null, exportIds = [], previewIndex = 0, previewTimer, previewSerial = 0, finalSerial = 0, info = {}, exportFolder = "", planTimer, planSerial = 0;
-const defaults = {width:1280,height:720,mode:'contain',color:'#15191e',rotation:0,flipH:false,flipV:false,zoom:1,x:0,y:0,safe:true,lockSize:false,lockX:false,lockY:false,lockOutput:false,logoId:null,logoScale:.12,logoX:.97,logoY:.03};
+const defaults = {width:1280,height:720,mode:'contain',color:'#15191e',rotation:0,flipH:false,flipV:false,zoom:1,scaleX:1,scaleY:1,proportionLocked:true,x:0,y:0,safe:true,lockSize:false,lockX:false,lockY:false,lockOutput:false,logoId:null,logoScale:.12,logoX:.97,logoY:.03};
 function mediaGeometry(m){
  const s=m.settings,angle=s.rotation*Math.PI/180,cos=Math.abs(Math.cos(angle)),sin=Math.abs(Math.sin(angle));
  let iw,ih;if(s.rotation%90===0){iw=s.rotation%180?m.height:m.width;ih=s.rotation%180?m.width:m.height;}
  else{const spanX=m.width*cos+m.height*sin,spanY=m.width*sin+m.height*cos;iw=Math.ceil((m.width+spanX)/2)-Math.floor((m.width-spanX)/2);ih=Math.ceil((m.height+spanY)/2)-Math.floor((m.height-spanY)/2);}
- const factor=s.lockSize?1:(s.mode==='cover'?Math.max(s.width/iw,s.height/ih):Math.min(s.width/iw,s.height/ih))*s.zoom,rw=Math.max(1,Math.round(iw*factor)),rh=Math.max(1,Math.round(ih*factor));
- return {factor,rw,rh,x:Math.round((s.width-rw)/2+s.x*s.width),y:Math.round((s.height-rh)/2+s.y*s.height),drawW:Math.max(1,Math.round(m.width*factor)),drawH:Math.max(1,Math.round(m.height*factor))};
+ const factor=s.lockSize?1:(s.mode==='cover'?Math.max(s.width/iw,s.height/ih):Math.min(s.width/iw,s.height/ih))*s.zoom;
+ const drawW=Math.max(1,Math.round(m.width*factor*(s.scaleX??1))),drawH=Math.max(1,Math.round(m.height*factor*(s.scaleY??1)));
+ let rw=Math.max(1,Math.round(iw*factor)),rh=Math.max(1,Math.round(ih*factor));
+ if((s.scaleX??1)!==1||(s.scaleY??1)!==1){if(s.rotation%90===0){rw=s.rotation%180?drawH:drawW;rh=s.rotation%180?drawW:drawH;}else{const spanX=drawW*cos+drawH*sin,spanY=drawW*sin+drawH*cos;rw=Math.ceil((drawW+spanX)/2)-Math.floor((drawW-spanX)/2);rh=Math.ceil((drawH+spanY)/2)-Math.floor((drawH-spanY)/2);}}
+ return {factor,rw,rh,x:Math.round((s.width-rw)/2+s.x*s.width),y:Math.round((s.height-rh)/2+s.y*s.height),drawW,drawH};
 }
 
 let reorderDrag=null, reorderFrame=0;
@@ -95,7 +98,7 @@ function nextMedia(step){if(busy||!job)return;const i=job.media.findIndex(m=>m.i
 $('media-prev').onclick=()=>nextMedia(-1);$('media-next').onclick=()=>nextMedia(1);
 
 for(const [id,key] of [['lock-size','lockSize'],['lock-x','lockX'],['lock-y','lockY']])$(id).onchange=()=>change({[key]:$(id).checked});
-$('fit-image').onclick=()=>{change({zoom:1,x:0,y:0,lockSize:false});$('zoom').value=1;};
+$('fit-image').onclick=()=>{change({zoom:1,scaleX:1,scaleY:1,proportionLocked:true,x:0,y:0,lockSize:false});$('zoom').value=1;};
 
 function queuePreview(){drawSoon();clearTimeout(previewTimer);previewSerial++;const ticket=previewSerial;previewTimer=setTimeout(()=>showPreview(ticket),180);}
 async function showPreview(ticket){const m=current();if(!m)return;try{const result=await request('/api/preview',{id:m.id,settings:m.settings,time:m.kind==='video'?videoPlayer.currentTime:undefined});if(ticket!==previewSerial||active!==m.id)return;$('editor-image').src=result.image;fitStage();$('safe-guide').hidden=!m.settings.safe;$('notes').replaceChildren();for(const note of [...m.notes,...result.notes]){const p=document.createElement('p');p.textContent='⚠ '+note;$('notes').append(p);}thumbCache.set(m.id,result.image);thumbKeys.set(m.id,JSON.stringify(m.settings));const cards=[...$('grid').children];const index=job.media.findIndex(x=>x.id===m.id);if(cards[index])cards[index].querySelector('.thumb').src=result.image;}catch(e){toast(e.message);}}

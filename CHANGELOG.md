@@ -2,6 +2,18 @@
 
 ## 1.8.0 — versão oficial — 06/10/2026
 
+### Guias e transformação de 08/10/2026
+
+- Até cinco guias de edição por seção, com +, fechar, renomear e aviso do limite.
+  Fechar mantém o trabalho salvo; guias, timeline aberta e ajustes são recuperáveis.
+- Corrente clicável liga/libera largura e altura, incluindo alças de esticamento,
+  prévia, exportação e persistência. Home e Ajustar à tela restauram a proporção.
+- Medidas superiores retiradas da vista de vídeo; Personalizado abre Tamanho da tela.
+- Espelhamentos padronizados nos editores de imagem e vídeo, com dicas por hover.
+  Em vídeo ficam à direita da rotação, num campo compacto com ° junto ao número.
+- Rotação preserva o sentido anti-horário com valores negativos; voltas completas
+  são reduzidas ao ângulo equivalente.
+
 ### Refinamentos visuais da fila de 07/10/2026
 
 - Adicionar à fila e Fila recebem rótulos separados e ícones de mídias empilhadas.

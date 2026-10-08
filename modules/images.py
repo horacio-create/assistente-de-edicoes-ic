@@ -8,7 +8,7 @@ import pymupdf
 Image.MAX_IMAGE_PIXELS = 40_000_000
 warnings.simplefilter('error', Image.DecompressionBombWarning)
 SUPPORTED = {'.jpg', '.jpeg', '.png', '.webp', '.bmp', '.tif', '.tiff', '.pdf'}
-DEFAULT = dict(width=1280, height=720, mode='contain', color='#15191e', rotation=0, flipH=False, flipV=False, zoom=1, x=0, y=0, safe=True, lockSize=False, lockX=False, lockY=False, lockOutput=False, logoId=None, logoScale=.12, logoX=.97, logoY=.03)
+DEFAULT = dict(width=1280, height=720, mode='contain', color='#15191e', rotation=0, flipH=False, flipV=False, zoom=1, scaleX=1, scaleY=1, proportionLocked=True, x=0, y=0, safe=True, lockSize=False, lockX=False, lockY=False, lockOutput=False, logoId=None, logoScale=.12, logoX=.97, logoY=.03)
 
 def settings(value):
     s = DEFAULT | value
@@ -17,14 +17,16 @@ def settings(value):
         raise ValueError('Use dimensões de 64 a 7680 pixels, até 20 milhões de pixels.')
     if s['mode'] not in ('contain', 'cover', 'background') or not re.fullmatch(r'#[0-9a-fA-F]{6}', s['color']):
         raise ValueError('Modo ou cor inválido.')
-    for key, low, high in [('zoom', .1, 5), ('x', -1, 1), ('y', -1, 1), ('logoScale', .02, .8), ('logoX', 0, 1), ('logoY', 0, 1)]:
+    for key, low, high in [('zoom', .1, 5), ('scaleX', .1, 5), ('scaleY', .1, 5), ('x', -1, 1), ('y', -1, 1), ('logoScale', .02, .8), ('logoX', 0, 1), ('logoY', 0, 1)]:
         s[key] = float(s[key])
         if not math.isfinite(s[key]) or not low <= s[key] <= high:
             raise ValueError('Ajuste fora do limite.')
+    if not isinstance(s['proportionLocked'], bool):
+        raise ValueError('Estado da proporção inválido.')
     s['rotation'] = float(s['rotation'])
     if not math.isfinite(s['rotation']):
         raise ValueError('Rotação inválida.')
-    s['rotation'] %= 360
+    s['rotation'] = math.fmod(s['rotation'], 360)
     if s['lockX']: s['x'] = 0
     if s['lockY']: s['y'] = 0
     return s
@@ -75,25 +77,46 @@ def rotated_size(width, height, rotation):
             math.ceil((height+span_y)/2)-math.floor((height-span_y)/2))
 
 
+def geometry(width, height, s):
+    iw, ih = rotated_size(width, height, s['rotation'])
+    factor = 1 if s['lockSize'] else (max if s['mode'] == 'cover' else min)(s['width']/iw, s['height']/ih)*s['zoom']
+    dw, dh = max(1, round(width*factor*s.get('scaleX', 1))), max(1, round(height*factor*s.get('scaleY', 1)))
+    stretched = s.get('scaleX', 1) != 1 or s.get('scaleY', 1) != 1
+    rw, rh = rotated_size(dw, dh, s['rotation']) if stretched else (max(1, round(iw*factor)), max(1, round(ih*factor)))
+    if stretched and (dw*dh > 20_000_000 or rw*rh > 20_000_000):
+        raise ValueError('Reduza a escala: o esticamento deve ficar abaixo de 20 milhões de pixels.')
+    return dict(factor=factor, drawW=dw, drawH=dh, rw=rw, rh=rh,
+                x=round((s['width']-rw)/2+s['x']*s['width']),
+                y=round((s['height']-rh)/2+s['y']*s['height']))
+
+
 def render(source, value, logo=None, transparent=False):
     s = settings(value)
     with Image.open(source) as original:
         im = original.convert('RGBA')
     if s['flipH']: im = ImageOps.mirror(im)
     if s['flipV']: im = ImageOps.flip(im)
-    im = im.rotate(-s['rotation'], expand=True, resample=Image.Resampling.BICUBIC if s['rotation'] % 90 else Image.Resampling.NEAREST)
     w, h = s['width'], s['height']
-    factor = 1 if s['lockSize'] else (max if s['mode'] == 'cover' else min)(w / im.width, h / im.height) * s['zoom']
-    rw, rh = max(1, round(im.width * factor)), max(1, round(im.height * factor))
-    x, y = (w - rw) / 2 + s['x'] * w, (h - rh) / 2 + s['y'] * h
+    g = geometry(im.width, im.height, s)
+    factor, rw, rh, x, y = (g[k] for k in ('factor','rw','rh','x','y'))
     result = Image.new('RGBA', (w, h), (0, 0, 0, 0) if transparent else s['color'] if s['mode'] == 'background' else '#000000')
-    if rw * rh <= 20_000_000:
-        layer = im.resize((rw, rh), Image.Resampling.LANCZOS)
-        result.alpha_composite(layer, (round(x), round(y)))
-    else:
-        # Bound memory for extreme zooms or aspect ratios.
-        layer = im.transform((w, h), Image.Transform.AFFINE, (1/factor, 0, -x/factor, 0, 1/factor, -y/factor), Image.Resampling.BICUBIC)
+    if s['scaleX'] != 1 or s['scaleY'] != 1:
+        # Sample directly into the output canvas, bounding memory even when cropped.
+        angle = math.radians(s['rotation']); co, si = math.cos(angle), math.sin(angle)
+        sx, sy = g['drawW']/im.width, g['drawH']/im.height
+        cx, cy = x+rw/2, y+rh/2
+        matrix = (co/sx, si/sx, im.width/2-(co*cx+si*cy)/sx,
+                  -si/sy, co/sy, im.height/2+(si*cx-co*cy)/sy)
+        layer = im.transform((w,h), Image.Transform.AFFINE, matrix, Image.Resampling.BICUBIC)
         result.alpha_composite(layer)
+    else:
+        im = im.rotate(-s['rotation'], expand=True, resample=Image.Resampling.BICUBIC if s['rotation'] % 90 else Image.Resampling.NEAREST)
+        if rw * rh <= 20_000_000:
+            layer = im.resize((rw, rh), Image.Resampling.LANCZOS)
+            result.alpha_composite(layer, (round(x), round(y)))
+        else:
+            layer = im.transform((w, h), Image.Transform.AFFINE, (1/factor, 0, -x/factor, 0, 1/factor, -y/factor), Image.Resampling.BICUBIC)
+            result.alpha_composite(layer)
     if logo:
         with Image.open(logo) as asset:
             mark = asset.convert('RGBA')

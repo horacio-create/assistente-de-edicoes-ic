@@ -697,7 +697,7 @@ def app(environ, start_response):
             content_type = 'image/png'
         else:
             name = 'index.html' if path == '/' else path.lstrip('/')
-            if name not in ('index.html','app.js','video-controls.js','composition-controls.js','project-controls.js','editor-layout.js','audio-panels.js','transform-controls.js','clip-dialogs.js', 'edition-names.js','export-progress.js','undo-history.js','vector.js','eap.js','style.css','favicon.svg','logo-indoor.png','ofertas.js','ofertas.css','tarefas.js','tarefas.css'): raise FileNotFoundError()
+            if name not in ('index.html','app.js','video-controls.js','composition-controls.js','project-controls.js','editor-layout.js','audio-panels.js','transform-controls.js','clip-dialogs.js','editing-tabs.js', 'edition-names.js','export-progress.js','undo-history.js','vector.js','eap.js','style.css','favicon.svg','logo-indoor.png','ofertas.js','ofertas.css','tarefas.js','tarefas.css'): raise FileNotFoundError()
             data = (ROOT / 'static' / name).read_bytes()
             content_type = mimetypes.guess_type(name)[0] or 'application/octet-stream'
     except Conflict as exc:
