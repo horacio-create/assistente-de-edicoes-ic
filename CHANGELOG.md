@@ -10,6 +10,11 @@
   e recuos iguais aos da biblioteca de mídias.
 - Chaves de início/fim em vetores espelhados e centralizados. Ícone Fila menor,
   alinhado ao texto e com espaçamento regular; mantido o desenho de mídias empilhadas.
+- Botão + das guias de edição logo após a curva da guia ativa, sem espaço sobrando.
+- Tempo atual da timeline maior (18 px), à esquerda e alinhado à coluna de ferramentas,
+  como o timecode do Premiere; largura estável durante a reprodução.
+- Coluna de ferramentas da timeline com o mesmo recuo dos dois lados; setas de mover
+  trecho redesenhadas no tamanho dos demais ícones e opticamente centralizadas.
 - Mantidos os cortes, cancelamento de importação, login e fila de exportação em
   segundo plano da main, sem alterações nas edições ou mídias dos usuários.
 

@@ -686,3 +686,14 @@ body:not(.video-workspace) .presetbar>div.format-picker{flex:1 1 100%;min-width:
 .video-workspace .preview-cut-marks button:focus-visible{outline:2px solid var(--purple);outline-offset:-2px}
 .video-workspace .queue-actions #queue-open{gap:var(--ui-gap)}
 .video-workspace .queue-actions #queue-open>svg{width:20px;height:20px;transform:translateY(-1px)}
+
+/* Editing tabs: + sits right after the active tab's 8px curve, as in Chrome. */
+#editing-tabbar{gap:0}
+
+/* Current time: Premiere-style timecode, larger and flush with the tool rail. */
+.video-workspace #montage-position{gap:3px;min-width:76px;font-size:18px;font-weight:700;line-height:1}
+.video-workspace #montage-current-time{width:auto;field-sizing:content;min-width:2ch;padding:3px 0;font-size:18px;text-align:left;font-variant-numeric:tabular-nums}
+@supports not (field-sizing:content){.video-workspace #montage-current-time{width:7.4ch}}
+
+/* Tool rail: 8px on both sides; the timeline's own border is the divider. */
+.video-workspace .timeline-rail::after{display:none}
