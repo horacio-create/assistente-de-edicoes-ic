@@ -15,7 +15,7 @@ window.IndoorTarefas = (() => {
     painel.setAttribute('aria-label', 'Tarefas em andamento');
     painel.innerHTML = `<header><strong aria-live="polite"></strong>
       <button type="button" class="t-min" aria-label="Minimizar" aria-expanded="true"><span></span></button>
-      <button type="button" class="t-fechar" aria-label="Fechar">×</button></header><ul></ul>`;
+      <button type="button" class="t-fechar" aria-label="Fechar">${icon('x')}</button></header><ul></ul>`;
     document.body.append(painel);
     // o painel não pode esconder conteúdo: a página reserva o espaço dele (ver tarefas.css)
     new ResizeObserver(() => document.body.style.setProperty('--tarefas-altura', painel.hidden ? '0px' : painel.offsetHeight + 24 + 'px')).observe(painel);

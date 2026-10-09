@@ -1,7 +1,7 @@
 'use strict';
 
 // Definitions are hoisted so timeline rendering can call them after this script loads.
-const clipClockIcon='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>';
+const clipClockIcon=icon('clock');
 let clipClickPrevious=null,clipTimeDraft=null;
 function appendClipClock(controls,track,name){
  const clips=project().clips.filter(c=>c.track===track.id),chosen=clips.find(c=>c.id===compositionSelected)||clips.find(c=>compositionCursor>=c.at&&compositionCursor<c.at+c.duration)||clips[0];
@@ -15,7 +15,7 @@ function handleClipClick(e,c){
 }
 function makeClipDialog(id,title,body){
  const dialog=document.createElement('dialog');dialog.id=id;dialog.className='clip-time-dialog';dialog.setAttribute('aria-labelledby',id+'-title');
- dialog.innerHTML=`<div class="dialog-head"><h2 id="${id}-title">${title}</h2><button type="button" class="close" aria-label="Fechar">×</button></div>${body}<p class="clip-time-error" role="alert" hidden></p><div class="dialog-footer"><button type="button" class="secondary clip-time-cancel">Cancelar</button><button type="button" class="primary clip-time-apply">Aplicar</button></div>`;
+ dialog.innerHTML=`<div class="dialog-head"><h2 id="${id}-title">${title}</h2><button type="button" class="close" aria-label="Fechar">${icon('x')}</button></div>${body}<p class="clip-time-error" role="alert" hidden></p><div class="dialog-footer"><button type="button" class="secondary clip-time-cancel">Cancelar</button><button type="button" class="primary clip-time-apply">Aplicar</button></div>`;
  document.body.append(dialog);dialog.querySelector('.close').onclick=dialog.querySelector('.clip-time-cancel').onclick=()=>dialog.close();return dialog;
 }
 const clipSpeedDialog=makeClipDialog('clip-speed-dialog','Velocidade e duração',`<p class="clip-time-name"></p><p>Duração do trecho a 100%: <strong id="clip-speed-original"></strong></p><div class="two-columns"><label id="clip-speed-percent-label">Duração relativa (%)<input id="clip-speed-percent" type="number" min="25" max="400" step="0.01"></label><label>Nova duração (s)<input id="clip-speed-duration" type="number" min="0.04" max="3600" step="0.01"></label></div><p id="clip-speed-explanation">100% mantém a duração original do corte. 50% reduz a duração à metade (2× mais rápido); 200% dobra a duração (0,5×).</p><p id="clip-speed-rate"></p>`);
@@ -73,11 +73,7 @@ const originalApplyCaption=$('apply-all').textContent;
 const clipDialogSyncKind=syncEditorKind;syncEditorKind=function(){clipDialogSyncKind();$('apply-selected').hidden=editorKind==='video';$('apply-all').textContent=editorKind==='video'?'Aplicar modelo às demais timelines':originalApplyCaption;};
 
 // Pixel fields use the same geometry as the canvas; Cartesian Y points upwards.
-const geometryIcon=path=>`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${path}</svg>`;
-const positionIcon=geometryIcon('<rect x="8" y="8" width="8" height="8"/><path d="M12 1v5m-2-3 2-2 2 2M12 18v5m-2-2 2 2 2-2M1 12h5m-3-2-2 2 2 2M18 12h5m-2-2 2 2-2 2"/>');
-const scaleIcon=geometryIcon('<rect x="8" y="8" width="8" height="8"/><path d="m2 2 4 4M2 5V2h3m17 0-4 4m1-4h3v3M2 22l4-4m-4 1v3h3m17 0-4-4m1 4h3v-3"/>');
-const rotationIcon=geometryIcon('<path d="M3 8a10 10 0 0 1 18 0m-4-1 4 1 1-4"/><path d="m12 10 6 6-6 6-6-6z"/>');
-const chainIcon=geometryIcon('<path d="m10 14 4-4m-6 3-2 2a4 4 0 0 0 6 6l3-3a4 4 0 0 0 0-6m-6 0a4 4 0 0 1 0-6l3-3a4 4 0 0 1 6 6l-2 2"/>');
+const positionIcon=icon('move'),scaleIcon=icon('scaling'),rotationIcon=icon('rotate-cw'),chainIcon=icon('link');
 const pixelGeometry=document.createElement('section');pixelGeometry.id='pixel-geometry';pixelGeometry.innerHTML=`<h3>Transformação</h3>
 <div class="geometry-row"><span class="geometry-icon" title="Posição">${positionIcon}</span><div class="geometry-pair"><label class="geometry-field"><span>X</span><input id="clip-position-x" aria-label="Posição X em pixels" type="number" step="0.01"></label><label class="geometry-field"><span>Y</span><input id="clip-position-y" aria-label="Posição Y em pixels" type="number" step="0.01"></label></div></div>
 <div class="geometry-row"><span class="geometry-icon" title="Rotação">${rotationIcon}</span><label class="geometry-field rotation-field"><input id="clip-rotation" aria-label="Rotação em graus" type="number" step="0.01"><span aria-hidden="true">°</span></label></div>

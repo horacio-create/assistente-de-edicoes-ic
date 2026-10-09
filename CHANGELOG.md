@@ -15,6 +15,16 @@
   como o timecode do Premiere; largura estável durante a reprodução.
 - Coluna de ferramentas da timeline com o mesmo recuo dos dois lados; setas de mover
   trecho redesenhadas no tamanho dos demais ícones e opticamente centralizadas.
+- Ícones unificados no conjunto Lucide (via Iconify, fonte da skill Better Icons), com
+  traço único de 1,75 em `static/icons.js`; caracteres usados como ícone (▶, ×, ↶, ↗, 🔒, ⚠)
+  trocados por SVG. Mantidos o ✓ dos resultados de exportação e o X vermelho do áudio mudo.
+- Auditoria de espaçamentos: mesma borda esquerda para formatos, título, biblioteca e
+  timeline; espaçamentos de 4/8 px na prévia, na barra de exportação e nas guias da biblioteca;
+  botões de texto do painel alinhados à coluna; rotação e espelhos nas mesmas duas colunas
+  de posição e escala; controles das faixas em 28 × 28 px.
+- Editor de imagens: frase de apoio logo abaixo do título e guias de edição encaixadas no
+  cartão Formato da tela; título do cartão, formatos e miniaturas em espaçamentos de 8 px;
+  ＋ de Nova seção, Importar, Adicionar e telas vazias trocado pelo ícone Lucide.
 - Mantidos os cortes, cancelamento de importação, login e fila de exportação em
   segundo plano da main, sem alterações nas edições ou mídias dos usuários.
 

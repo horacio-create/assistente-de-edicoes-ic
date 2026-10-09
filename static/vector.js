@@ -28,7 +28,7 @@ function drawVector(){
  $('vector-path').setAttribute('d',r.path);
  $('vector-size').textContent=`${fmtMm(r.width)} × ${fmtMm(r.height)} mm`;
  $('vector-stats').textContent=`${r.contours} contorno${r.contours!==1?'s':''} fechado${r.contours!==1?'s':''} · ${r.points.toLocaleString('pt-BR')} pontos`;
- $('vector-notes').replaceChildren(...r.notes.map(n=>{const p=document.createElement('p');p.textContent='⚠ '+n;return p;}));
+ $('vector-notes').replaceChildren(...r.notes.map(n=>{const p=document.createElement('p');p.textContent=n;p.insertAdjacentHTML('afterbegin',icon('alert','note-icon'));return p;}));
 }
 function setVectorView(view){
  vecView=view;const shell=document.querySelector('.vector-shell');shell.classList.toggle('outline',view==='outline');shell.classList.toggle('original',view==='original');

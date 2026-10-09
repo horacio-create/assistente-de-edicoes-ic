@@ -43,7 +43,7 @@ async function renderEap(serial){
   for(const key of ['white','black','transparent'])$('eap-'+key).src=result.previews[key];
   const a=result.assessment;
   $('eap-stats').textContent=`Arte original ${a.artPx[0]} × ${a.artPx[1]} px${result.colors?` · ${result.colors} cor${result.colors>1?'es':''}`:''}`;
-  $('eap-notes').replaceChildren(...result.notes.map(n=>{const p=document.createElement('p');p.textContent='⚠ '+n;return p;}));
+  $('eap-notes').replaceChildren(...result.notes.map(n=>{const p=document.createElement('p');p.textContent=n;p.insertAdjacentHTML('afterbegin',icon('alert','note-icon'));return p;}));
  }catch(e){if(serial!==eapSerial)return;eapResult=null;$('eap-notes').replaceChildren();$('eap-stats').textContent=e.message;}
  finally{if(serial===eapSerial){$('eap-busy').hidden=true;eapSync();}}
 }

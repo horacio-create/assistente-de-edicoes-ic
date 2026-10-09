@@ -17,9 +17,9 @@ function nextTimelineName(){let number=timelines().length+1;while(timelines().so
 function emptyComposition(){return {version:1,settings:structuredClone(project()?.settings||{...defaults,targetMB:4,mute:false}),tracks:[{id:freshId(),kind:'video',locked:false,muted:false,previewVisible:true}],clips:[]};}
 function mutateEdition(mutate){undoGesture=null;editSettings(job.media,mutate);markDirty();}
 const timelineViews=new Map();let timelineScreen=null,clipClipboard=null,libraryTab='media',queueExportMode=false,timelinePanelSignature=null;
-const timelineIcon='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16M4 11h16M4 17h16M8 3v18"/><rect x="11" y="8" width="7" height="5" rx="1"/></svg>';
-const trashIcon='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18M9 6V3h6v3M5 6l1 15h12l1-15M10 10v7M14 10v7"/></svg>';
-const scissorsIcon='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="m8 8 12 12M8 16 20 4"/></svg>';
+const timelineIcon=icon('timeline');
+const trashIcon=icon('trash');
+const scissorsIcon=icon('scissors');
 const libraryTabs=document.createElement('div');libraryTabs.className='library-tabs';libraryTabs.setAttribute('role','tablist');libraryTabs.setAttribute('aria-label','Biblioteca da edição');
 libraryTabs.innerHTML='<button id="media-tab" role="tab" type="button" aria-controls="media-panel" data-help="Biblioteca compartilhada. Arraste arquivos do computador para importar e miniaturas para a timeline.">Mídias</button><button id="edition-tab" role="tab" type="button" aria-controls="edition-panel" data-help="Criar, abrir, renomear e excluir as timelines desta edição.">Edição</button>';
 const mediaPanel=document.createElement('div');mediaPanel.id='media-panel';mediaPanel.className='library-panel';mediaPanel.setAttribute('role','tabpanel');mediaPanel.setAttribute('aria-labelledby','media-tab');
@@ -34,7 +34,7 @@ const timelineTabs=document.createElement('div');timelineTabs.id='timeline-tabs'
 timelineToolbar.prepend(timelineTabs);
 const timelineBody=document.createElement('div');timelineBody.className='timeline-body';
 const timelineRail=document.createElement('div');timelineRail.className='timeline-rail';timelineRail.setAttribute('aria-label','Ferramentas da timeline');
-for(const [id,icon,label] of [['split-segment',scissorsIcon,'Dividir aqui'],['remove-segment',trashIcon,'Remover trecho'],['segment-left','<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M4.75 12 11.25 6.5v4h8.5v3h-8.5v4Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>','Mover trecho para antes'],['segment-right','<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M19.25 12 12.75 6.5v4h-8.5v3h8.5v4Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>','Mover trecho para depois']]){const button=$(id);button.innerHTML=icon;button.setAttribute('aria-label',label);timelineRail.append(button);}
+for(const [id,svg,label] of [['split-segment',scissorsIcon,'Dividir aqui'],['remove-segment',trashIcon,'Remover trecho'],['segment-left',icon('arrow-left'),'Mover trecho para antes'],['segment-right',icon('arrow-right'),'Mover trecho para depois']]){const button=$(id);button.innerHTML=svg;button.setAttribute('aria-label',label);timelineRail.append(button);}
 $('add-segment').hidden=true;$('add-segment').setAttribute('aria-hidden','true');
 $('add-segment').onclick=()=>{selectLibraryTab('media');$('library-add').focus();};
 $('layered-timeline').before(timelineBody);timelineBody.append(timelineRail,$('layered-timeline'));
@@ -81,7 +81,7 @@ function renderProjectPanels(){
   const remove=document.createElement('button');remove.type='button';remove.className='timeline-delete';remove.innerHTML=trashIcon;remove.setAttribute('aria-label','Excluir '+t.name);remove.dataset.help='Excluir esta timeline. As mídias e os itens da fila são preservados; Ctrl + Z desfaz.';remove.onclick=()=>deleteTimeline(t.id);row.append(button,remove);list.append(row);
   const tab=document.createElement('button');tab.type='button';tab.className='timeline-tab';tab.setAttribute('role','tab');tab.setAttribute('aria-selected',String(t.id===job.meta.activeTimeline));tab.dataset.timelineId=t.id;tab.innerHTML=timelineIcon;const text=document.createElement('span');text.textContent=t.name;tab.append(text);tab.dataset.help='Abrir '+t.name+'. Dois cliques para renomear.';tab.onclick=()=>switchTimeline(t.id);tab.ondblclick=()=>renameTimeline(t.id);timelineTabs.append(tab);
  }
- const add=document.createElement('button');add.type='button';add.id='timeline-tab-add';add.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14m-7-7v14"/></svg>';add.setAttribute('aria-label','Criar timeline');add.dataset.help='Criar uma timeline vazia.';add.onclick=createTimeline;timelineTabs.append(add);
+ const add=document.createElement('button');add.type='button';add.id='timeline-tab-add';add.innerHTML=icon('plus');add.setAttribute('aria-label','Criar timeline');add.dataset.help='Criar uma timeline vazia.';add.onclick=createTimeline;timelineTabs.append(add);
  $('new-timeline').disabled=busy||timelines().length>=TIMELINE_LIMIT;syncQueueControls();
 }
 
@@ -104,12 +104,12 @@ window.addEventListener('keydown',e=>{
 },true);
 
 const queueActions=document.createElement('div');queueActions.className='queue-actions';queueActions.hidden=true;
-const queueStackIcon='<svg viewBox="0 0 32 32" aria-hidden="true"><g fill="white" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"><rect x="1.5" y="2" width="23" height="20" rx="1.5"/><rect x="4.5" y="5" width="23" height="20" rx="1.5"/><rect x="7.5" y="8" width="23" height="22" rx="1.5"/></g><circle cx="14" cy="14" r="2.8" fill="currentColor"/><path d="m9 27 4-5 2 2 3-4 3 3 4-7 4 6v5z" fill="currentColor"/></svg>';
-const queueAddIcon='<svg viewBox="0 0 32 32" aria-hidden="true"><g fill="white" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"><rect x="1.5" y="2" width="23" height="18" rx="1.5"/><rect x="5.5" y="6" width="23" height="18" rx="1.5"/></g><circle cx="11.5" cy="11.5" r="2.6" fill="currentColor"/><path d="m7 22 4-5 2 2 3-4 3 3 4-7 4 7v4z" fill="currentColor"/><circle cx="25" cy="24.5" r="6.7" fill="currentColor" stroke="white" stroke-width="1"/><path d="M23.8 21h2.4v2.3h2.3v2.4h-2.3V28h-2.4v-2.3h-2.3v-2.4h2.3z" fill="white"/></svg>';
+const queueStackIcon=icon('layers');
+const queueAddIcon=icon('layers-plus');
 queueActions.innerHTML='<button id="queue-add" type="button" class="secondary" data-help="Guardar uma cópia da timeline atual na fila. Você pode continuar editando antes de exportar.">'+queueAddIcon+'<span>Adicionar à fila</span></button><button id="queue-open" type="button" aria-label="Ver fila de exportação" data-help="Conferir ou remover os vídeos que esperam na fila.">'+queueStackIcon+'<span>Fila</span><span id="queue-count" hidden></span></button>';
-$('open-export').querySelector('span').innerHTML='<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M22 12 12 5v5H2v4h10v5Z" transform="rotate(-45 12 12)"/></svg>';
+$('open-export').querySelector('span').innerHTML=icon('arrow-up-right');
 $('open-export').before(queueActions);
-const queueDialog=document.createElement('dialog');queueDialog.id='queue-dialog';queueDialog.innerHTML='<div class="dialog-head"><h2>Fila de exportação</h2><button id="queue-close" type="button" class="close" aria-label="Fechar fila">×</button></div><div id="queue-list"></div><div class="dialog-footer"><button id="queue-export" type="button" class="primary">Exportar fila</button></div>';
+const queueDialog=document.createElement('dialog');queueDialog.id='queue-dialog';queueDialog.innerHTML='<div class="dialog-head"><h2>Fila de exportação</h2><button id="queue-close" type="button" class="close" aria-label="Fechar fila">'+icon('x')+'</button></div><div id="queue-list"></div><div class="dialog-footer"><button id="queue-export" type="button" class="primary">Exportar fila</button></div>';
 document.body.append(queueDialog);
 function syncQueueControls(){const video=editorKind==='video';queueActions.hidden=!video;$('queue-count').textContent=String(exportQueue().length);$('queue-count').hidden=!exportQueue().length;$('queue-add').disabled=busy||!project()?.clips.length||exportQueue().length>=50;$('queue-open').disabled=busy;$('queue-export').disabled=busy||!exportQueue().length;if(video){$('open-export').disabled=busy||(!project()?.clips.length&&!exportQueue().length);$('open-export').dataset.help=exportQueue().length?'Revisar e exportar os '+exportQueue().length+' vídeos da fila em sequência (Ctrl + E).':'Revisar e exportar a timeline atual (Ctrl + E).';}}
 function renderQueue(){
@@ -138,7 +138,7 @@ finalPreview=async function(){
  if(!queueExportMode)return projectFinalPreview();stopCompositionFinal();releasePlayers(compositionFinalPlayers);compositionFinalTime=0;const p=exportProject(),item=exportQueue()[previewIndex];if(!item)return;
  $('preview-prev').hidden=$('preview-next').hidden=exportQueue().length<2;$('final-image').hidden=true;$('final-video-canvas').hidden=false;$('final-video-controls').hidden=false;
  $('preview-index').textContent=(previewIndex+1)+' / '+exportQueue().length+' · '+item.name;$('final-video-scrub').min=0;$('final-video-scrub').max=projectDuration(p);$('final-video-scrub').value=0;
- const s=p.settings;$('final-notes').textContent=s.width+' × '+s.height+' px · '+seconds(projectDuration(p))+' · até '+s.targetMB+' MB · '+(s.mute?'Sem áudio':'Áudio mantido quando presente');renderCompositionCanvas($('final-video-canvas'),0,true,compositionFinalPlayers,false);$('final-video-play').textContent='▶ Reproduzir resultado';
+ const s=p.settings;$('final-notes').textContent=s.width+' × '+s.height+' px · '+seconds(projectDuration(p))+' · até '+s.targetMB+' MB · '+(s.mute?'Sem áudio':'Áudio mantido quando presente');renderCompositionCanvas($('final-video-canvas'),0,true,compositionFinalPlayers,false);setPlayIcon($('final-video-play'),false,'Reproduzir resultado');
 };
 $('queue-export').onclick=()=>{queueDialog.close();guard(openExport);};
 $('export-dialog').addEventListener('close',()=>{queueExportMode=false;releasePlayers(compositionFinalPlayers);});
@@ -167,7 +167,7 @@ syncQueueControls();
 
 
 const reuseReportDialog=document.createElement('dialog');reuseReportDialog.id='reuse-timelines-dialog';
-reuseReportDialog.innerHTML='<div class="dialog-head"><h2>Ajustes reutilizados</h2><button type="button" class="close" aria-label="Fechar resumo">×</button></div><p id="reuse-timelines-summary"></p><div id="reuse-timelines-details"></div><p class="help">Ctrl + Z desfaz esta operação. Para os arquivos que ultrapassam o limite de 10 timelines, importe-os em uma nova edição ou exclua as outras 9 timelines e repita a operação.</p>';
+reuseReportDialog.innerHTML='<div class="dialog-head"><h2>Ajustes reutilizados</h2><button type="button" class="close" aria-label="Fechar resumo">'+icon('x')+'</button></div><p id="reuse-timelines-summary"></p><div id="reuse-timelines-details"></div><p class="help">Ctrl + Z desfaz esta operação. Para os arquivos que ultrapassam o limite de 10 timelines, importe-os em uma nova edição ou exclua as outras 9 timelines e repita a operação.</p>';
 document.body.append(reuseReportDialog);reuseReportDialog.querySelector('.close').onclick=()=>reuseReportDialog.close();
 $('apply-all').dataset.help='Usar a timeline aberta como modelo nas demais: enquadramento, cortes, duração e camadas. Com uma única timeline, preparar uma por arquivo, até 10. Os itens correspondentes da fila também são atualizados.';
 const timelineApplyAll=$('apply-all').onclick;

@@ -4,8 +4,8 @@ const editionName=document.createElement('button');editionName.id='edition-name'
 editionName.dataset.help='Renomear esta edição. O nome aparece nas edições recentes e no histórico.';
 editionName.setAttribute('aria-label','Renomear edição');$('page-title').after(editionName);
 const renameDialog=document.createElement('dialog');renameDialog.id='rename-dialog';renameDialog.setAttribute('aria-labelledby','rename-heading');
-const namePencil='<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m16 3 5 5-12 12-6 1 1-6Z M13 6l5 5"/></svg>';
-renameDialog.innerHTML='<div class="dialog-head"><h2 id="rename-heading">Nome da edição</h2><button class="close" type="button" aria-label="Fechar">×</button></div><form id="rename-form"><label for="edition-title">Nome</label><input id="edition-title" maxlength="90" required autocomplete="off"><div class="dialog-footer"><button class="secondary" type="button" id="rename-cancel">Cancelar</button><button class="primary" type="submit">Salvar nome</button></div></form>';
+const namePencil=icon('pencil');
+renameDialog.innerHTML='<div class="dialog-head"><h2 id="rename-heading">Nome da edição</h2><button class="close" type="button" aria-label="Fechar">'+icon('x')+'</button></div><form id="rename-form"><label for="edition-title">Nome</label><input id="edition-title" maxlength="90" required autocomplete="off"><div class="dialog-footer"><button class="secondary" type="button" id="rename-cancel">Cancelar</button><button class="primary" type="submit">Salvar nome</button></div></form>';
 document.body.append(renameDialog);let renameJob=null;
 renameDialog.querySelector('.close').onclick=$('rename-cancel').onclick=()=>renameDialog.close();
 async function openRename(id){

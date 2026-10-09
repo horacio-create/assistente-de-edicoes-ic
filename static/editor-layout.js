@@ -12,7 +12,7 @@ const timelineToolbar=document.createElement('div');timelineToolbar.className='t
 timelineToolbar.append($('video-timeline').querySelector(':scope > .timeline-heading'),document.querySelector('.montage-tools'));
 $('video-timeline').prepend(timelineToolbar);
 const layoutPosition=syncCompositionPosition;
-syncCompositionPosition=function(){layoutPosition();$('video-play').setAttribute('aria-label',compositionPlaying?'Pausar montagem':'Reproduzir montagem');$('video-play').textContent=compositionPlaying?'Ⅱ':'▶';};
+syncCompositionPosition=function(){layoutPosition();$('video-play').setAttribute('aria-label',compositionPlaying?'Pausar montagem':'Reproduzir montagem');setPlayIcon($('video-play'),compositionPlaying);};
 const layoutTimeline=renderLayeredTimeline;
 renderLayeredTimeline=function(){layoutTimeline();const row=document.querySelector('.new-track-drop');if(row){row.dataset.help=row.textContent;row.textContent='↑ Nova faixa';}};
 

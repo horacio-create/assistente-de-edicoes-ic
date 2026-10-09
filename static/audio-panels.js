@@ -1,11 +1,8 @@
 'use strict';
 
-for(const button of document.querySelectorAll('button.close'))button.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg>';
+for(const button of document.querySelectorAll('button.close'))button.innerHTML=icon('x');
 
-function mediaTypeIcon(kind){
- const paths={image:'<rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8" cy="8" r="1.5"/><path d="m3 17 5-5 4 4 4-7 5 8"/>',video:'<rect x="3" y="5" width="13" height="14" rx="2"/><path d="m16 10 5-3v10l-5-3"/>',audio:'<path d="M9 17V5l11-2v12M9 8l11-2"/><ellipse cx="6" cy="18" rx="3" ry="2"/><ellipse cx="17" cy="16" rx="3" ry="2"/>'};
- return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+(paths[kind]||paths.image)+'</svg>';
-}
+function mediaTypeIcon(kind){return icon({video:'video',audio:'music'}[kind]||'image');}
 function audioWaveform(m,c){
  const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');svg.classList.add('audio-waveform');svg.setAttribute('viewBox','0 0 512 50');svg.setAttribute('preserveAspectRatio','none');svg.setAttribute('aria-hidden','true');
  const peaks=m.waveform||[],largest=Math.max(.001,...peaks),duration=m.duration||1,upper=[],lower=[];

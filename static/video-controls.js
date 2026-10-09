@@ -63,7 +63,7 @@ function renderMontage(m) {
     block.draggable=!part.locked;block.classList.toggle('locked',!!part.locked);block.dataset.index=index;block.style.flexGrow=segmentLength(m,part);
     block.setAttribute('aria-pressed',String(index===selectedSegment));block.setAttribute('aria-label',`Trecho ${index+1}: de ${seconds(part.start)} a ${seconds(part.end)}`);
     const image=document.createElement('img');image.src='/media/'+m.id;image.alt='';image.draggable=false;segmentThumbnail(m,part.start).then(src=>image.src=src);
-    const title=document.createElement('strong');title.textContent=`${part.locked?'🔒 ':''}Trecho ${index+1}`;
+    const title=document.createElement('strong');title.textContent=`Trecho ${index+1}`;if(part.locked)title.insertAdjacentHTML('afterbegin',icon('lock','title-icon'));
     const range=document.createElement('span');range.textContent=`${seconds(part.start)} → ${seconds(part.end)}`;
     const duration=document.createElement('small');duration.textContent=seconds(segmentLength(m,part));
     block.append(image,title,range,duration);block.onclick=()=>selectSegment(index);
@@ -93,10 +93,10 @@ function renderMontage(m) {
   const eye=$('track-visibility');eye.innerHTML=propertyIcon('eye',visible)+`<span>${visible?'Ocultar prévia':'Mostrar prévia'} <span class="shortcut-hint">E</span></span>`;eye.setAttribute('aria-pressed',String(visible));eye.setAttribute('aria-label',visible?'Ocultar prévia da faixa':'Mostrar prévia da faixa');eye.title='Exibe ou oculta apenas a prévia. A exportação mantém todos os trechos (E)';
   $('segment-lock-status').textContent=locked?'Trecho protegido pelo cadeado':'';
 }
-function propertyIcon(kind,on){return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${kind==='lock'?`<rect x="5" y="10" width="14" height="11" rx="2"/><path d="${on?'M8 10V6a4 4 0 0 1 8 0v4':'M8 10V6a4 4 0 0 1 7-2'}"/><path d="M12 14v3"/>`:`<path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/>${on?'':'<path d="m3 3 18 18"/>'}`}</svg>`;}
+function propertyIcon(kind,on){return kind==='lock'?icon(on?'lock':'lock-open'):icon(on?'eye':'eye-off');}
 function seekMontage(time,render=true){const m=current();if(m?.kind!=='video')return;videoPlayer.pause();const position=locateMontage(m,time);selectedSegment=position.index;videoPlayer.currentTime=position.time;if(render)syncVideo();else{for(const block of $('montage-track').querySelectorAll('.montage-block'))block.classList.toggle('selected',Number(block.dataset.index)===selectedSegment);syncTimeline();}}
 function audioIcon(muted) {
-  return `<svg class="line-icon audio-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 9h4l5-4v14l-5-4H3Z"/>${muted ? '<path class="audio-cross" d="m16 9 5 6m0-6-5 6"/>' : '<path d="M16 8a6 6 0 0 1 0 8m3-11a10 10 0 0 1 0 14"/>'}</svg>`;
+  return icon(muted ? 'volume-x' : 'volume', 'line-icon audio-icon');
 }
 function videoSelection() { return job?.media.filter(m => m.kind === 'video' && selected.has(m.id)) || []; }
 
@@ -215,7 +215,7 @@ function syncTimeline() {
   if (current()?.kind !== 'video') return;
   $('video-scrub').value = videoPlayer.currentTime;
   $('video-position').textContent = seconds(videoPlayer.currentTime);
-  $('video-play').textContent = videoPlayer.paused ? '▶ Reproduzir' : 'Ⅱ Pausar';
+  setPlayIcon($('video-play'), !videoPlayer.paused, videoPlayer.paused ? 'Reproduzir' : 'Pausar');
   const m=current(),part=videoSegments(m)[selectedSegment];
   $('montage-scrub').value=segmentNow(m,selectedSegment,videoPlayer.currentTime);
   const position=Number($('montage-scrub').value),head=$('montage-playhead');
@@ -311,7 +311,7 @@ function animateFinalVideo() {
     else { finalPlayer.pause(); finalPlayer.currentTime=parts[finalSegment].end; }
   }
   drawVideoCanvas(m, finalPlayer, $('final-video-canvas'));
-  $('final-video-play').textContent = finalPlayer.paused ? '▶ Reproduzir resultado' : 'Ⅱ Pausar';
+  setPlayIcon($('final-video-play'), !finalPlayer.paused, finalPlayer.paused ? 'Reproduzir resultado' : 'Pausar');
   $('final-video-scrub').value = segmentNow(m,finalSegment,finalPlayer.currentTime);
   if (!finalPlayer.paused) finalFrameRequest = requestAnimationFrame(animateFinalVideo);
 }

@@ -120,7 +120,7 @@ change=function(patch){
 // Place the source library beside the preview; its files remain separate from clips.
 const videoTop=document.createElement('div');videoTop.className='video-top';
 const library=document.createElement('section');library.id='media-library';library.className='media-library';library.hidden=true;
-library.innerHTML='<div class="library-heading"><h3>Suas mídias</h3><button id="library-add" class="secondary" type="button">+ Importar</button></div><p class="help">Arraste para a timeline. Duplo clique para preparar um trecho.</p><div id="library-items" class="library-items"></div><button id="save-composition" class="secondary" type="button">Salvar edição</button>';
+library.innerHTML='<div class="library-heading"><h3>Suas mídias</h3><button id="library-add" class="secondary" type="button">'+icon('plus')+'Importar</button></div><p class="help">Arraste para a timeline. Duplo clique para preparar um trecho.</p><div id="library-items" class="library-items"></div><button id="save-composition" class="secondary" type="button">Salvar edição</button>';
 const previewArea=document.createElement('div');previewArea.className='video-preview-area';
 const canvasColumn=document.querySelector('.canvas-column');canvasColumn.prepend(videoTop);videoTop.append(library,previewArea);
 for(const selector of ['.canvas-shell','.canvas-caption','#composition-position','#notes'])previewArea.append(canvasColumn.querySelector(selector));
@@ -208,7 +208,7 @@ function seekComposition(time){stopComposition();compositionCursor=Math.max(0,Ma
 function syncCompositionPosition(){
  const total=projectDuration();$('montage-scrub').max=Math.max(1/30,total);$('montage-scrub').value=compositionCursor;
  const field=$('montage-current-time');if(document.activeElement!==field)field.value=compositionCursor.toFixed(2).replace('.',',');field.disabled=busy||!pHasClips();
- $('montage-total-time').textContent=seconds(total);$('video-play').textContent=compositionPlaying?'Ⅱ Pausar':'▶ Reproduzir';
+ $('montage-total-time').textContent=seconds(total);setPlayIcon($('video-play'),compositionPlaying,compositionPlaying?'Pausar':'Reproduzir');
  const host=$('layered-timeline'),head=$('montage-playhead');if(head){head.style.left=(126+compositionCursor*timelineScale())+'px';head.style.visibility=compositionCursor*timelineScale()<host.scrollLeft-.5?'hidden':'visible';head.setAttribute('aria-valuenow',compositionCursor);head.setAttribute('aria-valuetext',seconds(compositionCursor));}
  const timeBadge=$('playhead-time');if(timeBadge){timeBadge.textContent=seconds(compositionCursor);const host=$('layered-timeline'),x=126+compositionCursor*timelineScale()-host.scrollLeft;timeBadge.classList.toggle('left-side',x>host.clientWidth-90&&x>216);}
  const c=projectClip(),m=projectMedia(c),minimum=timedMedia(m)?.1*c.duration/(c.out-c.in):1/30;
@@ -266,7 +266,7 @@ function renderLayeredTimeline(){
   for(const c of p.clips.filter(c=>c.track===track.id)){
    const m=projectMedia(c),block=document.createElement('button');block.type='button';block.className='montage-block layer-clip'+(audio?' audio-clip':'')+(c.id===compositionSelected?' selected':'')+(clipLocked(c)?' locked':'');block.dataset.clip=c.id;block.dataset.mediaId=m.id;block.style.left=c.at*timelineScale()+'px';block.style.width=Math.max(6,c.duration*timelineScale())+'px';block.title=m.name+' · '+seconds(c.duration)+(clipLocked(c)?' · bloqueado':'');block.setAttribute('aria-label',m.name+' na faixa '+rank+', '+seconds(c.duration));block.setAttribute('aria-pressed',String(c.id===compositionSelected));
    const img=document.createElement('img');img.src='/media/'+m.id;img.alt='';img.draggable=false;if(m.kind==='video')segmentThumbnail(m,c.in).then(src=>img.src=src);
-   const title=document.createElement('strong');title.textContent=(clipLocked(c)?'🔒 ':'')+m.name;const label=document.createElement('small');label.textContent=seconds(c.duration)+(timedMedia(m)?' · '+seconds(c.in)+' → '+seconds(c.out):m.role==='logo'?' · logo':' · imagem');block.append(audio?audioWaveform(m,c):img,title,label);block.onclick=e=>handleClipClick(e,c);block.ondblclick=()=>openClipTrim(c.id);
+   const title=document.createElement('strong');title.textContent=m.name;if(clipLocked(c))title.insertAdjacentHTML('afterbegin',icon('lock','title-icon'));const label=document.createElement('small');label.textContent=seconds(c.duration)+(timedMedia(m)?' · '+seconds(c.in)+' → '+seconds(c.out):m.role==='logo'?' · logo':' · imagem');block.append(audio?audioWaveform(m,c):img,title,label);block.onclick=e=>handleClipClick(e,c);block.ondblclick=()=>openClipTrim(c.id);
    block.onpointerdown=e=>beginClipDrag(e,c);lane.append(block);
   }inner.append(row);
  });
@@ -437,15 +437,15 @@ openExport=async function(){
  $('export-dialog').showModal();await Promise.all([finalPreview(),refreshPlan()]);syncAudio();
 };
 exportValues=function(){return editorKind==='video'?{job:job.id,composition:true,template:$('export-name').value,folder:exportFolder,format:'mp4'}:compositionLegacy.exportValues();};
-function tickCompositionFinal(){compositionFinalTime=Math.min(projectDuration(exportProject()),(performance.now()-compositionFinalStart)/1000);renderCompositionCanvas($('final-video-canvas'),Math.min(compositionFinalTime,Math.max(0,projectDuration(exportProject())-1/3000)),true,compositionFinalPlayers,compositionFinalPlaying);$('final-video-scrub').value=compositionFinalTime;if(compositionFinalTime>=projectDuration(exportProject()))stopCompositionFinal();else if(compositionFinalPlaying)compositionFinalFrame=requestAnimationFrame(tickCompositionFinal);$('final-video-play').textContent=compositionFinalPlaying?'Ⅱ Pausar':'▶ Reproduzir resultado';}
+function tickCompositionFinal(){compositionFinalTime=Math.min(projectDuration(exportProject()),(performance.now()-compositionFinalStart)/1000);renderCompositionCanvas($('final-video-canvas'),Math.min(compositionFinalTime,Math.max(0,projectDuration(exportProject())-1/3000)),true,compositionFinalPlayers,compositionFinalPlaying);$('final-video-scrub').value=compositionFinalTime;if(compositionFinalTime>=projectDuration(exportProject()))stopCompositionFinal();else if(compositionFinalPlaying)compositionFinalFrame=requestAnimationFrame(tickCompositionFinal);setPlayIcon($('final-video-play'),compositionFinalPlaying,compositionFinalPlaying?'Pausar':'Reproduzir resultado');}
 finalPreview=async function(){
  $('preview-prev').hidden=$('preview-next').hidden=editorKind==='video';
  if(editorKind!=='video')return compositionLegacy.finalPreview();stopCompositionFinal();compositionFinalTime=0;$('final-image').hidden=true;$('final-video-canvas').hidden=false;$('final-video-controls').hidden=false;
  $('preview-index').textContent='Montagem completa';$('final-video-scrub').min=0;$('final-video-scrub').max=projectDuration();$('final-video-scrub').value=0;
  const s=project().settings;$('final-notes').textContent=`${s.width} × ${s.height} px · ${seconds(projectDuration())} · até ${s.targetMB} MB · ${s.mute?'Sem áudio':'Áudio mantido quando presente'}. Todas as faixas participam da exportação, mesmo com o olho fechado.`;
- renderCompositionCanvas($('final-video-canvas'),0,true,compositionFinalPlayers,false);$('final-video-play').textContent='▶ Reproduzir resultado';
+ renderCompositionCanvas($('final-video-canvas'),0,true,compositionFinalPlayers,false);setPlayIcon($('final-video-play'),false,'Reproduzir resultado');
 };
-$('final-video-play').onclick=()=>{if(editorKind!=='video')return;if(compositionFinalPlaying)stopCompositionFinal();else{if(compositionFinalTime>=projectDuration(exportProject()))compositionFinalTime=0;compositionFinalPlaying=true;compositionFinalStart=performance.now()-compositionFinalTime*1000;tickCompositionFinal();}$('final-video-play').textContent=compositionFinalPlaying?'Ⅱ Pausar':'▶ Reproduzir resultado';};
+$('final-video-play').onclick=()=>{if(editorKind!=='video')return;if(compositionFinalPlaying)stopCompositionFinal();else{if(compositionFinalTime>=projectDuration(exportProject()))compositionFinalTime=0;compositionFinalPlaying=true;compositionFinalStart=performance.now()-compositionFinalTime*1000;tickCompositionFinal();}setPlayIcon($('final-video-play'),compositionFinalPlaying,compositionFinalPlaying?'Pausar':'Reproduzir resultado');};
 $('final-video-scrub').oninput=()=>{if(editorKind!=='video')return;stopCompositionFinal();compositionFinalTime=Number($('final-video-scrub').value);renderCompositionCanvas($('final-video-canvas'),compositionFinalTime,true,compositionFinalPlayers,false);};
 $('export-dialog').addEventListener('close',stopCompositionFinal);
 

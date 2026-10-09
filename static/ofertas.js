@@ -94,7 +94,7 @@ async function carregarCatalogo() {
       <button class="template-card ${t.erros.length ? 'invalido' : ''}" data-id="${esc(t.id)}" ${t.erros.length ? 'disabled' : ''}>
         ${t.capa ? `<img src="/ofertas/capa/${esc(t.id)}.png" alt="">` : '<span class="sem-capa">Sem capa</span>'}
         <span class="corpo"><strong>${esc(t.nome)}</strong><small>${esc(t.cliente)}</small><small>${esc(t.descricao)}</small>
-        <span class="usar">${t.erros.length ? 'Template com problemas — veja em Templates' : 'Usar este template →'}</span></span></button>`).join('')
+        <span class="usar">${t.erros.length ? 'Template com problemas — veja em Templates' : 'Usar este template '+icon('arrow-right','inline-icon')}</span></span></button>`).join('')
       : '<div class="vazio">Nenhum template publicado ainda. Publique o primeiro em Templates.</div>';
     el('lista-templates').querySelectorAll('.template-card:not([disabled])').forEach((c) => c.addEventListener('click', async () => {
       try { abrirPedido(await api('/pedidos', { body: { template: c.dataset.id } })); } catch (e) { falha(e); }
@@ -548,7 +548,7 @@ function desenharEncarte() {
     const pos = state.ordem.indexOf(k), av = avisosDe(it);
     return `<button class="card ${pos >= 0 ? 'selected' : ''} ${av.length ? 'com-aviso' : ''}" data-k="${k}">${pos >= 0 ? `<span class="ordem">${pos + 1}</span>` : ''}
       <span class="edit-card secondary conferir">${av.length ? 'Conferir' : 'Editar'}</span>
-      ${av.length ? `<span class="alerta" title="${esc(av.join('\n'))}">${av.length === 1 ? 'Conferir' : av.length + ' avisos'}</span>` : it.conferido ? '<span class="conferido" title="Conferido">✓ conferido</span>' : ''}
+      ${av.length ? `<span class="alerta" title="${esc(av.join('\n'))}">${av.length === 1 ? 'Conferir' : av.length + ' avisos'}</span>` : it.conferido ? '<span class="conferido" title="Conferido">'+icon('check','inline-icon')+'conferido</span>' : ''}
       <img class="thumb" src="/ofertas/miniatura/${it.imagem}.png" alt="" loading="lazy">${itemEncarte(it)}</button>`;
   }).join('');
   el('encarte-itens').querySelectorAll('.card').forEach((c) => c.addEventListener('click', (e) => {
@@ -993,7 +993,7 @@ async function publicarZip(arquivo) {
     if (r.ok) t.concluir(r.avisos?.length ? 'Publicado, com avisos' : 'Publicado'); else t.falhar(`Não publicado: ${r.erros.length} problema(s)`);
     res.hidden = false;
     res.innerHTML = r.ok
-      ? `<strong>✓ ${esc(r.nome)} publicado.</strong> ${r.substituiu ? 'A versão anterior foi guardada.' : 'Já aparece em Novo vídeo.'}${(r.avisos || []).length ? `<ul>${r.avisos.map((a) => `<li>⚠ ${esc(a)}</li>`).join('')}</ul>` : ''}`
+      ? `<strong>${icon('circle-check','inline-icon')}${esc(r.nome)} publicado.</strong> ${r.substituiu ? 'A versão anterior foi guardada.' : 'Já aparece em Novo vídeo.'}${(r.avisos || []).length ? `<ul>${r.avisos.map((a) => `<li>${icon('alert','inline-icon')}${esc(a)}</li>`).join('')}</ul>` : ''}`
       : `<strong>O template não foi publicado. Corrija e envie de novo:</strong><ul>${r.erros.map((e) => `<li>${esc(e)}</li>`).join('')}</ul>`;
     carregarTemplatesAdmin();
   } catch (e) { t.falhar(e.message); res.hidden = false; res.textContent = e.message; }

@@ -697,3 +697,59 @@ body:not(.video-workspace) .presetbar>div.format-picker{flex:1 1 100%;min-width:
 
 /* Tool rail: 8px on both sides; the timeline's own border is the divider. */
 .video-workspace .timeline-rail::after{display:none}
+
+/* Lucide icons (icons.js): one set, one 1.75 stroke; sizes follow the text they sit beside. */
+#video-play,#final-video-play{display:inline-flex;align-items:center;justify-content:center;gap:6px}
+.play-icon{flex:none;width:16px;height:16px}
+.title-icon,.note-icon,.inline-icon{display:inline-block;flex:none;width:1.1em;height:1.1em;margin-right:.3em;vertical-align:-.18em}
+.four-buttons button[data-transform]{display:inline-flex;align-items:center;justify-content:center;gap:4px}
+.four-buttons button[data-transform] svg{flex:none;width:16px;height:16px}
+button.close svg,.t-fechar svg{display:block;width:18px;height:18px}
+#preview-prev svg,#preview-next svg{display:block;width:18px;height:18px}
+.primary>span>svg{display:block;width:16px;height:16px}
+
+/* Spacing audit (Hallmark + UI UX Pro Max): one 8px rhythm and one left edge per column. */
+.video-workspace .canvas-column{padding:8px}
+.video-workspace .presetbar{padding-inline:8px}
+.video-workspace .editor-head{padding-inline:8px}
+.video-workspace .library-tabs{gap:var(--ui-gap-tight)}
+.video-workspace .composition-position{column-gap:var(--ui-gap)}
+.video-workspace .export-actions,.video-workspace .queue-actions{gap:var(--ui-gap)}
+.video-workspace #open-export{gap:var(--ui-gap)}
+.video-workspace .adjustments .text-button{padding-inline:0}
+.video-workspace .four-buttons{gap:var(--ui-gap)}
+/* Rotation row on the same two columns as Position and Scale. */
+#pixel-geometry .geometry-row:has(.rotation-field){display:grid;grid-template-columns:auto minmax(0,1fr) minmax(0,1fr);gap:var(--ui-gap)}
+#pixel-geometry .rotation-field{width:auto;max-width:none;padding:0 7px;justify-content:flex-start}
+#pixel-geometry .rotation-field input{width:auto;field-sizing:content;min-width:1ch;text-align:left}
+#pixel-geometry .rotation-actions{display:grid;grid-template-columns:1fr 1fr;gap:var(--ui-gap)}
+#pixel-geometry .rotation-actions button{width:auto}
+/* Track header: three equal square controls. */
+.video-workspace .track-icons{gap:var(--ui-gap-tight)}
+.video-workspace .track-property,.video-workspace .track-property.clip-clock{width:28px;height:28px;padding:0}
+.video-workspace .track-property svg,.video-workspace .track-property.clip-clock svg{width:16px;height:16px}
+
+/* Image editor: subtitle right under the title; editing tabs sit on the "Formato da tela" card. */
+body:not(.video-workspace) main>header>div{display:flex;flex-direction:column;align-items:flex-start}
+body:not(.video-workspace) #page-subtitle{order:1}
+body:not(.video-workspace) #editing-tabbar{order:2;align-self:stretch;flex:none;position:relative;z-index:1;margin:18px 0 -1px}
+body:not(.video-workspace) #editing-tabs{padding-left:18px}
+body:not(.video-workspace) main>header:has(#editing-tabbar:not([hidden])){margin-bottom:0}
+body:not(.video-workspace) main>header>.save-status{flex:none;align-self:center;margin:0 12px 0 0;text-align:right}
+body:not(.video-workspace) main>header>#new-job{align-self:center}
+#new-job{display:inline-flex;align-items:center;gap:6px}
+#new-job svg{flex:none;width:16px;height:16px}
+.empty-symbol svg{width:32px;height:32px}
+.add-card>span svg{display:block;width:28px;height:28px}
+#editing-tabs .editing-tab .edition-name{height:var(--ui-control-compact);width:24px;padding:4px}
+/* Image editor spacing audit: 8px rhythm, card heads on the card content edge. */
+body:not(.video-workspace) main>header>.save-status{margin-right:-12px}
+body:not(.video-workspace) #page-title{margin:8px 0}
+body:not(.video-workspace) #editing-tabbar{margin-top:16px}
+body:not(.video-workspace) .format-buttons{gap:var(--ui-gap)}
+body:not(.video-workspace) .editor-head{padding-inline:17px}
+body:not(.video-workspace) .filmstrip-track{gap:var(--ui-gap)}
+body:not(.video-workspace) .add-card{gap:var(--ui-gap)}
+body:not(.video-workspace) .timeline-model-action.two-columns{gap:var(--ui-gap)}
+body:not(.video-workspace) .filmstrip-track{grid-template-columns:auto minmax(0,1fr) auto}
+#library-add{display:inline-flex;align-items:center;gap:4px}#library-add svg{flex:none;width:14px;height:14px}
