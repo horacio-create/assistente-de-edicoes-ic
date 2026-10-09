@@ -1,4 +1,4 @@
-# Indoor Channel — Assistente de Edições V1.8.0
+# Indoor Channel — Assistente de Edições V1.8.1
 
 Aplicação local para Windows e macOS, com Chrome ou Edge. Não envia mídias à internet. Os colegas usam o navegador; apenas o PC que hospeda a aplicação precisa da instalação.
 

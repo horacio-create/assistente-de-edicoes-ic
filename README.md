@@ -1,4 +1,4 @@
-# Assistente de Edições — versão web V1.8.0
+# Assistente de Edições — versão web V1.8.1
 
 Aplicação web local de padronização de imagens e montagem de vídeos da Indoor Channel.
 
@@ -184,7 +184,7 @@ node tests/test_undo.cjs
 cd ofertas/motor && npm test   # contrato de templates de Ofertas
 ```
 
-A V1.8.0 tem 101 testes Python e cinco testes JavaScript; o módulo Ofertas acrescenta 22 testes Python (os que dependem do motor são pulados sem Node.js), um teste do extrator com encartes reais conferidos (pulado sem `OFERTAS_ENCARTES`) e oito testes do contrato em `ofertas/motor`. Os testes de vídeo usam
+A V1.8.1 tem 188 testes Python, incluindo os do módulo Ofertas (os 20 que dependem do motor são pulados sem Node.js e o do extrator com encartes reais conferidos é pulado sem `OFERTAS_ENCARTES`), além de cinco testes JavaScript e oito testes do contrato em `ofertas/motor`. Os testes de vídeo usam
 FFmpeg e arquivos sintéticos temporários. Node.js é necessário apenas para os testes JavaScript.
 O teste de navegador em `tests/test_composition_browser.cjs` usa Playwright, uma instância
 isolada, um vídeo sintético de cinco segundos e imagens verdes/amarelas ao lado dele.
@@ -208,7 +208,7 @@ Veja `LEIA-ME.md` e `VALIDACAO.md` para instruções e verificações.
 
 ## Arquitetura
 
-Interface HTML/CSS/JavaScript, servidor Python com Waitress, processamento Pillow/PyMuPDF e histórico SQLite. Esta versão é executada pelo navegador e ainda não foi adaptada para hospedagem em nuvem.
+Interface HTML/CSS/JavaScript, servidor Python com Waitress, processamento Pillow/PyMuPDF e histórico SQLite. A interface é acessada pelo navegador e roda tanto localmente (Iniciar.bat/Iniciar.command) quanto no servidor, via Docker e deploy automático (veja **Deploy automático (CI/CD)**).
 
 As logos e a identidade visual pertencem à Indoor Channel.
 

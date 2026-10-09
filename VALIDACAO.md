@@ -1,3 +1,14 @@
+# Verificação da versão oficial 1.8.1
+
+## Conferência da 1.8.1 — 08/10/2026
+
+- Versão 1.8.1 alinhada em `version.py`, README, LEIA-ME e CHANGELOG.
+- 188 testes Python executados no Windows (Python 3.12), nenhuma falha; 21 pulados:
+  20 do motor de Ofertas (Node.js ausente na máquina) e o do extrator de encartes
+  (`OFERTAS_ENCARTES` não definido). Testes JavaScript e de contrato ficam a cargo da CI.
+- Os refinamentos de interface da 1.8.1 (alinhamento, ícones e espaçamentos) não alteram
+  edições, mídias, login nem a fila de exportação. Nenhum executável novo foi gerado.
+
 # Verificação da versão oficial 1.8.0
 
 ## Integração para GitHub — 06/10/2026
