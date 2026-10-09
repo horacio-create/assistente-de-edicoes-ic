@@ -20,7 +20,7 @@ from version import VERSION
 from modules.images import DEFAULT, SUPPORTED, decode, dominant, encoded, render, settings
 from modules import ofertas
 from modules import videos, audio, composition, naming, export_progress, export_queue, projects, import_tasks
-from modules import eap, vector, auth
+from modules import eap, vector, auth, home
 from PIL import Image
 from storage import DATA, FERRAMENTA, ROOT, USUARIO, connect, event, get_job, init, mine, now, owner, uid
 
@@ -29,7 +29,7 @@ LOCK = threading.RLock()
 # Os números vêm do deploy/compose.yaml (dimensionados para a máquina); os padrões servem ao app local.
 EXPORTAR = threading.Semaphore(export_queue.WORKERS)                   # exportar (fila de fundo): pesado e longo
 IMPORTAR = threading.Semaphore(int(os.environ.get('INDOOR_IMPORTS', '2')))  # importar: recodifica o vídeo enviado
-LEVE = threading.Semaphore(int(os.environ.get('INDOOR_LEVES', '4')))       # prévia, logos de MS6/EAP, vetorização
+LEVE = threading.Semaphore(int(os.environ.get('INDOOR_LEVES', '4')))       # prévia, logos de M6S/EAP, vetorização
 PICKER = threading.Lock()
 MAX_UPLOAD = 100 * 1024 * 1024
 
@@ -59,13 +59,13 @@ def validate_host(host):
             raise ValueError()
     except ValueError:
         raise ValueError('Host não autorizado.') from None
-MODULES = [{'id': 'images', 'name': 'Imagens', 'active': True}, {'id': 'video', 'name': 'Vídeos', 'active': True}, {'id': 'conteudos', 'name': 'Conteúdos Indoor', 'active': False}, {'id': 'offers', 'name': 'Ofertas de supermercados', 'active': True}, {'id': 'eap', 'name': 'Logo EAP', 'active': True}, {'id': 'ms6', 'name': 'Vetorização MS6', 'active': True}]
+MODULES = [{'id': 'images', 'name': 'Imagens', 'active': True}, {'id': 'video', 'name': 'Vídeos', 'active': True}, {'id': 'conteudos', 'name': 'Conteúdos Indoor', 'active': False}, {'id': 'offers', 'name': 'Ofertas de supermercados', 'active': True}, {'id': 'eap', 'name': 'Logo EAP', 'active': True}, {'id': 'ms6', 'name': 'Vetorização M6S', 'active': True}]
 
 # login só no servidor (deploy/compose.yaml); o app local/portátil continua aberto
 AUTH = os.environ.get('INDOOR_AUTH') == '1'
 PUBLIC = ('/login.html', '/login.js', '/style.css', '/acesso.css', '/favicon.svg', '/logo-indoor.png', '/api/info')
 # ferramenta exigida por prefixo; o resto do /api e as mídias são do editor (Imagens ou Vídeos)
-TOOLS = [(('/api/history',), None), (('/api/ofertas/', '/ofertas/'), {'offers'}), (('/api/vector/', '/vetor/'), {'ms6'}), (('/api/eap/', '/eap/'), {'eap'}),
+TOOLS = [(('/api/history', '/api/home', '/home/'), None), (('/api/ofertas/', '/ofertas/'), {'offers'}), (('/api/vector/', '/vetor/'), {'ms6'}), (('/api/eap/', '/eap/'), {'eap'}),
          (('/api/', '/media/', '/logo/', '/video/', '/audio/', '/entrega'), {'images', 'video'})]
 
 class Conflict(Exception): pass
@@ -355,12 +355,25 @@ def run_export(token, row, plan):
     return response
 
 def api(method, path, query, raw, environ=None, background=False):
-    value = json.loads(raw) if raw and path not in ('/api/upload', '/api/logo', '/api/vector/upload', '/api/eap/upload') else {}
+    value = json.loads(raw) if raw and path not in ('/api/upload', '/api/logo', '/api/vector/upload', '/api/eap/upload', '/api/home/foto', '/api/home/tutorial') else {}
     if path == '/api/info':
         user = USUARIO.get()
         if AUTH and not user: return dict(version=VERSION, auth=True, user=None)
         tools = auth.allowed(user, MODULES) if user else None
-        return dict(user=user and auth.public(user), auth=AUTH, host=socket.gethostname(), modules=[m for m in MODULES if tools is None or m['id'] in tools], videoReady=videos.available(), defaultFolder=str(Path.home() / 'Pictures'), version=VERSION, portable=bool(os.environ.get('INDOOR_PORTABLE')), nativePicker=(os.name == 'nt' or sys.platform == 'darwin') and (environ or {}).get('REMOTE_ADDR') in ('127.0.0.1','::1'))
+        return dict(user=user and auth.public(user), brand=auth.brand(user), auth=AUTH, host=socket.gethostname(), modules=[m for m in MODULES if tools is None or m['id'] in tools], videoReady=videos.available(), defaultFolder=str(Path.home() / 'Pictures'), version=VERSION, portable=bool(os.environ.get('INDOOR_PORTABLE')), nativePicker=(os.name == 'nt' or sys.platform == 'darwin') and (environ or {}).get('REMOTE_ADDR') in ('127.0.0.1','::1'))
+    if path.startswith('/api/home'):
+        user = USUARIO.get()
+        tools = auth.allowed(user, MODULES) if user else [m['id'] for m in MODULES if m['active']]
+        editar = not AUTH or bool(user and user['superadmin'])
+        if path != '/api/home':
+            if method != 'POST': raise ValueError('Operação não encontrada.')
+            if not editar: raise auth.Denied('Só superadmins trocam o conteúdo da Home.')
+            if path == '/api/home/foto': home.adicionar_foto(raw)
+            elif path == '/api/home/foto-remover': home.remover_foto(value.get('id'))
+            elif path == '/api/home/tutorial': home.enviar_tutorial(query.get('tool', [''])[0], raw)
+            elif path == '/api/home/tutorial-remover': home.remover_tutorial(value.get('tool'))
+            else: raise ValueError('Operação não encontrada.')
+        return home.view(tools, editar)
     # cada usuário só vê e mexe nas próprias edições; o id vem em campos diferentes conforme a rota
     with connect() as db:
         ref = {'/api/job': query.get('id', [None])[0], '/api/logo': query.get('job', [None])[0], '/api/upload': query.get('job', [None])[0],
@@ -705,6 +718,39 @@ def eap_api(path, query, value, raw):
         return {'files': saved, 'folder': str(folder)}
     raise ValueError('Operação não encontrada.')
 
+def send_range(environ, start_response, video, mime):
+    """Envia um arquivo de mídia aceitando Range, para o player do navegador avançar e voltar."""
+    method, status = environ['REQUEST_METHOD'], '200 OK'
+    size = video.stat().st_size
+    first, last = 0, size - 1
+    range_header = environ.get('HTTP_RANGE')
+    if range_header:
+        match = re.fullmatch(r'bytes=(\d*)-(\d*)', range_header)
+        if not match or not any(match.groups()):
+            start_response('416 Range Not Satisfiable', [('Content-Range', f'bytes */{size}')]); return []
+        a, b = match.groups()
+        if a:
+            first, last = int(a), min(int(b), size-1) if b else size-1
+        else:
+            first = max(0, size-int(b))
+        if first > last or first >= size:
+            start_response('416 Range Not Satisfiable', [('Content-Range', f'bytes */{size}')]); return []
+        status = '206 Partial Content'
+    headers = [('Content-Type', mime), ('Content-Length', str(last-first+1)),
+               ('Accept-Ranges', 'bytes'), ('X-Content-Type-Options', 'nosniff')]
+    if range_header: headers.append(('Content-Range', f'bytes {first}-{last}/{size}'))
+    start_response(status, headers)
+    def chunks():
+        with video.open('rb') as stream:
+            stream.seek(first)
+            remaining = last-first+1
+            while remaining:
+                chunk = stream.read(min(65536, remaining))
+                if not chunk: break
+                remaining -= len(chunk)
+                yield chunk
+    return chunks() if method != 'HEAD' else []
+
 def app(environ, start_response):
     status, content_type = '200 OK', 'application/json; charset=utf-8'
     try:
@@ -750,36 +796,16 @@ def app(environ, start_response):
             ident = path.split('/')[-1]
             if not re.fullmatch(r'[0-9a-f]{32}', ident): raise ValueError('Mídia inválida.')
             is_audio = path.startswith('/audio/')
-            video = DATA / 'midias' / (ident + ('.m4a' if is_audio else '.mp4'))
-            size = video.stat().st_size
-            first, last = 0, size - 1
-            range_header = environ.get('HTTP_RANGE')
-            if range_header:
-                match = re.fullmatch(r'bytes=(\d*)-(\d*)', range_header)
-                if not match or not any(match.groups()):
-                    start_response('416 Range Not Satisfiable', [('Content-Range', f'bytes */{size}')]); return []
-                a, b = match.groups()
-                if a:
-                    first, last = int(a), min(int(b), size-1) if b else size-1
-                else:
-                    first = max(0, size-int(b))
-                if first > last or first >= size:
-                    start_response('416 Range Not Satisfiable', [('Content-Range', f'bytes */{size}')]); return []
-                status = '206 Partial Content'
-            headers = [('Content-Type', 'audio/mp4' if is_audio else 'video/mp4'), ('Content-Length', str(last-first+1)),
-                       ('Accept-Ranges', 'bytes'), ('X-Content-Type-Options', 'nosniff')]
-            if range_header: headers.append(('Content-Range', f'bytes {first}-{last}/{size}'))
-            start_response(status, headers)
-            def chunks():
-                with video.open('rb') as stream:
-                    stream.seek(first)
-                    remaining = last-first+1
-                    while remaining:
-                        chunk = stream.read(min(65536, remaining))
-                        if not chunk: break
-                        remaining -= len(chunk)
-                        yield chunk
-            return chunks() if method != 'HEAD' else []
+            return send_range(environ, start_response, DATA / 'midias' / (ident + ('.m4a' if is_audio else '.mp4')), 'audio/mp4' if is_audio else 'video/mp4')
+        elif path.startswith('/home/tutorial/'):
+            tool = path.split('/')[-1]
+            if tool not in home.TOOLS: raise FileNotFoundError()
+            if AUTH and tool not in auth.allowed(user, MODULES): raise auth.Denied('Seu cargo não tem acesso a este tutorial.')
+            return send_range(environ, start_response, home.tutorial_path(tool), 'video/mp4')
+        elif path.startswith('/home/foto/'):
+            ident = path.split('/')[-1]
+            if not re.fullmatch(r'[0-9a-f]{32}', ident): raise ValueError('Foto inválida.')
+            data, content_type = home.foto_path(ident).read_bytes(), 'image/jpeg'
         elif path == '/entrega':
             query = parse_qs(environ.get('QUERY_STRING', ''))
             token, name = query.get('token', [''])[0], query.get('name', [''])[0]
@@ -797,7 +823,7 @@ def app(environ, start_response):
             content_type = 'image/png'
         else:
             name = 'index.html' if path == '/' else path.lstrip('/')
-            if name not in ('index.html','app.js','video-controls.js','composition-controls.js','project-controls.js','editor-layout.js','audio-panels.js','transform-controls.js','clip-dialogs.js','editing-tabs.js','preview-ruler.js','icons.js', 'edition-names.js','export-progress.js','undo-history.js','vector.js','eap.js','style.css','favicon.svg','logo-indoor.png','ofertas.js','ofertas.css','tarefas.js','tarefas.css','login.html','login.js','admin.js','acesso.css','conta.js'): raise FileNotFoundError()
+            if name not in ('index.html','app.js','video-controls.js','composition-controls.js','project-controls.js','editor-layout.js','audio-panels.js','transform-controls.js','clip-dialogs.js','editing-tabs.js','preview-ruler.js','icons.js', 'edition-names.js','export-progress.js','undo-history.js','vector.js','eap.js','style.css','favicon.svg','logo-indoor.png','ofertas.js','ofertas.css','tarefas.js','tarefas.css','login.html','login.js','admin.js','acesso.css','conta.js','home.js','eap-icon.svg'): raise FileNotFoundError()
             data = (ROOT / 'static' / name).read_bytes()
             content_type = mimetypes.guess_type(name)[0] or 'application/octet-stream'
     except Conflict as exc:

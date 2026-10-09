@@ -1,4 +1,4 @@
-# Indoor Channel — Assistente de Edições V1.9.0
+# Indoor Channel — Assistente de Edições V1.10.0
 
 Aplicação local para Windows e macOS, com Chrome ou Edge. Não envia mídias à internet. Os colegas usam o navegador; apenas o PC que hospeda a aplicação precisa da instalação.
 
@@ -23,7 +23,7 @@ Para acesso pela rede, permita o Python no Firewall do Windows **somente na rede
 
 ## Novidades da versão 1.2
 
-O Assistente de Edições reúne Imagens, Vídeos, Logo EAP e Vetorização MS6 na barra lateral. Use o botão no alto da barra para recolhê-la ou expandi-la. A barra começa recolhida em cada abertura. Passe o mouse sobre ela para ver os nomes ou use o botão para fixá-la aberta.
+O Assistente de Edições reúne Imagens, Vídeos, Logo EAP e Vetorização M6S na barra lateral. Use o botão no alto da barra para recolhê-la ou expandi-la. A barra começa recolhida em cada abertura. Passe o mouse sobre ela para ver os nomes ou use o botão para fixá-la aberta.
 
 Arraste imagens para toda a área “Traga sua primeira arte”, ou clique nela para escolher. Depois da importação, a faixa de miniaturas continua aceitando arquivos arrastados e inclui o cartão “Adicionar imagens”. As áreas identificam adicionar, ajustar e exportar, sem numeração.
 
@@ -70,7 +70,7 @@ O lote é processado em sequência; a janela deve permanecer aberta até conclui
 
 ## Estrutura e expansão
 
-`server.py`: API local e aplicação WSGI servida por Waitress. `storage.py`: persistência SQLite e eventos. `modules/images.py`: importação, transformação e codificação. `static/`: interface sem dependências externas, utilizável sem internet após a instalação. `modules/vector.py`: vetorização MS6 e geração de DXF. `modules/eap.py`: tratamento da Logo EAP. O registro `MODULES` reserva vídeo e ofertas de supermercados, que ainda não são funcionalidades ativas.
+`server.py`: API local e aplicação WSGI servida por Waitress. `storage.py`: persistência SQLite e eventos. `modules/images.py`: importação, transformação e codificação. `static/`: interface sem dependências externas, utilizável sem internet após a instalação. `modules/vector.py`: vetorização M6S e geração de DXF. `modules/eap.py`: tratamento da Logo EAP. O registro `MODULES` reserva vídeo e ofertas de supermercados, que ainda não são funcionalidades ativas.
 
 Variáveis opcionais: `INDOOR_PORT` (padrão 8080), `INDOOR_HOST` (padrão 0.0.0.0), `INDOOR_DATA` (pasta de dados, padrão `dados` ao lado da aplicação).
 
@@ -128,9 +128,9 @@ Ajustes: **Sensibilidade** do fundo; **Preservar áreas internas da cor do fundo
 
 Em **Exportar logos**, escolha a pasta, o nome base e as versões. Os arquivos saem como `EAP - Cliente - fundo branco.png`, `… - fundo preto.png`, `… - transparente.png` e, no modo vetor, `EAP - Cliente.svg`. Arquivos existentes nunca são substituídos.
 
-## Vetorização MS6 — V1.7.0
+## Vetorização M6S — V1.7.0
 
-Transforma a logo do cliente em um DXF para gravar no microfone MS6 com o laser Cloudray CRS335-5F. Abra **Vetorização MS6** na barra lateral e arraste a logo (PNG, JPG, WebP, BMP, TIFF, PDF, AI ou SVG). Logos vetoriais são rasterizadas em alta resolução e retraçadas, o que dá o mesmo resultado para qualquer origem.
+Transforma a logo do cliente em um DXF para gravar no microfone M6S com o laser Cloudray CRS335-5F. Abra **Vetorização M6S** na barra lateral e arraste a logo (PNG, JPG, WebP, BMP, TIFF, PDF, AI ou SVG). Logos vetoriais são rasterizadas em alta resolução e retraçadas, o que dá o mesmo resultado para qualquer origem.
 
 1. Digite a **largura final** em mm. Ela vale para a arte, sem as margens vazias da imagem; a altura acompanha.
 2. Confira a prévia **Gravação** (o que o laser marca, em escuro sobre alumínio). **Contornos** mostra as linhas do DXF e **Original**, a imagem recebida.

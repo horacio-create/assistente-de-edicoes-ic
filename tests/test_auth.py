@@ -1,4 +1,5 @@
 import io
+from PIL import Image
 import json
 import os
 import sys
@@ -173,6 +174,37 @@ class AuthTests(unittest.TestCase):
         self.assertEqual(status, 200)
         self.assertTrue(body['link'].startswith('http://localhost:8080/login.html?convite='))
         self.assertIn('novo@x.com', [i['email'] for i in call('GET', '/api/admin/dados', cookie=self.admin_cookie)[1]['invites']])
+
+
+    def test_home_brand_tutorials_and_content_permissions(self):
+        def raw(path, data, cookie, extra=None):
+            path, _, qs = path.partition('?')
+            env = {'REQUEST_METHOD': 'POST', 'PATH_INFO': path, 'QUERY_STRING': qs, 'HTTP_HOST': 'localhost:8080', 'HTTP_X_INDOOR': '1',
+                   'CONTENT_LENGTH': str(len(data)), 'wsgi.input': io.BytesIO(data), 'HTTP_COOKIE': cookie}
+            out = {}; body = b''.join(server.app(env, lambda s, h: out.update(status=s)))
+            return int(out['status'][:3]), json.loads(body)
+        roles = call('GET', '/api/admin/dados', cookie=self.admin_cookie)[1]['roles']
+        eap_role = next(r for r in roles if r['brand'] == 'eap')
+        self.assertEqual((eap_role['name'], sorted(eap_role['modules'])), ('Colaborador EAP', ['eap', 'ms6']))
+        _, cookie = signup('eap@x.com', 'Marina Souza', eap_role['id'])
+        info = call('GET', '/api/info', cookie=cookie)[1]
+        self.assertEqual((info['brand'], sorted(m['id'] for m in info['modules'])), ('eap', ['eap', 'ms6']))
+        self.assertEqual(call('GET', '/api/info', cookie=self.admin_cookie)[1]['brand'], 'indoor')
+        image = io.BytesIO(); Image.new('RGB', (40, 30), 'red').save(image, 'PNG')
+        self.assertEqual(raw('/api/home/foto', image.getvalue(), self.admin_cookie)[0], 200)
+        mp4 = b'\x00\x00\x00\x18ftypmp42' + b'\x00' * 64
+        for tool in ('offers', 'eap'): self.assertEqual(raw(f'/api/home/tutorial?tool={tool}', mp4, self.admin_cookie)[0], 200)
+        self.assertEqual(raw('/api/home/tutorial?tool=eap', b'nao e video', self.admin_cookie)[0], 400)
+        self.assertEqual(call('POST', '/api/admin/cargo-salvar', {'name': 'X', 'modules': [], 'brand': 'outra'}, self.admin_cookie)[0], 400)
+        home = call('GET', '/api/home', cookie=cookie)[1]
+        self.assertEqual(([t['tool'] for t in home['tutoriais']], len(home['fotos']), home['editar']), (['eap'], 1, False))
+        self.assertEqual(raw('/api/home/foto', image.getvalue(), cookie)[0], 403)
+        self.assertEqual(call('GET', '/home/tutorial/offers', cookie=cookie)[0], 403)
+        self.assertEqual(call('GET', '/home/tutorial/eap', cookie=cookie)[0], 200)
+        self.assertEqual(call('GET', home['fotos'][0]['url'], cookie=cookie)[0], 200)
+        admin_home = call('GET', '/api/home', cookie=self.admin_cookie)[1]
+        self.assertEqual(([t['tool'] for t in admin_home['tutoriais']], admin_home['editar']), (['offers', 'eap'], True))
+        self.assertEqual(call('POST', '/api/home/foto-remover', {'id': home['fotos'][0]['id']}, self.admin_cookie)[1]['fotos'], [])
 
 
 class LocalModeTests(unittest.TestCase):

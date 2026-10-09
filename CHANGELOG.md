@@ -1,5 +1,19 @@
 # Histórico de versões
 
+## 1.10.0 — Tela Home e marca por cargo — 09/10/2026
+
+- Tela Home, aberta ao entrar, pela logo do menu ou pelo novo ícone de casa no topo da barra:
+  faixa de boas-vindas ("Bem-vindo, nome") com fotos dos colaboradores que se alternam com
+  esmaecimento e leve aproximação, cartões das ferramentas liberadas pelo cargo e tutoriais.
+- Tutoriais filtrados no servidor: cada vídeo só aparece, e só abre, para quem tem a ferramenta.
+- Conteúdo da Home (só superadmin, ou qualquer um no app local): enviar e remover fotos (até 12)
+  e um tutorial MP4 por ferramenta. Acesso pela própria Home ou pela tela Usuários.
+- Cargos ganham o campo Marca (Indoor Channel ou EAP). Marca EAP troca a logo do menu, o ícone
+  e o nome da aba para "EAP · Assistente de edições". O cargo "Colaborador EAP" já vem criado,
+  com Vetorização M6S e Logo EAP. Superadmins continuam com a marca Indoor Channel.
+- "Vetorização MS6" passa a se chamar "Vetorização M6S" na interface e nos arquivos sugeridos.
+- Inicialização espera todos os scripts da página antes de aplicar acesso e marca.
+
 ## 1.9.0 — Desfocar fundo — 09/10/2026
 
 - Novo enquadramento "Desfocar fundo" no editor de vídeos: a própria mídia, ampliada até cobrir

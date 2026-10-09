@@ -4,7 +4,7 @@
 
 A produção passou de uma e2-medium (2 vCPUs compartilhadas, cerca de 1 sustentada, 4 GB) para uma **e2-standard-4** (4 vCPUs, 16 GB). Só que o código e o container não aproveitavam a máquina nova, e tinham quatro problemas de concorrência:
 
-1. **Uma vaga só para tudo.** Exportar, importar, a prévia, as logos de MS6 e EAP e a vetorização disputavam o mesmo `threading.Semaphore(2)`. Duas exportações longas travavam a prévia e a importação de todo mundo.
+1. **Uma vaga só para tudo.** Exportar, importar, a prévia, as logos de M6S e EAP e a vetorização disputavam o mesmo `threading.Semaphore(2)`. Duas exportações longas travavam a prévia e a importação de todo mundo.
 2. **Exportação presa à requisição.** O `/api/export` processava dentro da própria chamada HTTP. Fechar a aba ou perder a conexão derrubava a exportação, e cada exportação longa ocupava uma das 6 threads do servidor web.
 3. **"Remover fundo" sem limite.** Cada pedido abria um processo Node com um modelo de IA pesado; vários pedidos juntos esgotavam CPU e memória.
 4. **Vídeos de Ofertas perdidos em reinícios.** O que estava sendo gerado quando o servidor parava (inclusive a cada deploy) virava `interrompido` para sempre.
@@ -97,7 +97,7 @@ A rota escolhe pelo parâmetro explícito `background`:
 ```python
 EXPORTAR = threading.Semaphore(export_queue.WORKERS)                   # exportar (fila de fundo): pesado e longo
 IMPORTAR = threading.Semaphore(int(os.environ.get('INDOOR_IMPORTS', '2')))  # importar: recodifica o vídeo enviado
-LEVE = threading.Semaphore(int(os.environ.get('INDOOR_LEVES', '4')))       # prévia, logos de MS6/EAP, vetorização
+LEVE = threading.Semaphore(int(os.environ.get('INDOOR_LEVES', '4')))       # prévia, logos de M6S/EAP, vetorização
 ```
 
 | Grupo | Usado em |

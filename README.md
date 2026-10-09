@@ -1,4 +1,4 @@
-# Assistente de Edições — versão web V1.9.0
+# Assistente de Edições — versão web V1.10.0
 
 Aplicação web local de padronização de imagens e montagem de vídeos da Indoor Channel.
 
@@ -23,7 +23,7 @@ Colegas na mesma rede acessam http://NOME-DO-PC:8080. O computador que hospeda a
 - Versão no rodapé esquerdo e check verde por três segundos após exportação completa.
 - Histórico e edições recentes.
 
-Logo EAP e Vetorização MS6 também estão disponíveis na barra lateral.
+Logo EAP e Vetorização M6S também estão disponíveis na barra lateral.
 - **Ofertas de supermercados:** VTs de oferta em MP4 a partir de templates, com formulário, prévia ao vivo, importação de encarte em PDF, biblioteca de imagens com remoção de fundo e fila de geração. Requer Node.js 20+; veja `ofertas/README.md`.
 
 ## Vídeos
@@ -139,7 +139,7 @@ Imagens importadas, edições e histórico ficam na pasta `dados`, criada ao usa
 No servidor (`deploy/`), `INDOOR_AUTH=1` liga o login; no PC e no executável portátil o sistema continua sem login.
 
 - **Primeiro superadmin:** `docker compose -f deploy/compose.yaml exec assistente python server.py criar-superadmin email@empresa.com.br` imprime um link de convite (vale 7 dias). Quem aceitar esse primeiro convite herda as edições, pedidos e histórico feitos antes do login existir.
-- **Cargos:** na tela **Usuários** (só superadmins), cada cargo libera um conjunto de ferramentas (Imagens, Vídeos, Ofertas, Logo EAP, Vetorização MS6). Superadmin é uma marcação do usuário, não um cargo, e só outro superadmin pode dar ou tirar.
+- **Cargos:** na tela **Usuários** (só superadmins), cada cargo libera um conjunto de ferramentas (Imagens, Vídeos, Ofertas, Logo EAP, Vetorização M6S). Superadmin é uma marcação do usuário, não um cargo, e só outro superadmin pode dar ou tirar.
 - **Convites:** o superadmin informa e-mail e cargo e copia o link gerado; a pessoa abre o link e completa o cadastro com nome e senha. O link vale 7 dias e uma vez. Não há envio de e-mail: o link é enviado por quem convidou.
 - **Dados por usuário:** edições, pedidos de Ofertas, encartes, vídeos gerados e histórico são de quem criou. A Biblioteca de imagens e os templates continuam compartilhados com a equipe.
 - **Esqueceu a senha:** na tela Usuários, **Redefinir senha** gera um link (7 dias, uso único) para a pessoa definir uma senha nova; ao usar, as sessões abertas em outros aparelhos são encerradas.
@@ -184,7 +184,7 @@ node tests/test_undo.cjs
 cd ofertas/motor && npm test   # contrato de templates de Ofertas
 ```
 
-A V1.9.0 tem 192 testes Python, incluindo os do módulo Ofertas (os 20 que dependem do motor são pulados sem Node.js e o do extrator com encartes reais conferidos é pulado sem `OFERTAS_ENCARTES`), além de cinco testes JavaScript e oito testes do contrato em `ofertas/motor`. Os testes de vídeo usam
+A V1.10.0 tem 193 testes Python, incluindo os do módulo Ofertas (os 20 que dependem do motor são pulados sem Node.js e o do extrator com encartes reais conferidos é pulado sem `OFERTAS_ENCARTES`), além de cinco testes JavaScript e oito testes do contrato em `ofertas/motor`. Os testes de vídeo usam
 FFmpeg e arquivos sintéticos temporários. Node.js é necessário apenas para os testes JavaScript.
 O teste de navegador em `tests/test_composition_browser.cjs` usa Playwright, uma instância
 isolada, um vídeo sintético de cinco segundos e imagens verdes/amarelas ao lado dele.

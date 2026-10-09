@@ -10,7 +10,7 @@ O Assistente de Edições roda em dois lugares:
 A funcionalidade fecha o servidor com:
 
 1. **Login** por e-mail e senha.
-2. **Cargos personalizados**: cada cargo libera um subconjunto das ferramentas (Imagens, Vídeos, Ofertas, Logo EAP, Vetorização MS6).
+2. **Cargos personalizados**: cada cargo libera um subconjunto das ferramentas (Imagens, Vídeos, Ofertas, Logo EAP, Vetorização M6S).
 3. **Superadmin como booleano do usuário** (não é um cargo): vê todas as ferramentas e é o único que gerencia cargos, convites e usuários. Só um superadmin dá ou tira essa marcação.
 4. **Cadastro por convite**: o superadmin informa e-mail + cargo, o sistema gera um link, o superadmin envia o link e a pessoa completa o cadastro com nome e senha.
 5. **Dados por usuário**: edições, pedidos de Ofertas, encartes, vídeos gerados e histórico passam a ter dono.

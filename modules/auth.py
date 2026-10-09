@@ -33,6 +33,11 @@ def init():
         # convite com `user` preenchido = link de redefinição de senha de um usuário que já existe
         if 'user' not in {c[1] for c in db.execute('PRAGMA table_info(invites)')}:
             db.execute('ALTER TABLE invites ADD COLUMN user TEXT')
+        # marca do cargo: troca logo, ícone e nome da aba (Indoor Channel ou EAP)
+        if 'brand' not in {c[1] for c in db.execute('PRAGMA table_info(roles)')}:
+            db.execute("ALTER TABLE roles ADD COLUMN brand TEXT NOT NULL DEFAULT 'indoor'")
+            # uma vez, junto da coluna: o cargo da EAP já vem pronto (pode ser editado ou excluído depois)
+            db.execute("INSERT INTO roles(id,name,modules,brand) VALUES(?,?,?,'eap')", (uid(), 'Colaborador EAP', json.dumps(['ms6', 'eap'])))
 
 def digest(token): return hashlib.sha256(token.encode()).hexdigest()
 def later(days): return (datetime.now(timezone.utc) + timedelta(days=days)).isoformat()
@@ -51,6 +56,14 @@ def allowed(user, modules):
     if user['superadmin']: return ativos
     with connect() as db: row = db.execute('SELECT modules FROM roles WHERE id=?', (user['role'],)).fetchone()
     return [m for m in json.loads(row['modules']) if m in ativos] if row else []
+
+BRANDS = ('indoor', 'eap')
+
+def brand(user):
+    """Marca exibida ao usuário. Superadmin e app local (sem login) ficam com a Indoor Channel."""
+    if not user or user['superadmin']: return 'indoor'
+    with connect() as db: row = db.execute('SELECT brand FROM roles WHERE id=?', (user['role'],)).fetchone()
+    return row['brand'] if row and row['brand'] in BRANDS else 'indoor'
 
 def session_token(environ):
     return dict(c.strip().split('=', 1) for c in environ.get('HTTP_COOKIE', '').split(';') if '=' in c).get(COOKIE, '')
@@ -211,9 +224,11 @@ def admin(method, path, value, environ):
             name = str(value.get('name') or '').strip()
             if not 1 <= len(name) <= 60: raise ValueError('Dê um nome ao cargo (até 60 caracteres).')
             modules = [str(m) for m in value.get('modules') or []]
+            marca = value.get('brand', 'indoor')
+            if marca not in BRANDS: raise ValueError('Marca inválida.')
             ident = value.get('id') or uid()
-            db.execute('INSERT INTO roles VALUES(?,?,?) ON CONFLICT(id) DO UPDATE SET name=excluded.name, modules=excluded.modules',
-                       (ident, name, json.dumps(modules)))
+            db.execute('INSERT INTO roles(id,name,modules,brand) VALUES(?,?,?,?) ON CONFLICT(id) DO UPDATE SET name=excluded.name, modules=excluded.modules, brand=excluded.brand',
+                       (ident, name, json.dumps(modules), marca))
             return {'id': ident}
         if path == '/api/admin/cargo-excluir':
             if db.execute('SELECT 1 FROM users WHERE role=? UNION SELECT 1 FROM invites WHERE role=? AND used IS NULL', (value.get('id'),) * 2).fetchone():

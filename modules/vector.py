@@ -1,4 +1,4 @@
-"""Vetorização MS6: logo em bitmap → contornos fechados em mm → DXF R12 para o laser."""
+"""Vetorização M6S: logo em bitmap → contornos fechados em mm → DXF R12 para o laser."""
 import io
 import logging
 import math

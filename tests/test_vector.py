@@ -87,9 +87,9 @@ class VectorTests(unittest.TestCase):
         traced = api('/api/vector/trace', {'id': ident, 'settings': {'widthMm': 30}})
         self.assertEqual(traced['contours'], 3)
         with tempfile.TemporaryDirectory() as folder:
-            body = {'id': ident, 'settings': {'widthMm': 30}, 'folder': folder, 'name': 'MS6 - Cliente'}
+            body = {'id': ident, 'settings': {'widthMm': 30}, 'folder': folder, 'name': 'M6S - Cliente'}
             result = api('/api/vector/export', body)
-            dest = Path(folder) / 'MS6 - Cliente.dxf'
+            dest = Path(folder) / 'M6S - Cliente.dxf'
             self.assertEqual(result['name'], dest.name)
             original = dest.read_bytes()
             self.assertEqual(len(list(read_dxf(original).modelspace())), 3)
@@ -100,10 +100,10 @@ class VectorTests(unittest.TestCase):
     def test_network_export_goes_to_browser_delivery_and_is_cleaned(self):
         ident = api('/api/vector/upload', query={'name': ['logo.png']}, raw=ring())['id']
         token = 'ab' * 16
-        api('/api/vector/export', {'id': ident, 'settings': {'widthMm': 30}, 'folder': 'navegador:' + token, 'name': 'MS6 - Rede'})
-        self.assertEqual(server.api('GET', '/api/entrega', {'token': [token]}, b''), ['MS6 - Rede.dxf'])
+        api('/api/vector/export', {'id': ident, 'settings': {'widthMm': 30}, 'folder': 'navegador:' + token, 'name': 'M6S - Rede'})
+        self.assertEqual(server.api('GET', '/api/entrega', {'token': [token]}, b''), ['M6S - Rede.dxf'])
         env = {'REQUEST_METHOD': 'GET', 'PATH_INFO': '/entrega', 'HTTP_HOST': 'localhost:8080',
-               'QUERY_STRING': f'token={token}&name=MS6%20-%20Rede.dxf'}
+               'QUERY_STRING': f'token={token}&name=M6S%20-%20Rede.dxf'}
         statuses = []
         body = b''.join(server.app(env, lambda status, headers: statuses.append(status)))
         self.assertEqual(statuses, ['200 OK'])

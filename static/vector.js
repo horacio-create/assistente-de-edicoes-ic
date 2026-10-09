@@ -1,5 +1,5 @@
 'use strict';
-// Vetorização MS6: logo → contornos fechados → DXF em mm para o laser.
+// Vetorização M6S: logo → contornos fechados → DXF em mm para o laser.
 const vectorDefaults={widthMm:30,threshold:null,invert:false,smooth:1,detailMm:.08,denoise:true};
 let vec=null,vecSettings={...vectorDefaults},vecResult=null,vecSerial=0,vecTimer,vecFolder='',vecView='engrave';
 
@@ -52,7 +52,7 @@ async function openVectorExport(){
  if(!vecResult)return;
  const folder=vecFolder||await chooseFolder();if(!folder)return;vecFolder=folder;
  $('vector-folder').textContent=folder;$('vector-result').hidden=true;$('vector-save').disabled=false;
- $('vector-filename').value=`MS6 - ${vec.name.replace(/\.[^.]+$/,'')} ${dateName()}`;
+ $('vector-filename').value=`M6S - ${vec.name.replace(/\.[^.]+$/,'')} ${dateName()}`;
  $('vector-dialog-size').textContent=`${fmtMm(vecResult.width)} × ${fmtMm(vecResult.height)} mm · ${vecResult.contours} contornos fechados · centralizado na origem (0,0)`;
  $('vector-dialog').showModal();
 }

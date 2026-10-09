@@ -1,4 +1,17 @@
-# Verificação da versão oficial 1.9.0
+# Verificação da versão oficial 1.10.0
+
+## Tela Home e marca por cargo — 09/10/2026
+
+- 193 testes Python no Windows, nenhuma falha; 21 pulados (motor de Ofertas sem Node.js e
+  encartes de referência). Novo teste: cargo "Colaborador EAP" criado com marca EAP; usuário
+  EAP recebe marca e ferramentas certas, vê só o tutorial da EAP, não troca conteúdo e recebe
+  403 no tutorial de Ofertas; superadmin envia e remove fotos e tutoriais; MP4 inválido e marca
+  desconhecida recusados.
+- Navegador, em dados isolados e sem login: Home como tela inicial; fotos alternando a cada 6 s;
+  Abrir leva a cada ferramenta e a logo volta à Home; tutorial toca com Range (206); gerenciador
+  lista fotos e ferramentas; marca EAP simulada troca logo, ícone, aba e cartões.
+
+# Verificação da versão 1.9.0
 
 ## Desfocar fundo — 09/10/2026
 

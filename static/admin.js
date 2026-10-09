@@ -1,5 +1,6 @@
 // Tela Usuários (só superadmin, com login no servidor): lista de pessoas + painel com convite, convites pendentes e cargos.
-const ADMIN_TOOLS = {images: 'Imagens', video: 'Vídeos', offers: 'Ofertas', eap: 'Logo EAP', ms6: 'Vetorização MS6'};
+const ADMIN_TOOLS = {images: 'Imagens', video: 'Vídeos', offers: 'Ofertas', eap: 'Logo EAP', ms6: 'Vetorização M6S'};
+const ADMIN_BRANDS = {indoor: {name: 'Indoor Channel', icon: '/favicon.svg?v=13'}, eap: {name: 'EAP', icon: '/eap-icon.svg'}};
 let adminEditing = null;  // id do cargo aberto para edição ('novo' = criando)
 const adminLinks = {};    // links gerados (convite e nova senha) continuam à vista quando a tela re-renderiza
 
@@ -109,11 +110,16 @@ async function loadAdmin() {
   const roleEditor = role => {
     const name = adminEl('input', {className: 'ac-input', value: role?.name || '', placeholder: 'Ex.: Equipe de Ofertas', maxLength: 60, ariaLabel: 'Nome do cargo'});
     const chips = tools.map(id => adminEl('label', {className: 'ac-chip'}, adminEl('input', {type: 'checkbox', value: id, checked: !!role?.modules.includes(id)}), ADMIN_TOOLS[id]));
+    // marca: troca a logo do menu, o ícone e o nome da aba de quem tem este cargo
+    const brands = Object.entries(ADMIN_BRANDS).map(([id, b]) => adminEl('label', {className: 'ac-chip ac-brand'},
+      adminEl('input', {type: 'radio', name: 'ac-brand', value: id, checked: (role?.brand || 'indoor') === id}), adminEl('img', {src: b.icon, alt: ''}), b.name));
     const close = () => { adminEditing = null; loadAdmin().catch(e => toast(e.message)); };
     setTimeout(() => name.focus());
     return adminEl('form', {className: 'ac-role-edit ac-reveal', noValidate: true, onsubmit: e => { e.preventDefault(); adminEditing = null;
-      adminAct('/api/admin/cargo-salvar', {id: role?.id, name: name.value, modules: chips.map(c => c.firstChild).filter(c => c.checked).map(c => c.value)}); }},
+      adminAct('/api/admin/cargo-salvar', {id: role?.id, name: name.value, modules: chips.map(c => c.firstChild).filter(c => c.checked).map(c => c.value),
+        brand: brands.map(b => b.firstChild).find(b => b.checked)?.value || 'indoor'}); }},
       adminEl('div', {className: 'ac-field'}, adminEl('span', {className: 'ac-label', textContent: 'Nome'}), name),
+      adminEl('div', {className: 'ac-field'}, adminEl('span', {className: 'ac-label', textContent: 'Marca'}), adminEl('div', {className: 'ac-chips'}, ...brands)),
       adminEl('div', {className: 'ac-field'}, adminEl('span', {className: 'ac-label', textContent: 'Ferramentas liberadas'}), adminEl('div', {className: 'ac-chips'}, ...chips)),
       adminEl('div', {className: 'ac-role-actions'},
         adminEl('button', {className: 'ac-btn ac-btn-quiet', type: 'button', textContent: 'Cancelar', onclick: close}),
@@ -121,7 +127,7 @@ async function loadAdmin() {
       role && adminEl('button', {className: 'ac-btn ac-btn-danger', type: 'button', textContent: 'Excluir cargo', onclick: () => { adminEditing = null; adminAct('/api/admin/cargo-excluir', {id: role.id}); }}));
   };
   const roles = data.roles.map(r => adminEditing === r.id ? roleEditor(r) : adminEl('div', {className: 'ac-role'},
-    adminEl('div', {className: 'ac-role-head'}, adminEl('strong', {textContent: r.name}),
+    adminEl('div', {className: 'ac-role-head'}, adminEl('strong', {textContent: r.name}, r.brand === 'eap' && adminEl('span', {className: 'ac-tag ac-brand-tag', textContent: 'Marca EAP'})),
       adminEl('button', {className: 'ac-btn ac-btn-text', type: 'button', textContent: 'Editar', ariaLabel: `Editar cargo ${r.name}`, onclick: () => { adminEditing = r.id; loadAdmin(); }})),
     adminEl('div', {className: 'ac-chips'}, ...(r.modules.filter(m => ADMIN_TOOLS[m]).length
       ? r.modules.filter(m => ADMIN_TOOLS[m]).map(m => adminEl('span', {className: 'ac-tag', textContent: ADMIN_TOOLS[m]}))
@@ -138,7 +144,12 @@ async function loadAdmin() {
     adminEl('section', {className: 'ac-box'},
       adminEl('header', {className: 'ac-box-head'}, adminEl('div', {}, adminEl('h2', {id: 'ac-roles-title'}, 'Cargos', adminEl('small', {textContent: String(data.roles.length)})),
         adminEl('p', {textContent: 'Cada cargo libera um conjunto de ferramentas.'}))),
-      adminEl('div', {className: 'ac-side-body'}, ...roles, newRole)));
+      adminEl('div', {className: 'ac-side-body'}, ...roles, newRole)),
+    adminEl('section', {className: 'ac-box'},
+      adminEl('header', {className: 'ac-box-head'}, adminEl('div', {}, adminEl('h2', {textContent: 'Conteúdo da Home'}),
+        adminEl('p', {textContent: 'Fotos dos colaboradores e tutoriais de cada ferramenta.'}))),
+      adminEl('div', {className: 'ac-side-body'}, adminEl('button', {className: 'ac-btn ac-btn-quiet', type: 'button', textContent: 'Gerenciar conteúdo',
+        onclick: () => { homeManaging = true; switchEditor(editorKind, 'home').catch(e => toast(e.message)); }}))));
 
   $('admin').replaceChildren(adminEl('div', {className: 'ac-admin'}, list, side));
 }
