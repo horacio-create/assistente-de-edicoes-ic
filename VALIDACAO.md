@@ -1,4 +1,16 @@
-# Verificação da versão oficial 1.8.1
+# Verificação da versão oficial 1.9.0
+
+## Desfocar fundo — 09/10/2026
+
+- Versão 1.9.0 alinhada em `version.py`, README, LEIA-ME e CHANGELOG.
+- 192 testes Python executados no Windows, nenhuma falha; 21 pulados (motor de Ofertas
+  sem Node.js e extrator de encartes sem `OFERTAS_ENCARTES`). Novo teste exporta vídeo e
+  imagem com Desfocar fundo numa tela vertical e confere a cor das áreas de fundo.
+- Navegador, em dados isolados: opção só no editor de vídeos; cor predominante por padrão;
+  desfoque e cor alteram a prévia; faixa "Fundo desfocado" ligada ao trecho; olho oculta só a
+  prévia; Ctrl+Z e salvamento no servidor conferidos; quadro exportado igual à prévia.
+
+# Verificação da versão 1.8.1
 
 ## Conferência da 1.8.1 — 08/10/2026
 

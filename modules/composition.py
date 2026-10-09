@@ -54,7 +54,8 @@ def validate(value, media):
         if kind not in ('video', 'audio') or any(k != kind for k in kinds):
             raise ValueError('Coloque áudio em faixas de áudio e imagens ou vídeos em faixas de vídeo.')
         clean_tracks.append(dict(id=ident(t['id']), kind=kind, locked=flag(t.get('locked')),
-                                 muted=flag(t.get('muted')), previewVisible=flag(t.get('previewVisible'), True)))
+                                 muted=flag(t.get('muted')), previewVisible=flag(t.get('previewVisible'), True),
+                                 blurVisible=flag(t.get('blurVisible'), True)))
     track_ids = {t['id'] for t in clean_tracks}
     if len(track_ids) != len(tracks):
         raise ValueError('Faixas repetidas.')
@@ -138,7 +139,7 @@ def export(media, folder, output_path, project, logo_for, progress=None, cancell
                 common += ['-threads','1','-ss',str(c['in']),'-t',str(c['out']-c['in']),'-i',str(folder/(m['id']+'.source'))]
             else:
                 image,_=render(folder/(m['id']+'.png'),c['settings'],logo,
-                               transparent=m.get('role')=='logo' or c['settings']['mode']!='background')
+                               transparent=m.get('role')=='logo' or c['settings']['mode'] not in ('background','blur'))
                 rendered=work/f'image-{i}.png';image.save(rendered)
                 common += ['-threads','1','-loop','1','-framerate',str(FPS),'-t',str(c['duration']),'-i',str(rendered)]
         for offset,(i,path) in enumerate(logo_inputs.items()):

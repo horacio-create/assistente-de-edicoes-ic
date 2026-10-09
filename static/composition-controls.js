@@ -193,7 +193,7 @@ function renderCompositionCanvas(canvas,time,final=false,pool=compositionPlayers
  let buffer=compositionBuffers.get(canvas);if(!buffer){buffer=document.createElement('canvas');compositionBuffers.set(canvas,buffer);}
  if(buffer.width!==w||buffer.height!==h){buffer.width=w;buffer.height=h;}
  const ctx=buffer.getContext('2d');ctx.setTransform(1,0,0,1,0,0);ctx.fillStyle='#000';ctx.fillRect(0,0,w,h);
- for(const {c,m,source} of sources)drawVideoCanvas({...m,settings:{...c.settings,width:s.width,height:s.height}},source,buffer,m.role==='logo'||(m.kind==='image'&&c.settings.mode!=='background'));
+ for(const {c,m,source} of sources)drawVideoCanvas({...m,settings:{...c.settings,width:s.width,height:s.height,blurHidden:!final&&p.tracks.find(t=>t.id===c.track)?.blurVisible===false}},source,buffer,m.role==='logo'||(m.kind==='image'&&!['background','blur'].includes(c.settings.mode)));
  if(!sources.length&&activeClips.some(c=>projectMedia(c)?.kind!=='audio')){ctx.setTransform(1,0,0,1,0,0);ctx.fillStyle='#eeeef4';ctx.fillRect(0,0,w,h);ctx.fillStyle='#64647d';ctx.font=`${Math.max(14,w/40)}px Segoe UI`;ctx.textAlign='center';ctx.fillText('Prévia oculta pelo olho',w/2,h/2);ctx.textAlign='start';}
  if(canvas.width!==w||canvas.height!==h){canvas.width=w;canvas.height=h;}
  const output=canvas.getContext('2d');output.setTransform(1,0,0,1,0,0);output.drawImage(buffer,0,0);
@@ -247,6 +247,21 @@ function snapToCuts(time,exclude=null){
  const closest=edges.reduce((best,e)=>Math.abs(e-time)<Math.abs(best-time)?e:best,edges[0]);
  compositionSnap=Math.abs(closest-time)<=10/timelineScale()?closest:null;return compositionSnap??time;
 }
+// Faixa "Fundo desfocado": mostra os trechos com Desfocar fundo e os acompanha; o olho altera só a prévia.
+function blurLaneRow(track,trackName,clips){
+ const visible=track.blurVisible!==false,row=document.createElement('div');row.className='composition-track blur-track'+(track.locked?' locked':'');row.dataset.track=track.id;
+ const header=document.createElement('div');header.className='track-header';const name=document.createElement('strong');name.textContent='Fundo desfocado';
+ const controls=document.createElement('div');controls.className='track-icons';const eye=document.createElement('button');eye.type='button';eye.className='track-property';eye.innerHTML=propertyIcon('eye',visible);eye.setAttribute('aria-pressed',String(visible));eye.setAttribute('aria-label',(visible?'Ocultar':'Mostrar')+' prévia do fundo desfocado de '+trackName);eye.dataset.help='Oculta só a prévia do fundo desfocado. A exportação é mantida.';eye.onclick=()=>editProject(()=>{const t=project().tracks.find(t=>t.id===track.id);if(t)t.blurVisible=!visible;});
+ controls.append(eye);header.append(name,controls);
+ const lane=document.createElement('div');lane.className='track-lane';
+ for(const c of clips){
+  const m=projectMedia(c),amount=Math.round(c.settings.blur??60),block=document.createElement('button');block.type='button';block.className='montage-block layer-clip blur-clip'+(c.id===compositionSelected?' selected':'');block.style.left=c.at*timelineScale()+'px';block.style.width=Math.max(6,c.duration*timelineScale())+'px';block.style.setProperty('--blur-color',c.settings.color);block.title='Fundo desfocado de '+m.name+' · desfoque '+amount+'%';block.setAttribute('aria-label',block.title);
+  const img=document.createElement('img');img.src='/media/'+m.id;img.alt='';img.draggable=false;if(m.kind==='video')segmentThumbnail(m,c.in).then(src=>img.src=src);
+  const title=document.createElement('strong');title.textContent='Fundo desfocado';const label=document.createElement('small');label.textContent='Desfoque '+amount+'% · cor a 50%';
+  block.append(img,title,label);block.onclick=e=>handleClipClick(e,c);lane.append(block);
+ }
+ row.append(header,lane);return row;
+}
 function renderLayeredTimeline(){
  timelineZoom=Math.max(1,Math.min(timelineZoom,64,Math.max(1,1200/timelineBaseScale())));
  const p=project();if(!p)return;const host=$('layered-timeline'),scrollLeft=host.scrollLeft,scrollTop=host.scrollTop;host.replaceChildren();const inner=document.createElement('div');inner.id='layered-inner';inner.className='layered-inner';inner.style.width=Math.max(host.clientWidth,126+Math.max(15,projectDuration()+2)*timelineScale())+'px';
@@ -268,7 +283,7 @@ function renderLayeredTimeline(){
    const img=document.createElement('img');img.src='/media/'+m.id;img.alt='';img.draggable=false;if(m.kind==='video')segmentThumbnail(m,c.in).then(src=>img.src=src);
    const title=document.createElement('strong');title.textContent=m.name;if(clipLocked(c))title.insertAdjacentHTML('afterbegin',icon('lock','title-icon'));const label=document.createElement('small');label.textContent=seconds(c.duration)+(timedMedia(m)?' · '+seconds(c.in)+' → '+seconds(c.out):m.role==='logo'?' · logo':' · imagem');block.append(audio?audioWaveform(m,c):img,title,label);block.onclick=e=>handleClipClick(e,c);block.ondblclick=()=>openClipTrim(c.id);
    block.onpointerdown=e=>beginClipDrag(e,c);lane.append(block);
-  }inner.append(row);
+  }inner.append(row);const blurred=audio?[]:p.clips.filter(c=>c.track===track.id&&c.settings?.mode==='blur');if(blurred.length)inner.append(blurLaneRow(track,trackName,blurred));
  });
  const bottom=document.createElement('div');bottom.className='timeline-bottom-space';bottom.textContent='As faixas de cima cobrem as de baixo; o olho altera só a prévia.';inner.append(bottom);
  const head=document.createElement('div');head.id='montage-playhead';head.className='montage-playhead';head.tabIndex=0;head.setAttribute('role','slider');head.setAttribute('aria-label','Cursor de reprodução');head.setAttribute('aria-valuemin','0');head.setAttribute('aria-valuemax',projectDuration());const grip=document.createElement('span');grip.className='playhead-grip';const badge=document.createElement('span');badge.id='playhead-time';badge.className='playhead-time';head.append(grip,badge);

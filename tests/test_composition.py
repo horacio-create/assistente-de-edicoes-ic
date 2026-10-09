@@ -82,6 +82,19 @@ class CompositionTests(unittest.TestCase):
         self.assertGreater(videos.frame(output,4.9).getpixel((160,90))[0],200)
         image=videos.frame(output,5.1);self.assertGreater(image.getpixel((160,90))[2],200);self.assertGreater(image.getpixel((0,0))[1],200)
 
+    def test_blur_background_covers_bars_with_media_and_half_color(self):
+        job=self.upload(self.create(),'video.mp4',self.videos['red']);job=self.upload(job,'foto.png',self.image('blue'))
+        track=uid();p=self.project([track]);p['tracks'][0]['blurVisible']=False
+        p['settings'].update(width=180,height=320,mute=True)
+        p['clips']=[self.clip(job['media'][0],track,0,1),self.clip(job['media'][1],track,1,1)]
+        for clip in p['clips']:clip['settings'].update(mode='blur',blur=80,color='#000000')
+        output=self.export_project(job,p,'Fundo desfocado')
+        top=videos.frame(output,.5).getpixel((90,20));self.assertTrue(100<top[0]<160 and top[1]<40 and top[2]<40,top)
+        self.assertGreater(videos.frame(output,.5).getpixel((90,160))[0],200)
+        top=videos.frame(output,1.5).getpixel((90,20));self.assertTrue(100<top[2]<160 and top[0]<40,top)
+        p['clips'][0]['settings']['blur']=150;job=api('/api/job',method='GET',query={'id':[job['id']]});job['meta']['composition']=p
+        with self.assertRaises(ValueError):api('/api/save',job)
+
     def test_mute_applies_to_entire_composition(self):
         job=self.upload(self.create(),'audio.mp4',self.videos['red']);track=uid();p=self.project([track]);p['settings']['mute']=True;p['clips']=[self.clip(job['media'][0],track,0,2,1,3)]
         output=self.export_project(job,p,'Montagem muda');self.assertFalse(videos.probe(output)['hasAudio'])

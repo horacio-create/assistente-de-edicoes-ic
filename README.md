@@ -1,4 +1,4 @@
-# Assistente de Edições — versão web V1.8.1
+# Assistente de Edições — versão web V1.9.0
 
 Aplicação web local de padronização de imagens e montagem de vídeos da Indoor Channel.
 
@@ -184,7 +184,7 @@ node tests/test_undo.cjs
 cd ofertas/motor && npm test   # contrato de templates de Ofertas
 ```
 
-A V1.8.1 tem 188 testes Python, incluindo os do módulo Ofertas (os 20 que dependem do motor são pulados sem Node.js e o do extrator com encartes reais conferidos é pulado sem `OFERTAS_ENCARTES`), além de cinco testes JavaScript e oito testes do contrato em `ofertas/motor`. Os testes de vídeo usam
+A V1.9.0 tem 192 testes Python, incluindo os do módulo Ofertas (os 20 que dependem do motor são pulados sem Node.js e o do extrator com encartes reais conferidos é pulado sem `OFERTAS_ENCARTES`), além de cinco testes JavaScript e oito testes do contrato em `ofertas/motor`. Os testes de vídeo usam
 FFmpeg e arquivos sintéticos temporários. Node.js é necessário apenas para os testes JavaScript.
 O teste de navegador em `tests/test_composition_browser.cjs` usa Playwright, uma instância
 isolada, um vídeo sintético de cinco segundos e imagens verdes/amarelas ao lado dele.

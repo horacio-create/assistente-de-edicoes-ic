@@ -229,6 +229,20 @@ function videoFrame(m) {
   return asset('/media/' + m.id);
 }
 
+// Desfocar fundo: a mídia cobre a tela, desfocada, sob a cor escolhida a 50% (igual à exportação).
+function drawBlurBackground(ctx, source, s, scale) {
+  const sw = source.videoWidth || source.naturalWidth, sh = source.videoHeight || source.naturalHeight;
+  if (!sw || !sh) return;
+  const sigma = (s.blur ?? 60)/100*.05*Math.max(s.width, s.height), k = Math.max(s.width/sw, s.height/sh), dw = sw*k, dh = sh*k;
+  ctx.save(); ctx.translate(s.width/2, s.height/2); ctx.scale(s.flipH?-1:1, s.flipV?-1:1);
+  // Sem a borda extra o desfoque escurece os cantos; a exportação repete os pixels da borda.
+  const bleed = sigma*2;
+  if (sigma > 0) ctx.filter = `blur(${sigma*scale}px)`;
+  ctx.drawImage(source, -dw/2-bleed, -dh/2-bleed, dw+bleed*2, dh+bleed*2);
+  ctx.restore();
+  ctx.save(); ctx.globalAlpha = .5; ctx.fillStyle = s.color; ctx.fillRect(0, 0, s.width, s.height); ctx.restore();
+}
+
 function drawVideoCanvas(m, source, canvas, overlay=false) {
   if (!source || source.readyState < 2) return;
   const s = m.settings, scale = Math.min(1, 1280/s.width, 1280/s.height);
@@ -236,6 +250,7 @@ function drawVideoCanvas(m, source, canvas, overlay=false) {
   if (canvas.width !== w || canvas.height !== h) { canvas.width = w; canvas.height = h; }
   const ctx = canvas.getContext('2d'); ctx.setTransform(scale,0,0,scale,0,0);
   if(!overlay){ctx.fillStyle = s.mode === 'background' ? s.color : '#000'; ctx.fillRect(0,0,s.width,s.height);}
+  if(!overlay && s.mode === 'blur' && !s.blurHidden) drawBlurBackground(ctx, source, s, scale);
   const {rw,rh,x,y,drawW,drawH}=mediaGeometry(m);
   ctx.save(); ctx.translate(x+rw/2,y+rh/2); ctx.rotate(s.rotation*Math.PI/180); ctx.scale(s.flipH?-1:1,s.flipV?-1:1);
   ctx.drawImage(source,-drawW/2,-drawH/2,drawW,drawH); ctx.restore();

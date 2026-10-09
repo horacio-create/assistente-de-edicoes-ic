@@ -11,7 +11,7 @@ import time
 from pathlib import Path
 from functools import lru_cache
 from PIL import Image
-from modules.images import DEFAULT, settings as image_settings, render as render_image, rotated_size, geometry
+from modules.images import DEFAULT, settings as image_settings, render as render_image, rotated_size, geometry, blur_sigma
 
 ROOT = Path(__file__).resolve().parents[1]
 SUPPORTED = {'.mp4', '.mov', '.m4v', '.mkv', '.avi', '.webm', '.wmv', '.mpeg', '.mpg'}
@@ -265,8 +265,19 @@ def filters(info, s, logo=None, include_audio=True):
         graph.append(''.join(f'[clip{i}]' for i in range(len(parts))) +
                      f'concat=n={len(parts)}:v=1:a=0[joined]')
     duration = output_duration(s)
-    bg = s['color'] if s['mode'] == 'background' else '#000000'
-    graph.append(f'color=c={bg}:s={w}x{h}:r=30:d={duration}[bg]')
+    blur = s['mode'] == 'blur' and cw > 0 and ch > 0
+    if blur:
+        # Desfocar fundo: a própria mídia cobre a tela, desfocada em 1/4 da
+        # resolução e escurecida/clareada pela cor escolhida a 50%.
+        sigma = blur_sigma(s) / 4
+        flips = ''.join(f',{f}' for f, on in (('hflip', s['flipH']), ('vflip', s['flipV'])) if on)
+        graph.append('[joined]split=2[main][backdrop]')
+        graph.append(f"[backdrop]setsar=1{flips},scale={w}:{h}:force_original_aspect_ratio=increase,crop={w}:{h},"
+                     f"scale={max(2, w // 4)}:{max(2, h // 4)}" + (f',gblur=sigma={sigma:.3f}' if sigma > 0 else '') +
+                     f",scale={w}:{h},format=rgb24,drawbox=x=0:y=0:w=iw:h=ih:color={s['color']}@0.5:t=fill,fps=30,format=yuv420p[bg]")
+    else:
+        bg = s['color'] if s['mode'] == 'background' else '#000000'
+        graph.append(f'color=c={bg}:s={w}x{h}:r=30:d={duration}[bg]')
     if cw > 0 and ch > 0:
         if rw * rh > 20_000_000:
             sx, sy = int(crop_x / factor), int(crop_y / factor)
@@ -275,7 +286,7 @@ def filters(info, s, logo=None, include_audio=True):
         else:
             chain.extend([f'scale={rw}:{rh}:flags=lanczos', f'crop={cw}:{ch}:{crop_x}:{crop_y}:exact=1'])
         chain.append('fps=30')
-        graph.append('[joined]' + ','.join(chain) + '[image]')
+        graph.append(('[main]' if blur else '[joined]') + ','.join(chain) + '[image]')
         graph.append(f'[bg][image]overlay=x={max(0,x)}:y={max(0,y)}:shortest=1:eof_action=endall[base]')
     else:
         graph.append('[bg]null[base]')

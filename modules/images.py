@@ -2,22 +2,22 @@ import io
 import math
 import re
 import warnings
-from PIL import Image, ImageOps, ImageCms
+from PIL import Image, ImageFilter, ImageOps, ImageCms
 import pymupdf
 
 Image.MAX_IMAGE_PIXELS = 40_000_000
 warnings.simplefilter('error', Image.DecompressionBombWarning)
 SUPPORTED = {'.jpg', '.jpeg', '.png', '.webp', '.bmp', '.tif', '.tiff', '.pdf'}
-DEFAULT = dict(width=1280, height=720, mode='contain', color='#15191e', rotation=0, flipH=False, flipV=False, zoom=1, scaleX=1, scaleY=1, proportionLocked=True, x=0, y=0, safe=True, lockSize=False, lockX=False, lockY=False, lockOutput=False, logoId=None, logoScale=.12, logoX=.97, logoY=.03)
+DEFAULT = dict(width=1280, height=720, mode='contain', color='#15191e', rotation=0, flipH=False, flipV=False, zoom=1, scaleX=1, scaleY=1, proportionLocked=True, x=0, y=0, safe=True, lockSize=False, lockX=False, lockY=False, lockOutput=False, logoId=None, logoScale=.12, logoX=.97, logoY=.03, blur=60)
 
 def settings(value):
     s = DEFAULT | value
     s['width'], s['height'] = int(s['width']), int(s['height'])
     if not (64 <= s['width'] <= 7680 and 64 <= s['height'] <= 7680) or s['width'] * s['height'] > 20_000_000:
         raise ValueError('Use dimensões de 64 a 7680 pixels, até 20 milhões de pixels.')
-    if s['mode'] not in ('contain', 'cover', 'background') or not re.fullmatch(r'#[0-9a-fA-F]{6}', s['color']):
+    if s['mode'] not in ('contain', 'cover', 'background', 'blur') or not re.fullmatch(r'#[0-9a-fA-F]{6}', s['color']):
         raise ValueError('Modo ou cor inválido.')
-    for key, low, high in [('zoom', .1, 5), ('scaleX', .1, 5), ('scaleY', .1, 5), ('x', -1, 1), ('y', -1, 1), ('logoScale', .02, .8), ('logoX', 0, 1), ('logoY', 0, 1)]:
+    for key, low, high in [('zoom', .1, 5), ('scaleX', .1, 5), ('scaleY', .1, 5), ('x', -1, 1), ('y', -1, 1), ('logoScale', .02, .8), ('logoX', 0, 1), ('logoY', 0, 1), ('blur', 0, 100)]:
         s[key] = float(s[key])
         if not math.isfinite(s[key]) or not low <= s[key] <= high:
             raise ValueError('Ajuste fora do limite.')
@@ -90,6 +90,25 @@ def geometry(width, height, s):
                 y=round((s['height']-rh)/2+s['y']*s['height']))
 
 
+def blur_sigma(s):
+    """Desfocar fundo: 0–100 vira o desvio do desfoque, proporcional ao maior lado da tela."""
+    return s['blur'] / 100 * .05 * max(s['width'], s['height'])
+
+
+def blurred_background(im, s):
+    """Mídia ampliada até cobrir a tela, desfocada e coberta pela cor a 50%."""
+    w, h = s['width'], s['height']
+    flat = Image.new('RGB', im.size, s['color'])
+    flat.paste(im, mask=im.getchannel('A'))
+    bg = ImageOps.fit(flat, (w, h), Image.Resampling.BILINEAR)
+    sigma = blur_sigma(s)
+    if sigma > 0:
+        # Desfoca em 1/4 da resolução: mesmo resultado visual, bem mais rápido.
+        small = bg.resize((max(1, w // 4), max(1, h // 4)), Image.Resampling.BILINEAR)
+        bg = small.filter(ImageFilter.GaussianBlur(sigma / 4)).resize((w, h), Image.Resampling.BILINEAR)
+    return Image.blend(bg, Image.new('RGB', (w, h), s['color']), .5).convert('RGBA')
+
+
 def render(source, value, logo=None, transparent=False):
     s = settings(value)
     with Image.open(source) as original:
@@ -99,7 +118,10 @@ def render(source, value, logo=None, transparent=False):
     w, h = s['width'], s['height']
     g = geometry(im.width, im.height, s)
     factor, rw, rh, x, y = (g[k] for k in ('factor','rw','rh','x','y'))
-    result = Image.new('RGBA', (w, h), (0, 0, 0, 0) if transparent else s['color'] if s['mode'] == 'background' else '#000000')
+    if s['mode'] == 'blur' and not transparent:
+        result = blurred_background(im, s)
+    else:
+        result = Image.new('RGBA', (w, h), (0, 0, 0, 0) if transparent else s['color'] if s['mode'] == 'background' else '#000000')
     if s['scaleX'] != 1 or s['scaleY'] != 1:
         # Sample directly into the output canvas, bounding memory even when cropped.
         angle = math.radians(s['rotation']); co, si = math.cos(angle), math.sin(angle)

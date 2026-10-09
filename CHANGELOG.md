@@ -1,5 +1,15 @@
 # Histórico de versões
 
+## 1.9.0 — Desfocar fundo — 09/10/2026
+
+- Novo enquadramento "Desfocar fundo" no editor de vídeos: a própria mídia, ampliada até cobrir
+  a tela e desfocada, fica sob o trecho, coberta por uma cor a 50% (padrão: cor predominante).
+  Desfoque de 0 a 100% e cor ajustáveis em Ajustes; a faixa "Fundo desfocado" aparece na
+  timeline logo abaixo do trecho, acompanha cortes e posição e tem olho só para a prévia.
+  Vale para vídeos e imagens da montagem, na prévia e na exportação.
+- Exportação mistura a cor do preenchimento em RGB, sem desbotar o fundo; teste automático
+  confere a cor das áreas de fundo em vídeos e imagens.
+
 ## 1.8.1 — refinamentos de interface — 08/10/2026
 
 - Alinhamento e espaçamentos dos menus, campos, ícones e ações de Imagens, Vídeos,
