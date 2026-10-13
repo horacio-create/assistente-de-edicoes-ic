@@ -7,6 +7,7 @@ const esc = (t) => String(t ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '
 const hora = (iso) => (iso ? new Date(iso).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : '');
 const STATUS = { na_fila: 'Na fila', gerando: 'Gerando', pronto: 'Pronto', falhou: 'Falhou', cancelado: 'Cancelado', interrompido: 'Interrompido' };
 const TELAS = {
+  etapas: ['Do encarte ao vídeo', 'Importe os encartes, confira as ofertas, escolha o template e gere todos os vídeos de uma vez.'],
   catalogo: ['Novo vídeo', 'Escolha um template. Preencha os produtos. O vídeo sai pronto para a tela.'],
   editor: ['', 'Preencha os campos. A prévia atualiza sozinha.'],
   pedidos: ['Pedidos recentes', 'Retome um vídeo de onde parou.'],
@@ -14,7 +15,7 @@ const TELAS = {
   biblioteca: ['Biblioteca de imagens', 'Recortes prontos para reaproveitar.'],
   templates: ['Templates', 'Publique layouts criados pelos designers.'],
 };
-const state = { tela: 'catalogo', pronto: null, imagens: {}, pedido: null, esquema: null, validacao: [], timer: null, salvando: null, pendente: false, alvoImagem: null, selecionada: null, encarte: [], ordem: [], vistos: {}, encartes: [], encarteSel: null, encartesVistos: {}, nomes: {} };
+const state = { tela: 'etapas', renders: [], pronto: null, imagens: {}, pedido: null, esquema: null, validacao: [], timer: null, salvando: null, pendente: false, alvoImagem: null, selecionada: null, encarte: [], ordem: [], vistos: {}, encartes: [], encarteSel: null, encartesVistos: {}, nomes: {} };
 
 async function api(path, { body, raw } = {}) {
   const opts = { method: body || raw ? 'POST' : 'GET', headers: {} };
@@ -69,9 +70,8 @@ async function mostrar(tela) {
   state.tela = tela;
   document.querySelectorAll('#ofertas .of-tela').forEach((t) => (t.hidden = t.id !== 'of-' + tela));
   document.querySelectorAll('#ofertas .aba').forEach((a) => a.setAttribute('aria-selected', String(a.dataset.tela === (tela === 'editor' ? 'catalogo' : tela))));
-  const [titulo, sub] = TELAS[tela];
-  document.getElementById('page-title').textContent = tela === 'editor' ? state.esquema?.nome || '' : titulo;
-  document.getElementById('page-subtitle').textContent = sub;
+  aplicarTitulo();
+  if (tela === 'etapas') { desenharEtapas(); if (et.passo === 4) carregarFila(); }  // lista do lote com os vídeos gerados de novo pelo editor
   if (tela === 'catalogo') carregarCatalogo();
   if (tela === 'editor') desenharCardEncarte();
   if (tela === 'pedidos') carregarPedidos();
@@ -80,6 +80,13 @@ async function mostrar(tela) {
   if (tela === 'templates') carregarTemplatesAdmin();
 }
 document.querySelectorAll('#ofertas .aba').forEach((a) => a.addEventListener('click', () => mostrar(a.dataset.tela)));
+function aplicarTitulo() {
+  const [titulo, sub] = TELAS[state.tela];
+  document.getElementById('page-title').textContent = state.tela === 'editor' ? state.esquema?.nome || '' : titulo;
+  document.getElementById('page-subtitle').textContent = sub;
+}
+// o app.js reescreve o título a cada clique em "Ofertas", mesmo com a seção já aberta (sem disparar o observador acima)
+document.querySelector('.nav[data-view="ofertas"]')?.addEventListener('click', () => setTimeout(() => { if (state.pronto && !document.getElementById('ofertas').hidden) aplicarTitulo(); }));
 
 // ---------- catálogo ----------
 // nome legível do template para Pedidos e Vídeos gerados (as listas guardam só o id)
@@ -465,6 +472,7 @@ async function carregarEncartes() {
   clearTimeout(encTimer);
   try {
     state.encartes = await api('/encartes');
+    state.encartesCarregados = true;
     for (const e of state.encartes) {
       if (e.status === 'lendo' && !tarefaEncarte[e.id]) tarefaEncarte[e.id] = IndoorTarefas.criar(e.nome, 'Lendo encarte…');
       const t = tarefaEncarte[e.id];
@@ -477,6 +485,7 @@ async function carregarEncartes() {
     }
     if (!state.encarteSel && state.encartes.length) state.encarteSel = state.encartes[0].id;
     if (!el('editor').hidden) desenharCardEncarte();
+    if (!el('etapas').hidden) desenharEtapas();
     // o botão "Trocar pelo encarte" dos produtos depende de haver encarte pronto
     const temTroca = !!el('formulario').querySelector('.trocar-encarte');
     if (state.esquema && !el('editor').hidden && temTroca !== (encartesProntos().length > 0 && !!listaPrincipal())) montarFormulario();
@@ -491,6 +500,7 @@ async function enviarEncarte(arquivo) {
     tarefaEncarte[r.id] = t.detalhe('Lendo encarte…').progresso(null);
     state.encarteSel = r.id; state.ordem = [];
     await carregarEncartes();
+    return r.id;
   } catch (e) { t.falhar(e.message); }
 }
 el('arquivo-pdf').addEventListener('change', (e) => { const f = e.target.files[0]; e.target.value = ''; enviarEncarte(f); });
@@ -672,7 +682,7 @@ async function abrirConferir(k) {
   el('conferir-foto').src = `/ofertas/miniatura/${it.imagem}.png`;
   el('conferir-avisos').innerHTML = avisosDe(it).map((a) => `<li>${esc(a)}</li>`).join('');
   el('cf-nome').value = it.nome; el('cf-de').value = it.de; el('cf-por').value = it.por; el('cf-unidade').value = it.unidade;
-  el('cf-unidades').innerHTML = (listaPrincipal()?.campos.find((c) => c.id === 'unidade')?.opcoes || []).map((o) => `<option value="${esc(o)}">`).join('');
+  el('cf-unidades').innerHTML = (((el('editor').hidden ? listaEt() : listaPrincipal()) || listaPrincipal())?.campos.find((c) => c.id === 'unidade')?.opcoes || []).map((o) => `<option value="${esc(o)}">`).join('');
   mostrarPagina(it.pagina || 1, it.area);
   el('conferir-dialog').showModal();
   el('cf-nome').focus();
@@ -730,6 +740,7 @@ el('conferir-salvar').addEventListener('click', async () => {
     state.encarte = null;  // força redesenhar com os dados novos
     el('conferir-dialog').close();
     desenharCardEncarte();
+    if (!el('etapas').hidden) desenharEtapas();
     aviso(`${it.nome} conferido.`);
   } catch (e) { falha(e); }
 });
@@ -819,6 +830,309 @@ el('lote-gerar').addEventListener('click', async () => {
   } catch (e) { falha(e); } finally { el('lote-gerar').disabled = false; }
 });
 
+// ---------- do encarte ao vídeo (etapas) ----------
+// Fluxo guiado trazido do Encarte Studio: 1. um ou mais encartes, em ordem → 2. conferir e aprovar em grupo →
+// 3. template, cartelas e prévia do 1º vídeo → 4. gerar todos e baixar em ZIP. O andamento fica salvo neste
+// navegador; os dados (encartes, conferência, pedidos e vídeos) ficam no servidor, como no resto do módulo.
+const ET_CHAVE = 'ofertas-etapas';
+const et = Object.assign({ passo: 1, encartes: [], template: null, nome: '', cartelas: null, impar: null, previa: null, previaChave: null, lote: null },
+  (() => { try { return JSON.parse(localStorage.getItem(ET_CHAVE) || '{}'); } catch { return {}; } })());
+const salvarEt = () => { try { localStorage.setItem(ET_CHAVE, JSON.stringify(et)); } catch {} };
+const esquemasEt = {};
+let templatesEt = null;
+const etSel = new Set();  // "idDoEncarte:k" dos produtos marcados na conferência
+const listaEt = () => esquemasEt[et.template]?.campos.find((c) => c.tipo === 'lista');
+const encartesDoLote = () => et.encartes.map((id) => state.encartes.find((e) => e.id === id)).filter(Boolean);
+const itensDoLote = () => encartesDoLote().flatMap((enc) => (enc.status === 'pronto' ? enc.itens.map((it, k) => ({ enc, it, k })) : []));
+const chaveItem = (enc, k) => `${enc.id}:${k}`;
+const baseNome = () => et.nome.trim() || (encartesDoLote()[0]?.nome || 'Ofertas').replace(/\.[^.]+$/, '');
+
+function podeIr(passo) {
+  const encs = encartesDoLote(), itens = itensDoLote();
+  if (passo >= 2 && (!encs.length || encs.some((e) => e.status !== 'pronto') || !itens.length)) return false;
+  if (passo >= 3 && itens.some(({ it }) => !it.conferido)) return false;
+  if (passo >= 4 && (!et.template || !listaEt() || nomesLongos().length)) return false;
+  return true;
+}
+// nomes maiores que o limite do template não entram na fila: corrigir na conferência, antes de gerar
+function nomesLongos() {
+  const max = listaEt()?.campos.find((c) => c.id === 'nome')?.max;
+  return max ? itensDoLote().filter(({ it }) => (it.nome || '').length > max).map((x) => ({ ...x, max })) : [];
+}
+function irPara(passo) {
+  if (!podeIr(passo)) return;
+  et.passo = passo; salvarEt();
+  desenharEtapas();
+  if (passo === 4) carregarFila();
+  el('etapas').scrollIntoView({ block: 'start', behavior: 'smooth' });
+}
+document.querySelectorAll('#of-etapas [data-passo], #of-etapas [data-ir]').forEach((b) =>
+  b.addEventListener('click', () => irPara(Number(b.dataset.passo || b.dataset.ir))));
+
+async function desenharEtapas() {
+  if (!state.encartesCarregados) return;  // ao abrir a página: sem a lista de encartes, o lote salvo pareceria vazio
+  if (et.template && !esquemasEt[et.template]) {
+    try { esquemasEt[et.template] = await api('/esquema?template=' + encodeURIComponent(et.template)); } catch { et.template = null; }
+  }
+  if (et.passo > 1 && !podeIr(et.passo)) { et.passo = [3, 2, 1].find((p) => p < et.passo && podeIr(p)) || 1; salvarEt(); }
+  document.querySelectorAll('#of-etapas .et-passos button').forEach((b) => {
+    const n = Number(b.dataset.passo);
+    b.disabled = n !== et.passo && !podeIr(n);
+    b.classList.toggle('feito', n < et.passo);
+    if (n === et.passo) b.setAttribute('aria-current', 'step'); else b.removeAttribute('aria-current');
+  });
+  document.querySelectorAll('#of-etapas [data-ir]').forEach((b) => (b.disabled = !podeIr(Number(b.dataset.ir))));
+  for (let n = 1; n <= 4; n++) el('passo-' + n).hidden = n !== et.passo;
+  [desenharPasso1, desenharPasso2, desenharPasso3, desenharPasso4][et.passo - 1]();
+}
+
+// 1. encartes
+function estadoEncarte(e) {
+  if (e.status === 'lendo') return 'Lendo o encarte…';
+  if (e.status === 'falhou') return e.erro || 'Não foi possível ler este encarte.';
+  const conferidos = e.itens.filter((it) => it.conferido).length;
+  return e.itens.length ? `${plural(e.itens.length, 'produto', 'produtos')} · ${conferidos} conferido${conferidos === 1 ? '' : 's'}` : 'Nenhum produto reconhecido: marque as ofertas na página';
+}
+function desenharPasso1() {
+  const encs = encartesDoLote(), itens = itensDoLote();
+  el('et-encartes').innerHTML = encs.length ? encs.map((e, i) => `<li data-id="${e.id}" class="${e.status}">
+      <span class="et-num">${i + 1}</span><div class="et-enc-nome"><strong>${esc(e.nome)}</strong><small>${esc(estadoEncarte(e))}</small></div>
+      <div class="toolbar">${e.status === 'pronto' ? '<button type="button" class="text-button marcar">Marcar oferta na página</button>' : ''}
+      <button type="button" class="secondary subir" ${i ? '' : 'disabled'} aria-label="Mover ${esc(e.nome)} para cima">↑</button>
+      <button type="button" class="secondary descer" ${i < encs.length - 1 ? '' : 'disabled'} aria-label="Mover ${esc(e.nome)} para baixo">↓</button>
+      <button type="button" class="text-button tirar">Tirar do lote</button></div></li>`).join('')
+    : '<li class="vazio">Nenhum encarte neste lote ainda. Arraste os arquivos para a área acima.</li>';
+  el('et-encartes').querySelectorAll('li[data-id]').forEach((li) => {
+    const id = li.dataset.id, i = et.encartes.indexOf(id);
+    const mover = (d) => { et.encartes.splice(i, 1); et.encartes.splice(i + d, 0, id); salvarEt(); desenharEtapas(); };
+    li.querySelector('.subir').onclick = () => mover(-1);
+    li.querySelector('.descer').onclick = () => mover(1);
+    li.querySelector('.tirar').onclick = () => { et.encartes.splice(i, 1); salvarEt(); desenharEtapas(); };
+    const marcar = li.querySelector('.marcar');
+    if (marcar) marcar.onclick = () => { state.encarteSel = id; abrirMarcar(); };
+  });
+  const recentes = state.encartes.filter((e) => !et.encartes.includes(e.id) && e.status !== 'falhou').slice(0, 12);
+  el('et-recentes-box').hidden = !recentes.length;
+  el('et-recentes').innerHTML = recentes.map((e) => `<button type="button" class="chip" data-id="${e.id}"><strong>${esc(e.nome)}</strong>
+    <small>${e.status === 'pronto' ? `${e.itens.length} produtos · ${hora(e.criado)}` : ENC_STATUS[e.status]}</small></button>`).join('');
+  el('et-recentes').querySelectorAll('.chip').forEach((c) => (c.onclick = () => { et.encartes.push(c.dataset.id); salvarEt(); desenharEtapas(); }));
+  el('et-resumo-1').textContent = encs.length ? `${plural(encs.length, 'encarte', 'encartes')} · ${plural(itens.length, 'produto', 'produtos')} na ordem em que vão aparecer` : '';
+  el('et-dica-1').textContent = !encs.length ? '' : encs.some((e) => e.status === 'lendo') ? 'Aguarde a leitura dos encartes…'
+    : encs.some((e) => e.status === 'falhou') ? 'Tire do lote o encarte que não pôde ser lido.' : !itens.length ? 'Marque as ofertas na página para continuar.' : '';
+}
+async function enviarVarios(arquivos) {
+  const validos = arquivos.filter((f) => /\.(pdf|png|jpe?g)$/i.test(f.name));
+  if (validos.length < arquivos.length) aviso('Só PDF, PNG ou JPG. Os outros arquivos foram ignorados.');
+  for (const f of validos) {  // um por vez: a ordem do lote é a ordem dos arquivos
+    const id = await enviarEncarte(f);
+    if (id && !et.encartes.includes(id)) { et.encartes.push(id); salvarEt(); if (!el('etapas').hidden) desenharEtapas(); }
+  }
+}
+el('et-escolher').addEventListener('click', (e) => { e.stopPropagation(); el('et-arquivos').click(); });
+el('et-drop').addEventListener('click', () => el('et-arquivos').click());
+el('et-drop').addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); el('et-arquivos').click(); } });
+el('et-arquivos').addEventListener('change', (e) => { const fs = [...e.target.files]; e.target.value = ''; enviarVarios(fs); });
+soltar(el('et-drop'), enviarVarios);
+
+// 2. conferir ofertas
+function desenharPasso2() {
+  const itens = itensDoLote(), validas = new Set(itens.map(({ enc, k }) => chaveItem(enc, k)));
+  etSel.forEach((c) => { if (!validas.has(c)) etSel.delete(c); });
+  let n = 0;
+  el('et-ofertas').innerHTML = encartesDoLote().map((enc, i) => `<section class="et-grupo" data-id="${enc.id}">
+      <div class="et-grupo-titulo"><div><strong>${i + 1}. ${esc(enc.nome)}</strong><small>${esc(estadoEncarte(enc))}</small></div>
+      <button type="button" class="text-button marcar">Marcar oferta na página</button></div>
+      <div class="image-grid et-grade">${enc.itens.map((it, k) => {
+        const av = avisosDe(it), chave = chaveItem(enc, k);
+        n++;
+        return `<article class="card et-card ${it.conferido ? 'ok' : ''} ${av.length ? 'com-aviso' : ''}" data-k="${k}">
+          <label class="et-sel" title="Selecionar"><input type="checkbox" data-chave="${chave}" ${etSel.has(chave) ? 'checked' : ''} aria-label="Selecionar ${esc(it.nome || 'produto')}"></label>
+          <span class="et-pos" title="Posição no lote">${n}</span>
+          ${av.length ? `<span class="alerta" title="${esc(av.join('\n'))}">${av.length === 1 ? esc(av[0]) : av.length + ' avisos'}</span>` : it.conferido ? '<span class="conferido">' + icon('check', 'inline-icon') + 'aprovado</span>' : ''}
+          <img class="thumb" src="/ofertas/miniatura/${it.imagem}.png" alt="" loading="lazy">${itemEncarte(it)}
+          <button type="button" class="text-button conferir">${it.conferido ? 'Editar' : 'Conferir'}</button></article>`;
+      }).join('')}</div></section>`).join('');
+  el('et-ofertas').querySelectorAll('.et-grupo').forEach((g) => {
+    const id = g.dataset.id;
+    g.querySelector('.marcar').onclick = () => { state.encarteSel = id; abrirMarcar(); };
+    g.querySelectorAll('.et-card').forEach((c) => (c.querySelector('.conferir').onclick = () => { state.encarteSel = id; abrirConferir(Number(c.dataset.k)); }));
+  });
+  el('et-ofertas').querySelectorAll('.et-sel input').forEach((i) => (i.onchange = () => { if (i.checked) etSel.add(i.dataset.chave); else etSel.delete(i.dataset.chave); contarSelecao(); }));
+  const aprovados = itens.filter(({ it }) => it.conferido).length;
+  el('et-progresso').textContent = `${aprovados} de ${plural(itens.length, 'produto aprovado', 'produtos aprovados')}`;
+  el('et-progresso').classList.toggle('completo', aprovados === itens.length && itens.length > 0);
+  el('et-aprovar-todos').disabled = aprovados === itens.length;
+  el('et-dica-2').textContent = aprovados < itens.length ? 'Aprove todos os produtos para escolher o template.' : '';
+  contarSelecao();
+}
+function contarSelecao() {
+  const total = itensDoLote().length, n = etSel.size;
+  el('et-sel-contagem').textContent = n ? `${n} selecionado${n > 1 ? 's' : ''}` : 'Nenhum selecionado';
+  el('et-sel-todos').checked = n > 0 && n === total;
+  el('et-sel-todos').indeterminate = n > 0 && n < total;
+  el('et-aprovar-sel').disabled = !n;
+}
+el('et-sel-todos').addEventListener('change', (e) => {
+  itensDoLote().forEach(({ enc, k }) => (e.target.checked ? etSel.add(chaveItem(enc, k)) : etSel.delete(chaveItem(enc, k))));
+  el('et-ofertas').querySelectorAll('.et-sel input').forEach((i) => (i.checked = etSel.has(i.dataset.chave)));
+  contarSelecao();
+});
+async function aprovarEt(chaves) {
+  const itens = chaves.map((c) => { const [id, k] = c.split(':'); return { id, k: Number(k) }; });
+  try {
+    const r = await api('/encarte-itens-aprovar', { body: { itens } });
+    etSel.clear();
+    await carregarEncartes();
+    aviso(`${plural(r.aprovados, 'produto aprovado', 'produtos aprovados')}.`);
+  } catch (e) { falha(e); }
+}
+el('et-aprovar-sel').addEventListener('click', () => aprovarEt([...etSel]));
+el('et-aprovar-todos').addEventListener('click', () => aprovarEt(itensDoLote().map(({ enc, k }) => chaveItem(enc, k))));
+
+// 3. template e prévia
+function planoEt() {
+  const lista = listaEt();
+  if (!lista) return null;
+  const passo = passoDe(lista), [gmin, gmax] = limitesCartelas(lista), incompleto = Boolean(lista.grupo?.incompleto);
+  const total = itensDoLote().length, sobra = passo > 1 ? total % passo : 0;
+  const impar = et.impar === 'sozinho' && !incompleto ? 'repetir' : et.impar || (incompleto ? 'sozinho' : 'repetir');
+  const n = impar === 'fora' && sobra && total > passo ? total - sobra : total;
+  const cartelas = Math.min(gmax, Math.max(gmin, Math.round(Number(et.cartelas) || gmax)));
+  const tamanhos = tamanhosDosVideos(n, lista, cartelas);
+  if (impar === 'sozinho' && sobra) tamanhos[tamanhos.length - 1] -= passo - sobra;
+  return { lista, passo, gmin, gmax, incompleto, total, sobra, n, impar, cartelas, tamanhos, repetidos: tamanhos.reduce((a, b) => a + b, 0) - n };
+}
+const corpoLote = () => { const p = planoEt(); return { encartes: et.encartes, template: et.template, cartelas: p.cartelas, impar: p.impar, nome: baseNome(), numerar: true }; };
+// muda quando algo que aparece no vídeo muda: a prévia mostrada deixa de valer
+const chavePrevia = () => JSON.stringify([corpoLote(), itensDoLote().map(({ it }) => [it.nome, it.por, it.de, it.unidade, it.imagem])]);
+async function desenharPasso3() {
+  try { templatesEt ??= (await carregarNomes()).filter((t) => !t.erros.length); } catch (e) { return falha(e); }
+  el('et-templates').innerHTML = templatesEt.length ? templatesEt.map((t) => `<button type="button" class="et-template" data-id="${esc(t.id)}" aria-pressed="${t.id === et.template}">
+      ${t.capa ? `<img src="/ofertas/capa/${esc(t.id)}.png" alt="">` : '<span class="sem-capa">Sem capa</span>'}<span><strong>${esc(t.nome)}</strong><small>${esc(t.cliente)}</small></span></button>`).join('')
+    : '<div class="vazio">Nenhum template publicado ainda. Publique o primeiro em Templates.</div>';
+  el('et-templates').querySelectorAll('.et-template').forEach((b) => (b.onclick = async () => {
+    if (b.dataset.id === et.template) return;
+    et.template = b.dataset.id; et.cartelas = null; et.impar = null; salvarEt();
+    await desenharEtapas();
+  }));
+  if (document.activeElement !== el('et-nome')) el('et-nome').value = et.nome;
+  el('et-nome').placeholder = `${nomeNumerado(baseNome(), 0)}`;
+  const p = planoEt();
+  el('et-cartelas').disabled = !p || p.gmin === p.gmax;
+  el('et-impar').hidden = !p || !p.sobra;
+  if (!p) {
+    el('et-plano').innerHTML = '<li>Escolha um template.</li>'; el('et-plano-nota').textContent = ''; el('et-cartelas-ajuda').textContent = '';
+    el('et-dica-3').textContent = 'Escolha um template para continuar.';
+  } else {
+    Object.assign(el('et-cartelas'), { min: p.gmin, max: p.gmax, value: p.cartelas });
+    el('et-cartelas-ajuda').textContent = p.gmin === p.gmax ? `Fixo neste template (${p.gmax}).` : `De ${p.gmin} a ${p.gmax} por vídeo.`;
+    el('et-impar-sozinho').hidden = !p.incompleto;
+    document.querySelector(`input[name=of-et-impar][value=${p.impar}]`).checked = true;
+    const nomeGrupo = (p.lista.grupo?.rotulo || 'cartela').toLowerCase();
+    el('et-plano').innerHTML = p.tamanhos.map((t, k) => `<li><b>${esc(nomeNumerado(baseNome(), k))}</b><span>${plural(Math.ceil(t / p.passo), nomeGrupo, nomeGrupo + 's')} · ${plural(t, 'produto', 'produtos')}</span></li>`).join('');
+    const notas = [];
+    if (p.repetidos) notas.push(`${plural(p.repetidos, 'produto se repete', 'produtos se repetem')} para completar ${p.repetidos > p.sobra ? 'os vídeos' : 'a cartela'} (a partir do 1º do lote).`);
+    if (p.impar === 'sozinho' && p.sobra) notas.push(`O último produto aparece sozinho, centralizado, na última ${nomeGrupo}.`);
+    if (p.n < p.total) notas.push('O último produto fica de fora.');
+    el('et-plano-nota').textContent = notas.join(' ');
+    el('et-dica-3').textContent = `${plural(p.tamanhos.length, 'vídeo', 'vídeos')} de ${esquemasEt[et.template].duracao}s`;
+  }
+  const longos = nomesLongos();
+  el('et-longos').hidden = !longos.length;
+  if (longos.length) {
+    el('et-longos').innerHTML = `<strong>${plural(longos.length, 'nome passa', 'nomes passam')} do limite de ${longos[0].max} caracteres deste template.</strong> Clique para encurtar:<ul>`
+      + longos.map(({ enc, it, k }) => `<li><button type="button" class="text-button" data-id="${enc.id}" data-k="${k}">${esc(it.nome)} (${it.nome.length})</button></li>`).join('') + '</ul>';
+    el('et-longos').querySelectorAll('button').forEach((b) => (b.onclick = () => { state.encarteSel = b.dataset.id; abrirConferir(Number(b.dataset.k)); }));
+    el('et-dica-3').textContent = 'Encurte os nomes destacados para continuar.';
+  }
+  el('et-ver-previa').disabled = !p;
+  const atual = et.previa && et.previaChave === (p && chavePrevia());
+  el('et-previa-vazia').hidden = Boolean(et.previa);
+  if (et.previa && el('et-player').dataset.pedido !== et.previa) mostrarPreviaEt();
+  if (!et.previa) el('et-previa-status').textContent = p ? 'Veja o 1º vídeo com os produtos reais antes de gerar todos.' : '';
+  else if (!atual) el('et-previa-status').textContent = 'A prévia mostra uma versão anterior. Clique em “Ver prévia do 1º vídeo” para atualizar.';
+}
+function mostrarPreviaEt() {
+  const player = el('et-player'), capa = esquemasEt[et.template]?.capaEm;
+  player.dataset.pedido = et.previa;
+  player.addEventListener('ready', () => { if (capa) player.seek(capa); }, { once: true });
+  player.setAttribute('src', `/ofertas/preview/${et.previa}/index.html?v=${Date.now()}`);
+}
+async function apagarPreviaEt() {
+  if (et.previa) await api('/pedido-excluir', { body: { id: et.previa } }).catch(() => {});
+  et.previa = null; et.previaChave = null; salvarEt();
+}
+el('et-ver-previa').addEventListener('click', async () => {
+  el('et-ver-previa').disabled = true;
+  el('et-previa-status').textContent = 'Montando a prévia…';
+  try {
+    const chave = chavePrevia();
+    await apagarPreviaEt();
+    const r = await api('/encarte-gerar-todos', { body: { ...corpoLote(), previa: true } });
+    Object.assign(et, { previa: r.pedido, previaChave: chave }); salvarEt();
+    el('et-previa-vazia').hidden = true;
+    mostrarPreviaEt();
+    el('et-previa-status').textContent = r.erros.length ? `Atenção: ${r.erros.join(' ')}` : `${r.titulo.replace(/^Prévia · /, '')} · 1º de ${plural(r.videos, 'vídeo', 'vídeos')} do lote.`;
+  } catch (e) { el('et-previa-status').textContent = e.message; } finally { el('et-ver-previa').disabled = false; }
+});
+el('et-nome').addEventListener('input', () => { et.nome = el('et-nome').value; salvarEt(); desenharPasso3(); });
+el('et-cartelas').addEventListener('change', () => { et.cartelas = Number(el('et-cartelas').value) || null; salvarEt(); desenharPasso3(); });
+document.querySelectorAll('input[name=of-et-impar]').forEach((r) => r.addEventListener('change', () => { et.impar = r.value; salvarEt(); desenharPasso3(); }));
+
+// 4. gerar e baixar
+function desenharPasso4() {
+  const p = planoEt();
+  if (!p) return;
+  el('et-gerar-titulo').textContent = `${plural(p.tamanhos.length, 'vídeo', 'vídeos')} com ${plural(p.total, 'produto', 'produtos')}`;
+  el('et-gerar-sub').textContent = `${nomeTemplate(et.template)} · ${plural(et.encartes.length, 'encarte', 'encartes')} · ${esquemasEt[et.template].duracao}s cada`;
+  el('et-nomes').innerHTML = p.tamanhos.map((_, k) => `<li>${esc(nomeNumerado(baseNome(), k))}.mp4</li>`).join('');
+  el('et-gerar').textContent = et.lote ? 'Gerar todos de novo' : `Gerar ${plural(p.tamanhos.length, 'vídeo', 'vídeos')}`;
+  el('et-gerar').className = et.lote ? 'secondary' : 'primary';
+  el('et-lote').hidden = !et.lote;
+  if (!et.lote) return;
+  // o vídeo de cada pedido é o render mais recente dele (gerar de novo pelo editor substitui)
+  const ultimo = (pedido) => state.renders.find((r) => r.pedido === pedido);
+  const linhas = et.lote.pedidos.map((v) => ({ ...v, render: ultimo(v.pedido) }));
+  el('et-videos').innerHTML = linhas.map((v) => {
+    const r = v.render, st = r ? r.status : v.erros?.length ? 'falhou' : 'na_fila';
+    return `<li class="${st}"><div><strong>${esc(r?.titulo || v.titulo)}</strong><small>${r ? STATUS[r.status] : v.erros?.length ? 'Não entrou na fila: ' + esc(v.erros.join(' ')) : 'Aguardando a fila…'}</small></div>
+      <span class="status ${st}">${r ? STATUS[r.status] : v.erros?.length ? 'Corrigir' : 'Na fila'}</span>
+      <div class="toolbar">${r?.status === 'pronto' ? `<a class="secondary botao-link" href="/ofertas/video/${r.id}.mp4?baixar=1">Baixar MP4</a>` : ''}
+      <button type="button" class="text-button personalizar" data-pedido="${v.pedido}">Personalizar</button></div></li>`;
+  }).join('');
+  el('et-videos').querySelectorAll('.personalizar').forEach((b) => (b.onclick = async () => { try { abrirPedido(await api('/pedido?id=' + b.dataset.pedido)); } catch (e) { falha(e); } }));
+  const prontosEt = linhas.filter((v) => v.render?.status === 'pronto');
+  el('et-lote-status').textContent = `${prontosEt.length} de ${plural(linhas.length, 'vídeo pronto', 'vídeos prontos')}`;
+  el('et-baixar').disabled = prontosEt.length !== linhas.length;
+  el('et-baixar').dataset.ids = prontosEt.map((v) => v.render.id).join(',');
+}
+el('et-gerar').addEventListener('click', async () => {
+  if (et.lote && !(await confirmar('Gerar todos os vídeos de novo?', 'Os vídeos já gerados continuam em Vídeos gerados. Este lote passa a mostrar os novos.', 'Gerar de novo'))) return;
+  el('et-gerar').disabled = true;
+  try {
+    const r = await api('/encarte-gerar-todos', { body: corpoLote() });
+    await apagarPreviaEt();
+    et.lote = { pedidos: r.videos.map((v) => ({ pedido: v.pedido, titulo: v.titulo, erros: v.erros })) }; salvarEt();
+    const falhos = r.videos.filter((v) => !v.render).length;
+    aviso(falhos ? `${r.videos.length - falhos} na fila. ${falhos} precisa(m) de correção: use “Personalizar”.` : `${plural(r.videos.length, 'vídeo enviado', 'vídeos enviados')} para a fila de geração.`, 7000);
+    await carregarFila();
+    desenharPasso4();
+  } catch (e) { falha(e); } finally { el('et-gerar').disabled = false; }
+});
+el('et-baixar').addEventListener('click', () => {
+  // sem "nome": cada arquivo leva o título do vídeo (VT 1 - …, VT 2 - …), mesmo depois de gerar um de novo
+  const a = document.createElement('a');
+  a.href = `/ofertas/videos.zip?ids=${el('et-baixar').dataset.ids}&arquivo=${encodeURIComponent(nomeNumerado(baseNome(), 0))}`;
+  document.body.append(a); a.click(); a.remove();
+});
+el('et-novo-lote').addEventListener('click', async () => {
+  if (!(await confirmar('Começar um novo lote?', 'Os encartes, a conferência e os vídeos deste lote continuam salvos no sistema.', 'Novo lote'))) return;
+  await apagarPreviaEt();
+  Object.assign(et, { passo: 1, encartes: [], nome: '', cartelas: null, impar: null, lote: null }); salvarEt();
+  etSel.clear();
+  desenharEtapas();
+});
+
 // ---------- pedidos ----------
 async function carregarPedidos() {
   try {
@@ -856,6 +1170,8 @@ async function carregarFila() {
   clearTimeout(filaTimer);
   try {
     const { renders, mediaSegundos } = await api('/renders');
+    state.renders = renders;
+    if (!el('etapas').hidden && et.passo === 4) desenharPasso4();
     const ativos = renders.filter((r) => r.status === 'na_fila' || r.status === 'gerando');
     for (const r of renders) {
       let t = tarefaRender[r.id];

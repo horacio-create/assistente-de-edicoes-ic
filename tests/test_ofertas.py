@@ -308,6 +308,8 @@ class FluxoTests(unittest.TestCase):
         status, data, headers = chamar('GET', f'/ofertas/videos.zip?ids={ids[0]},{ids[1]}')
         self.assertIn("filename*=UTF-8''videos-ofertas.zip", headers['Content-Disposition'])
         with zipfile.ZipFile(io.BytesIO(data)) as z: self.assertEqual(z.namelist(), ['Carnes.mp4', 'Carnes (2).mp4'])
+        _, _, headers = chamar('GET', f'/ofertas/videos.zip?ids={ids[0]}&arquivo=Hora%20da%20Carne')
+        self.assertIn("filename*=UTF-8''Hora%20da%20Carne.zip", headers['Content-Disposition'])
         # vídeo que não está pronto, id inválido ou lista vazia: recusado
         with connect() as db: db.execute("UPDATE ofertas_renders SET status='falhou' WHERE id=?", (ids[2],))
         self.assertEqual(chamar('GET', f'/ofertas/videos.zip?ids={ids[0]},{ids[2]}')[0], 400)
@@ -419,6 +421,58 @@ class FluxoTests(unittest.TestCase):
         _, novo = json_de('POST', '/api/ofertas/pedidos', {'template': MODELO.name})
         self.assertNotEqual(novo['id'], v['pedido'])
         self.assertEqual(json_de('GET', f"/api/ofertas/pedido?id={v['pedido']}")[0], 200)
+
+    def pdf_produto(self, nome, por_inteiro, por_centavos, de):
+        import pymupdf
+        doc = pymupdf.open()
+        page = doc.new_page(width=600, height=400)
+        page.insert_image(pymupdf.Rect(50, 80, 250, 220), stream=png())
+        page.insert_text((60, 70), nome, fontsize=12)
+        page.insert_text((80, 270), por_inteiro, fontsize=40)
+        page.insert_text((128, 255), por_centavos, fontsize=20)
+        page.insert_text((175, 270), 'KG', fontsize=8)
+        page.insert_text((60, 300), de, fontsize=16)
+        return doc.tobytes()
+
+    def test_aprovar_produtos_em_grupo_de_varios_encartes(self):
+        _, a = json_de('POST', '/api/ofertas/encarte?nome=Carnes.pdf', raw=self.pdf_picanha())
+        _, b = json_de('POST', '/api/ofertas/encarte?nome=Aves.pdf', raw=self.pdf_produto('Coxa de Frango Kg', '12', ',90', '15,99'))
+        self.esperar_encarte(a['id']); self.esperar_encarte(b['id'])
+        foto = io.BytesIO(); Image.new('RGB', (800, 600), 'white').save(foto, 'JPEG')
+        _, img = json_de('POST', '/api/ofertas/encarte?nome=feira.jpg', raw=foto.getvalue())
+        json_de('POST', '/api/ofertas/encarte-recortar', {'id': img['id'], 'pagina': 1, 'area': [0.1, 0.1, 0.4, 0.5]})
+        conferidos = lambda: {e['id']: [bool(it.get('conferido')) for it in e['itens']] for e in json_de('GET', '/api/ofertas/encartes')[1]}
+        # um produto incompleto (marcado à mão, sem nome nem preço) bloqueia o grupo inteiro
+        status, r = json_de('POST', '/api/ofertas/encarte-itens-aprovar', {'itens': [{'id': a['id'], 'k': 0}, {'id': img['id'], 'k': 0}]})
+        self.assertEqual(status, 400)
+        self.assertIn('Nenhum produto foi aprovado', r['error'])
+        self.assertIn('nome, preço em destaque', r['error'])
+        self.assertEqual(conferidos()[a['id']], [False])
+        status, r = json_de('POST', '/api/ofertas/encarte-itens-aprovar', {'itens': [{'id': a['id'], 'k': 0}, {'id': b['id'], 'k': 0}]})
+        self.assertEqual((status, r), (200, {'aprovados': 2}))
+        self.assertEqual((conferidos()[a['id']], conferidos()[b['id']]), ([True], [True]))
+        for corpo in ({'itens': []}, {'itens': [{'id': a['id'], 'k': 5}]}, {'itens': [{'id': a['id'], 'k': '0'}]}):
+            self.assertEqual(json_de('POST', '/api/ofertas/encarte-itens-aprovar', corpo)[0], 400)
+
+    def test_lote_com_varios_encartes_em_sequencia_e_previa(self):
+        _, a = json_de('POST', '/api/ofertas/encarte?nome=Carnes.pdf', raw=self.pdf_picanha())
+        _, b = json_de('POST', '/api/ofertas/encarte?nome=Aves.pdf', raw=self.pdf_produto('Coxa de Frango Kg', '12', ',90', '15,99'))
+        self.esperar_encarte(a['id']); self.esperar_encarte(b['id'])
+        corpo = {'encartes': [a['id'], b['id']], 'template': MODELO.name, 'nome': 'VT 1 - Carnes', 'numerar': True}
+        # prévia: só o pedido do 1º vídeo, sem entrar na fila
+        _, p = json_de('POST', '/api/ofertas/encarte-gerar-todos', dict(corpo, previa=True))
+        self.assertEqual((p['titulo'], p['videos'], p['erros']), ('Prévia · VT 1 - Carnes', 1, []))
+        self.assertFalse(any(r['pedido'] == p['pedido'] for r in json_de('GET', '/api/ofertas/renders')[1]['renders']))
+        _, g = json_de('POST', '/api/ofertas/encarte-gerar-todos', corpo)
+        for v in g['videos']:
+            if v['render']: json_de('POST', '/api/ofertas/render-cancelar', {'id': v['render']})
+        self.assertEqual([v['titulo'] for v in g['videos']], ['VT 1 - Carnes'])
+        pedido = json_de('GET', f"/api/ofertas/pedido?id={g['videos'][0]['pedido']}")[1]
+        # o 1º encarte continua no 2º: a sequência é contínua (e completa repetindo do início)
+        self.assertEqual([x['nome'] for x in pedido['dados']['produtos']][:3], ['Picanha Bovina Kg', 'Coxa de Frango Kg', 'Picanha Bovina Kg'])
+        self.assertEqual(pedido['dados']['produtos'][1]['por'], '12,90')
+        self.assertEqual(json_de('POST', '/api/ofertas/encarte-gerar-todos', dict(corpo, encartes=[a['id'], a['id']]))[0], 400)
+        self.assertEqual(json_de('POST', '/api/ofertas/encarte-gerar-todos', dict(corpo, encartes=[]))[0], 400)
 
     def test_template_com_quantidade_variavel_de_produtos(self):
         """Lista com "min": o pedido aceita 4 ou 6 produtos e o Gerar todos não repete produtos à toa."""

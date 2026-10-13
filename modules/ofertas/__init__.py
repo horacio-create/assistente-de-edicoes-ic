@@ -392,6 +392,42 @@ def conferir_item(value):
         return it
     return alterar_itens(str(value.get('id', '')), mudar)
 
+def falta_no_item(it):
+    """O que impede aprovar um produto (mesmas regras de conferir_item)."""
+    falta = []
+    if not str(it.get('nome') or '').strip(): falta.append('nome')
+    if not PRECO.fullmatch(str(it.get('por') or '')): falta.append('preço em destaque')
+    if it.get('de') and not PRECO.fullmatch(str(it['de'])): falta.append('preço normal')
+    return falta
+
+def aprovar_itens(value):
+    """Aprovação em grupo, como no Encarte Studio: os produtos escolhidos (`itens`: [{id, k}], de um ou mais
+    encartes) são conferidos de uma vez, ou nenhum é. O que faltar em cada um aparece na mensagem."""
+    escolhidos = value.get('itens')
+    if not isinstance(escolhidos, list) or not escolhidos: raise ValueError('Selecione pelo menos um produto.')
+    por_encarte = {}
+    for e in escolhidos:
+        if not isinstance(e, dict) or type(e.get('k')) is not int: raise ValueError('Seleção inválida.')
+        por_encarte.setdefault(str(e.get('id', '')), set()).add(e['k'])
+    with LOCK, connect() as db:
+        listas, problemas = {}, []
+        for ident, ks in por_encarte.items():
+            mine(db, 'ofertas_encartes', ident)
+            row = db.execute('SELECT status, itens FROM ofertas_encartes WHERE id=?', (ident,)).fetchone()
+            if not row: raise ValueError('Encarte não encontrado.')
+            if row['status'] != 'pronto': raise ValueError('Espere a leitura do encarte terminar.')
+            itens = listas[ident] = json.loads(row['itens'] or '[]')
+            for k in sorted(ks):
+                it = itens[indice(itens, k)]
+                if falta := falta_no_item(it): problemas.append(f"{it.get('nome') or f'produto {k + 1}'} ({', '.join(falta)})")
+        if problemas:
+            mais = f' e mais {len(problemas) - 6}' if len(problemas) > 6 else ''
+            raise ValueError(f"Nenhum produto foi aprovado. Confira: {'; '.join(problemas[:6])}{mais}.")
+        for ident, ks in por_encarte.items():
+            for k in ks: listas[ident][k].update(avisos=[], conferido=True)
+            db.execute('UPDATE ofertas_encartes SET itens=? WHERE id=?', (json.dumps(listas[ident], ensure_ascii=False), ident))
+    return {'aprovados': sum(len(ks) for ks in por_encarte.values())}
+
 def excluir_item(value):
     def mudar(itens, _): return itens.pop(indice(itens, value.get('k')))
     alterar_itens(str(value.get('id', '')), mudar)
@@ -462,17 +498,35 @@ def tamanhos_dos_videos(n, lista, cartelas=None):
     total = -(-grupos // cartelas)
     return [max(gmin, grupos // total + (k < grupos % total)) * passo for k in range(total)]
 
+def itens_do_lote(value):
+    """Produtos de um encarte (`encarte`) ou de vários (`encartes`, na ordem escolhida) em sequência contínua: o
+    último produto de um encarte faz par com o primeiro do próximo, como no Encarte Studio. -> (itens, nomes)"""
+    ids = value.get('encartes') if value.get('encartes') is not None else [value.get('encarte', '')]
+    if not isinstance(ids, list) or not 1 <= len(ids) <= 20: raise ValueError('Escolha de 1 a 20 encartes.')
+    ids = [str(i) for i in ids]
+    if len(set(ids)) != len(ids): raise ValueError('O mesmo encarte foi escolhido duas vezes.')
+    itens, nomes = [], []
+    with connect() as db:
+        for ident in ids:
+            mine(db, 'ofertas_encartes', ident)
+            row = db.execute('SELECT nome, status, itens FROM ofertas_encartes WHERE id=?', (ident,)).fetchone()
+            if not row or row['status'] != 'pronto': raise ValueError('Encarte não encontrado ou ainda em leitura.')
+            itens += json.loads(row['itens'] or '[]')
+            nomes.append(row['nome'])
+    return itens, nomes
+
 def gerar_todos(value):
-    """Todos os produtos do encarte em vídeos (ver tamanhos_dos_videos). `impar`: com número ímpar de produtos
-    a última cartela fica incompleta; "repetir" completa com o primeiro produto, "fora" deixa o último de fora e
-    "sozinho" mostra o último sozinho na cartela (só templates com grupo.incompleto)."""
-    ident, template = str(value.get('encarte', '')), value.get('template')
+    """Todos os produtos do encarte (ou dos encartes, em sequência) em vídeos (ver tamanhos_dos_videos). `impar`: com
+    número ímpar de produtos a última cartela fica incompleta; "repetir" completa com o primeiro produto, "fora" deixa
+    o último de fora e "sozinho" mostra o último sozinho na cartela (só templates com grupo.incompleto).
+    `numerar`: os títulos seguem o nome do primeiro ("VT 1 - Carnes", "VT 2 - Carnes"…) em vez de "nome (n)".
+    `previa`: só monta o pedido do 1º vídeo, sem fila, para a prévia ao vivo antes de gerar tudo."""
+    template = value.get('template')
     schema = esquema(template)
     lista = next((c for c in schema['campos'] if c['tipo'] == 'lista'), None)
     if not lista: raise ValueError('Este template não tem lista de produtos.')
-    with connect() as db: row = db.execute('SELECT nome, status, itens FROM ofertas_encartes WHERE id=?', (ident,)).fetchone()
-    if not row or row['status'] != 'pronto': raise ValueError('Encarte não encontrado ou ainda em leitura.')
-    itens = json.loads(row['itens'] or '[]')
+    itens, nomes_encartes = itens_do_lote(value)
+    row = {'nome': nomes_encartes[0] + (f' + {len(nomes_encartes) - 1} encarte(s)' if len(nomes_encartes) > 1 else '')}
     if not itens: raise ValueError('Este encarte não tem produtos. Marque as ofertas na página.')
     sem_preco = [it['nome'] or f'produto {k + 1}' for k, it in enumerate(itens) if not PRECO.fullmatch(it.get('por') or '')]
     if sem_preco: raise ValueError(f'Confira antes de gerar: {", ".join(sem_preco[:4])} sem preço em destaque.')
@@ -485,7 +539,9 @@ def gerar_todos(value):
     tamanhos = tamanhos_dos_videos(len(itens), lista, value.get('cartelas'))
     if impar == 'sozinho' and len(itens) % passo: tamanhos[-1] -= passo - len(itens) % passo  # última cartela incompleta
     total = len(tamanhos)
-    base = str(value.get('nome') or '').strip()[:150] or Path(row['nome']).stem  # nome escolhido no lote; " (n)" vem depois
+    base = str(value.get('nome') or '').strip()[:150] or Path(nomes_encartes[0]).stem  # nome escolhido no lote; " (n)" vem depois
+    numerar = bool(value.get('numerar'))
+    previa = bool(value.get('previa'))
     videos = []
     inicio = 0
     for g, n in enumerate(tamanhos):
@@ -495,12 +551,14 @@ def gerar_todos(value):
         preencher_lista(lista, dados[lista['id']], [itens[(inicio + i) % len(itens)] for i in range(n)])
         inicio += n
         # revision 1: não é um rascunho intocado (o "Novo vídeo" reaproveita/apaga os de revision 0)
-        titulo = f'{base} ({g + 1})' if total > 1 else base
+        titulo = nome_numerado(base, g) if numerar else f'{base} ({g + 1})' if total > 1 else base
+        if previa: titulo = f'Prévia · {titulo}'
         pedido = {'id': uid(), 'template': schema['id'], 'titulo': titulo, 'dados': dados, 'revision': 1}
         with connect() as db:
             db.execute('INSERT INTO ofertas_pedidos VALUES(?,?,?,?,?,?,?,?)', (pedido['id'], pedido['template'], pedido['titulo'],
                        json.dumps(dados, ensure_ascii=False), 1, now(), now(), owner()))
         erros = preparar(schema['id'], dados)['erros']
+        if previa: return {'pedido': pedido['id'], 'titulo': titulo, 'erros': erros[:3], 'videos': total}
         videos.append({'pedido': pedido['id'], 'titulo': pedido['titulo'], 'render': None if erros else enfileirar(pedido), 'erros': erros[:3]})
     with connect() as db: registrar(db, 'Vídeos do encarte enviados para a fila', row['nome'], videos=total)
     return {'videos': videos, 'completados': sum(tamanhos) - len(itens)}
@@ -617,10 +675,9 @@ def api(method, path, query, raw):
     # o id de pedido, vídeo ou encarte só vale para o dono (login no servidor)
     tabela = {'/pedido': 'ofertas_pedidos', '/pedido-salvar': 'ofertas_pedidos', '/pedido-excluir': 'ofertas_pedidos', '/gerar': 'ofertas_pedidos',
               '/render-cancelar': 'ofertas_renders', '/encarte-paginas': 'ofertas_encartes', '/encarte-item-salvar': 'ofertas_encartes',
-              '/encarte-item-excluir': 'ofertas_encartes', '/encarte-recortar': 'ofertas_encartes', '/encarte-excluir': 'ofertas_encartes',
-              '/encarte-gerar-todos': 'ofertas_encartes'}.get(path)
-    if tabela:
-        with connect() as db: mine(db, tabela, q('id') or str(value.get('encarte' if path == '/encarte-gerar-todos' else 'id', '')))
+              '/encarte-item-excluir': 'ofertas_encartes', '/encarte-recortar': 'ofertas_encartes', '/encarte-excluir': 'ofertas_encartes'}.get(path)
+    if tabela:  # o lote (um ou vários encartes) e a aprovação em grupo conferem cada encarte por dentro
+        with connect() as db: mine(db, tabela, q('id') or str(value.get('id', '')))
     if not status()['pronto'] and path not in ('/imagens',): raise ValueError(status()['motivo'])
     if path == '/templates': return motor('catalogo', TEMPLATES)
     if path == '/esquema': return esquema(q('template'))
@@ -736,6 +793,7 @@ def api(method, path, query, raw):
     if path == '/encarte-item-excluir': return excluir_item(value)
     if path == '/encarte-recortar': return recortar_encarte(value)
     if path == '/encarte-gerar-todos': return gerar_todos(value)
+    if path == '/encarte-itens-aprovar': return aprovar_itens(value)
     if path == '/encarte-excluir':
         return apagar_encarte(str(value.get('id', '')))
     if path == '/templates-publicar': return publicar(raw)
@@ -856,7 +914,7 @@ def videos_zip(query):
                         if saida.partes: yield saida.tirar()
                 if saida.partes: yield saida.tirar()
         if saida.partes: yield saida.tirar()  # diretório central do ZIP, escrito ao fechar
-    return blocos(), (primeiro or 'videos-ofertas') + '.zip', len(rows)
+    return blocos(), (nome_arquivo(query.get('arquivo', [''])[0]) or primeiro or 'videos-ofertas') + '.zip', len(rows)  # `arquivo`: nome do .zip
 
 def arquivo(environ, path):
     """-> (status, content_type, data, extra_headers, csp, frame)"""
