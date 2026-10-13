@@ -1,4 +1,4 @@
-# Assistente de Edições — versão web V1.10.0
+# Assistente de Edições — versão web V1.11.0
 
 Aplicação web local de padronização de imagens e montagem de vídeos da Indoor Channel.
 
@@ -145,6 +145,23 @@ No servidor (`deploy/`), `INDOOR_AUTH=1` liga o login; no PC e no executável po
 - **Esqueceu a senha:** na tela Usuários, **Redefinir senha** gera um link (7 dias, uso único) para a pessoa definir uma senha nova; ao usar, as sessões abertas em outros aparelhos são encerradas.
 - Desativar um usuário encerra as sessões dele na hora. Cinco senhas erradas seguidas bloqueiam o e-mail por 15 minutos.
 
+## Relatórios (Clockify)
+
+A equipe registra o tempo no Clockify; a tela **Relatórios** (só superadmins, no servidor com login) lê os registros
+do mês pela API e mostra horas registradas, tarefas, alterações e colaboradores; horas por etiqueta, projeto,
+colaborador e tarefa; tarefas com mais alterações e todos os registros com filtro. **Exportar PDF** e
+**Exportar Excel** geram o mesmo mês. Tarefa é a descrição do registro (vários registros com a mesma descrição são a
+mesma tarefa); alteração é a tarefa com "alteração" na descrição ou numa etiqueta. Os dados ficam 2 minutos em
+memória; **Atualizar** busca de novo. Cronômetro esquecido ligado conta só até o fim do mês do relatório.
+
+- **Chave:** variável de ambiente `CLOCKIFY_API_KEY` (Clockify → Preferências → Avançado → Gerar chave de API). No
+  servidor, uma linha `CLOCKIFY_API_KEY=...` em `deploy/.env` na VM (fora do git; o deploy preserva o arquivo) e um
+  `docker compose -f deploy/compose.yaml up -d`. A chave nunca vai para o repositório.
+- **Espaço de trabalho:** o ativo do dono da chave; `CLOCKIFY_WORKSPACE` fixa outro pelo id.
+- Para ver a equipe inteira, a chave precisa ser de um administrador do espaço de trabalho no Clockify.
+- O cronômetro próprio do sistema (caixa "Nova atividade" antes das ferramentas) está guardado e desligado;
+  `INDOOR_CRONOMETRO=1` religa.
+
 ## Deploy automático (CI/CD)
 
 `.github/workflows/ci-cd.yml` roda em todo PR e push: FFmpeg + motor de Ofertas instalados, testes Python e JavaScript,
@@ -184,7 +201,7 @@ node tests/test_undo.cjs
 cd ofertas/motor && npm test   # contrato de templates de Ofertas
 ```
 
-A V1.10.0 tem 193 testes Python, incluindo os do módulo Ofertas (os 20 que dependem do motor são pulados sem Node.js e o do extrator com encartes reais conferidos é pulado sem `OFERTAS_ENCARTES`), além de cinco testes JavaScript e oito testes do contrato em `ofertas/motor`. Os testes de vídeo usam
+A V1.11.0 tem 199 testes Python, incluindo os do módulo Ofertas (os 20 que dependem do motor são pulados sem Node.js e o do extrator com encartes reais conferidos é pulado sem `OFERTAS_ENCARTES`), além de cinco testes JavaScript e oito testes do contrato em `ofertas/motor`. Os testes de vídeo usam
 FFmpeg e arquivos sintéticos temporários. Node.js é necessário apenas para os testes JavaScript.
 O teste de navegador em `tests/test_composition_browser.cjs` usa Playwright, uma instância
 isolada, um vídeo sintético de cinco segundos e imagens verdes/amarelas ao lado dele.

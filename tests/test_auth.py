@@ -5,13 +5,17 @@ import os
 import sys
 import tempfile
 import unittest
+import uuid
+from datetime import datetime, timedelta
+from unittest import mock
+from openpyxl import load_workbook
 from pathlib import Path
 
 SANDBOX = tempfile.TemporaryDirectory(prefix='indoor-auth-')
 os.environ['INDOOR_DATA'] = str(Path(SANDBOX.name) / 'data')
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import server  # noqa: E402
-from modules import auth  # noqa: E402
+from modules import auth, clockify, relatorios  # noqa: E402
 from modules import ofertas  # noqa: E402
 from storage import init, connect, now  # noqa: E402
 
@@ -205,6 +209,120 @@ class AuthTests(unittest.TestCase):
         admin_home = call('GET', '/api/home', cookie=self.admin_cookie)[1]
         self.assertEqual(([t['tool'] for t in admin_home['tutoriais']], admin_home['editar']), (['offers', 'eap'], True))
         self.assertEqual(call('POST', '/api/home/foto-remover', {'id': home['fotos'][0]['id']}, self.admin_cookie)[1]['fotos'], [])
+
+
+def clockify_entry(user, desc, tags, start, minutes, project='Cliente IC', running=False):
+    end = None if running else (datetime.fromisoformat(start) + timedelta(minutes=minutes)).isoformat()
+    return {'_id': uuid.uuid4().hex, 'description': desc, 'userName': user, 'projectName': project, 'clientName': '',
+            'tags': [{'name': n} for n in tags], 'timeInterval': {'start': start, 'end': end, 'duration': None if running else minutes * 60}}
+
+
+class RelatoriosTests(unittest.TestCase):
+    """Relatório mensal a partir do Clockify (só superadmin) e o cronômetro próprio, guardado atrás de CRONOMETRO."""
+    @classmethod
+    def setUpClass(cls):
+        server.AUTH = True
+        server.CRONOMETRO = True
+        cls.admin, cls.admin_cookie = signup('relatorios-chefe@x.com', 'Chefe Relatórios', superadmin=True)
+        role = call('POST', '/api/admin/cargo-salvar', {'name': 'Edição', 'modules': ['images', 'video']}, cls.admin_cookie)[1]['id']
+        cls.ana, cls.ana_cookie = signup('ana@x.com', 'Ana Lima', role)
+        cls.bia, cls.bia_cookie = signup('bia@x.com', 'Bia Rocha', role)
+
+    @classmethod
+    def tearDownClass(cls): server.AUTH = False; server.CRONOMETRO = False
+
+    def test_timer_stays_off_by_default(self):
+        server.CRONOMETRO = False
+        try:
+            self.assertFalse(call('GET', '/api/info', cookie=self.ana_cookie)[1]['registraTempo'])
+            self.assertEqual(call('GET', '/api/atividades/atual', cookie=self.ana_cookie)[1], {'atividade': None, 'registra': False})
+        finally: server.CRONOMETRO = True
+
+    def test_clockify_monthly_report_and_exports(self):
+        entradas = [
+            clockify_entry('Ana Lima', 'Veiculação - Clivet', ['Edição VT', 'Rende receita'], '2026-09-02T09:00:00-03:00', 90),
+            clockify_entry('Ana Lima', 'Veiculação - Clivet', ['Edição VT'], '2026-09-02T14:00:00-03:00', 30),
+            clockify_entry('Bia Rocha', 'Veiculação - Clivet (Alteração 1)', ['Edição VT'], '2026-09-03T10:00:00-03:00', 20),
+            clockify_entry('Bia Rocha', 'veiculação - clivet (alteração 2)', [], '2026-09-04T10:00:00-03:00', 10),
+            clockify_entry('Bia Rocha', 'Totem - Faculdade', ['Alteração de arte', 'Totem'], '2026-09-05T10:00:00-03:00', 15, 'Institucional'),
+            clockify_entry('Ana Lima', '', [], '2026-09-30T23:00:00-03:00', 0, None, running=True),
+        ]
+        chamadas = []
+        def falso(mes): chamadas.append(mes); return entradas
+        with mock.patch.object(clockify, 'buscar', falso):
+            clockify._cache.clear()
+            self.assertEqual(call('GET', '/api/relatorios?mes=2026-09', cookie=self.ana_cookie)[0], 403)
+            self.assertEqual(call('GET', '/relatorios/relatorio-2026-09.xlsx', cookie=self.ana_cookie)[0], 403)
+            rel = call('GET', '/api/relatorios?mes=2026-09', cookie=self.admin_cookie)[1]
+            t = rel['totais']
+            self.assertEqual((t['registros'], t['tarefas'], t['alteracoes'], t['colaboradores'], t['emAndamento']), (6, 5, 3, 2, 1))
+            self.assertAlmostEqual(t['segundos'], 225 * 60, delta=1)  # o cronômetro esquecido ligado conta só até o fim do mês
+            self.assertEqual(rel['alteracoesPorTarefa'][0] | {'segundos': 0}, {'nome': 'Veiculação - Clivet', 'alteracoes': 2, 'segundos': 0})
+            vt = next(x for x in rel['porEtiqueta'] if x['nome'] == 'Edição VT')
+            self.assertEqual((vt['segundos'], vt['tarefas'], vt['alteracoes'], vt['cor']), (140 * 60, 2, 1, '#6A4FD1'))
+            self.assertEqual([x['nome'] for x in rel['porProjeto']], ['Cliente IC', 'Sem projeto', 'Institucional'])
+            self.assertEqual(chamadas, ['2026-09'])
+            call('GET', '/api/relatorios?mes=2026-09', cookie=self.admin_cookie)
+            self.assertEqual(chamadas, ['2026-09'])  # guardado por 2 minutos
+            call('GET', '/api/relatorios?mes=2026-09&atualizar=1', cookie=self.admin_cookie)
+            self.assertEqual(len(chamadas), 2)  # "Atualizar" busca de novo
+            status, xlsx, headers = call('GET', '/relatorios/relatorio-2026-09.xlsx', cookie=self.admin_cookie)
+            self.assertEqual((status, xlsx[:2]), (200, b'PK')); self.assertIn('attachment', headers['Content-Disposition'])
+            planilha = load_workbook(io.BytesIO(xlsx))
+            self.assertEqual(planilha['Registros'].max_row, 7)
+            status, pdf, _ = call('GET', '/relatorios/relatorio-2026-09.pdf', cookie=self.admin_cookie)
+            self.assertEqual((status, pdf[:5]), (200, b'%PDF-'))
+            self.assertEqual(call('GET', '/api/relatorios?mes=2026-13', cookie=self.admin_cookie)[0], 400)
+        self.assertEqual(clockify.intervalo('2026-09'), ('2026-09-01T03:00:00.000Z', '2026-10-01T02:59:59.999Z'))
+        self.assertEqual(clockify.intervalo('2026-12')[1], '2027-01-01T02:59:59.999Z')
+        clockify._cache.clear()
+        with mock.patch.dict(os.environ, {'CLOCKIFY_API_KEY': ''}):
+            status, erro, _ = call('GET', '/api/relatorios?mes=2026-08', cookie=self.admin_cookie)
+        self.assertEqual(status, 400); self.assertIn('CLOCKIFY_API_KEY', json.dumps(erro, ensure_ascii=False))
+
+    def test_timer_repetition_and_corrections(self):
+        info = call('GET', '/api/info', cookie=self.ana_cookie)[1]
+        self.assertTrue(info['registraTempo'])
+        atual = call('GET', '/api/atividades/atual', cookie=self.ana_cookie)[1]
+        self.assertIsNone(atual['atividade']); self.assertEqual(len(atual['etiquetas']), 10)
+        self.assertEqual(call('POST', '/api/atividades/iniciar', {'cliente': 'Vantagem', 'tarefa': 'Ofertas', 'etiquetas': []}, self.ana_cookie)[0], 400)
+        tarefa = {'cliente': 'Vantagem Supermercado', 'tarefa': 'Ofertas 11 a 14/10', 'etiquetas': ['adaptacao-encartes', 'edicao-vt', 'inexistente']}
+        status, data, _ = call('POST', '/api/atividades/iniciar', tarefa, self.ana_cookie)
+        self.assertEqual((status, data['atividade']['etiquetas'], data['atividade']['status']), (200, ['adaptacao-encartes', 'edicao-vt'], 'andamento'))
+        original = data['atividade']['id']
+        self.assertEqual(call('POST', '/api/atividades/iniciar', tarefa, self.ana_cookie)[0], 400)  # uma aberta por vez
+        self.assertEqual(call('POST', '/api/atividades/pausar', {}, self.ana_cookie)[1]['atividade']['status'], 'pausada')
+        self.assertEqual(call('POST', '/api/atividades/retomar', {}, self.ana_cookie)[1]['atividade']['status'], 'andamento')
+        self.assertEqual(call('POST', '/api/atividades/corrigir', {'id': original, 'minutos': 30, 'motivo': 'x'}, self.ana_cookie)[0], 400)
+        self.assertEqual(call('POST', '/api/atividades/finalizar', {}, self.ana_cookie)[1]['atividade']['status'], 'finalizada')
+        # outra pessoa recebe o mesmo encarte de novo, com espaços e maiúsculas diferentes: é alteração
+        repetida = call('POST', '/api/atividades/verificar', {'cliente': ' vantagem  supermercado', 'tarefa': 'OFERTAS 11 a 14/10'}, self.bia_cookie)[1]['repeticao']
+        self.assertEqual((repetida['id'], repetida['pessoa']), (original, 'Ana Lima'))
+        self.assertIsNone(call('POST', '/api/atividades/verificar', {'cliente': 'Vantagem Supermercado', 'tarefa': 'Ofertas 15 a 18/10'}, self.bia_cookie)[1]['repeticao'])
+        segunda = call('POST', '/api/atividades/iniciar', tarefa | {'etiquetas': ['adaptacao-encartes'], 'alteracaoDe': original}, self.bia_cookie)[1]['atividade']
+        self.assertEqual(segunda['alteracaoDe'], original)
+        call('POST', '/api/atividades/finalizar', {}, self.bia_cookie)
+        sugestoes = call('GET', '/api/atividades/sugestoes', cookie=self.bia_cookie)[1]
+        self.assertIn('Vantagem Supermercado', sugestoes['clientes'])
+        # correção: só a própria, com motivo; registrada
+        self.assertEqual(call('POST', '/api/atividades/corrigir', {'id': original, 'minutos': 45, 'motivo': 'esqueci'}, self.bia_cookie)[0], 400)
+        corrigida = call('POST', '/api/atividades/corrigir', {'id': original, 'minutos': 45, 'motivo': 'Esqueci de pausar no almoço'}, self.ana_cookie)[1]['atividade']
+        self.assertEqual((corrigida['segundos'], corrigida['corrigido']), (2700, True))
+        self.assertEqual(len(call('GET', '/api/atividades/minhas', cookie=self.ana_cookie)[1]['atividades']), 1)
+        grafada = call('POST', '/api/atividades/iniciar', {'cliente': 'vantagem SUPERMERCADO', 'tarefa': 'Encarte novo', 'etiquetas': ['totem']}, self.ana_cookie)[1]['atividade']
+        self.assertEqual(grafada['cliente'], 'Vantagem Supermercado')  # reaproveita a grafia já usada
+        call('POST', '/api/atividades/finalizar', {}, self.ana_cookie)
+        # o relatório interno do cronômetro guardado continua coerente
+        rel = relatorios.relatorio(data['atividade']['inicio'][:7])
+        self.assertGreaterEqual(rel['totais']['atividades'], 2); self.assertGreaterEqual(rel['totais']['alteracoes'], 1)
+        encartes = next(x for x in rel['porEtiqueta'] if x['nome'] == 'Adaptação de encartes')
+        self.assertGreaterEqual((encartes['atividades'], encartes['alteracoes']), (2, 1))
+
+    def test_eap_role_does_not_track_time(self):
+        roles = call('GET', '/api/admin/dados', cookie=self.admin_cookie)[1]['roles']
+        _, cookie = signup('eap-tempo@x.com', 'Carlos EAP', next(r for r in roles if r['brand'] == 'eap')['id'])
+        self.assertFalse(call('GET', '/api/info', cookie=cookie)[1]['registraTempo'])
+        self.assertEqual(call('GET', '/api/atividades/atual', cookie=cookie)[1], {'atividade': None, 'registra': False})
 
 
 class LocalModeTests(unittest.TestCase):

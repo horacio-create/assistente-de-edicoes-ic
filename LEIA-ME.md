@@ -1,4 +1,4 @@
-# Indoor Channel — Assistente de Edições V1.10.0
+# Indoor Channel — Assistente de Edições V1.11.0
 
 Aplicação local para Windows e macOS, com Chrome ou Edge. Não envia mídias à internet. Os colegas usam o navegador; apenas o PC que hospeda a aplicação precisa da instalação.
 
@@ -128,15 +128,20 @@ Ajustes: **Sensibilidade** do fundo; **Preservar áreas internas da cor do fundo
 
 Em **Exportar logos**, escolha a pasta, o nome base e as versões. Os arquivos saem como `EAP - Cliente - fundo branco.png`, `… - fundo preto.png`, `… - transparente.png` e, no modo vetor, `EAP - Cliente.svg`. Arquivos existentes nunca são substituídos.
 
-## Vetorização M6S — V1.7.0
+## Relatórios — V1.11.0
 
-Transforma a logo do cliente em um DXF para gravar no microfone M6S com o laser Cloudray CRS335-5F. Abra **Vetorização M6S** na barra lateral e arraste a logo (PNG, JPG, WebP, BMP, TIFF, PDF, AI ou SVG). Logos vetoriais são rasterizadas em alta resolução e retraçadas, o que dá o mesmo resultado para qualquer origem.
+Só para superadmins. Abra **Relatórios** na barra lateral e escolha o mês. Os números vêm do Clockify, onde a equipe registra o tempo: horas, tarefas, alterações e colaboradores; barras por etiqueta, projeto, colaborador e tarefa; e a lista de registros com filtro. **Atualizar** busca os dados mais recentes. **Exportar PDF** e **Exportar Excel** baixam o mês. Correções de tempo são feitas no próprio Clockify.
 
-1. Digite a **largura final** em mm. Ela vale para a arte, sem as margens vazias da imagem; a altura acompanha.
+## Vetorização M6S — V1.11.0
+
+Transforma a logo do cliente em um DXF para gravar no microfone M6S com o laser Cloudray CRS335-5F. Abra **Vetorização M6S** na barra lateral e arraste a logo (PNG, JPG, WebP, BMP, TIFF, PDF, AI ou SVG). SVG, AI e PDF com formas vetoriais usam as curvas do próprio arquivo; se houver texto não convertido em curvas, imagem embutida ou só linhas, o sistema avisa e redesenha a partir da imagem.
+
+1. A altura é sempre **12 mm**, a medida do M6S; a largura acompanha a proporção da logo, sem as margens vazias.
 2. Confira a prévia **Gravação** (o que o laser marca, em escuro sobre alumínio). **Contornos** mostra as linhas do DXF e **Original**, a imagem recebida.
 3. Se faltar ou sobrar parte da arte, desmarque **Automática** e ajuste a **Sensibilidade**. Use **Inverter** para gravar o fundo em vez da arte.
 4. **Remover detalhes menores que** elimina pontos e textura. **Suavidade das curvas** em 0 mantém cantos retos e em valores maiores arredonda.
-5. Clique em **Exportar DXF**, escolha a pasta e o nome. Um arquivo existente nunca é substituído.
+5. Em **Editar vetores**, clique numa parte da prévia para **Apagar parte** ou, num furo, **Preencher furo**. **Suavizar bordas** e **Engrossar traços** valem para a parte escolhida ou, sem seleção, para o desenho todo. **Mover pontos (avançado)** mostra pontos verdes que podem ser arrastados. **Desfazer** (Ctrl+Z) volta um passo; **Voltar ao automático** descarta as edições.
+6. Clique em **Exportar DXF**, escolha a pasta e o nome. O arquivo sai como está na tela, com as edições. Um arquivo existente nunca é substituído.
 
 O DXF é R12 (AC1009), em milímetros, com polilinhas fechadas na camada GRAVACAO e a arte centralizada na origem (0,0), que é o centro do campo no EzCad. Importe no EzCad ou LightBurn em mm e aplique a hachura de preenchimento lá; contornos internos (furos de letras como O e A) ficam vazados. Avisos aparecem quando há traços com menos de 0,1 mm no tamanho escolhido ou contornos demais, sinal de ruído.
 

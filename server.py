@@ -20,7 +20,7 @@ from version import VERSION
 from modules.images import DEFAULT, SUPPORTED, decode, dominant, encoded, render, settings
 from modules import ofertas
 from modules import videos, audio, composition, naming, export_progress, export_queue, projects, import_tasks
-from modules import eap, vector, auth, home
+from modules import eap, vector, auth, home, relatorios, relatorios_export, clockify
 from PIL import Image
 from storage import DATA, FERRAMENTA, ROOT, USUARIO, connect, event, get_job, init, mine, now, owner, uid
 
@@ -63,9 +63,11 @@ MODULES = [{'id': 'images', 'name': 'Imagens', 'active': True}, {'id': 'video', 
 
 # login só no servidor (deploy/compose.yaml); o app local/portátil continua aberto
 AUTH = os.environ.get('INDOOR_AUTH') == '1'
+# Cronômetro próprio guardado: a equipe registra o tempo no Clockify. INDOOR_CRONOMETRO=1 religa a caixa e o cronômetro.
+CRONOMETRO = os.environ.get('INDOOR_CRONOMETRO') == '1'
 PUBLIC = ('/login.html', '/login.js', '/style.css', '/acesso.css', '/favicon.svg', '/logo-indoor.png', '/api/info')
 # ferramenta exigida por prefixo; o resto do /api e as mídias são do editor (Imagens ou Vídeos)
-TOOLS = [(('/api/history', '/api/home', '/home/'), None), (('/api/ofertas/', '/ofertas/'), {'offers'}), (('/api/vector/', '/vetor/'), {'ms6'}), (('/api/eap/', '/eap/'), {'eap'}),
+TOOLS = [(('/api/history', '/api/home', '/home/', '/api/atividades', '/api/relatorios', '/relatorios/'), None), (('/api/ofertas/', '/ofertas/'), {'offers'}), (('/api/vector/', '/vetor/'), {'ms6'}), (('/api/eap/', '/eap/'), {'eap'}),
          (('/api/', '/media/', '/logo/', '/video/', '/audio/', '/entrega'), {'images', 'video'})]
 
 class Conflict(Exception): pass
@@ -360,7 +362,18 @@ def api(method, path, query, raw, environ=None, background=False):
         user = USUARIO.get()
         if AUTH and not user: return dict(version=VERSION, auth=True, user=None)
         tools = auth.allowed(user, MODULES) if user else None
-        return dict(user=user and auth.public(user), brand=auth.brand(user), auth=AUTH, host=socket.gethostname(), modules=[m for m in MODULES if tools is None or m['id'] in tools], videoReady=videos.available(), defaultFolder=str(Path.home() / 'Pictures'), version=VERSION, portable=bool(os.environ.get('INDOOR_PORTABLE')), nativePicker=(os.name == 'nt' or sys.platform == 'darwin') and (environ or {}).get('REMOTE_ADDR') in ('127.0.0.1','::1'))
+        return dict(user=user and auth.public(user), brand=auth.brand(user), registraTempo=registra_tempo(user), auth=AUTH, host=socket.gethostname(), modules=[m for m in MODULES if tools is None or m['id'] in tools], videoReady=videos.available(), defaultFolder=str(Path.home() / 'Pictures'), version=VERSION, portable=bool(os.environ.get('INDOOR_PORTABLE')), nativePicker=(os.name == 'nt' or sys.platform == 'darwin') and (environ or {}).get('REMOTE_ADDR') in ('127.0.0.1','::1'))
+    if path.startswith('/api/atividades'):
+        user = USUARIO.get()
+        if not registra_tempo(user): return {'atividade': None, 'registra': False}
+        return relatorios.api(method, path, value, query, user) | {'registra': True}
+    if path.startswith('/api/relatorios'):
+        user = USUARIO.get()
+        if not (AUTH and user and user['superadmin']): raise auth.Denied('Só superadmins acessam os relatórios.')
+        if path == '/api/relatorios':
+            mes = relatorios.mes_valido(query.get('mes', [now()[:7]])[0])
+            return clockify.relatorio(mes, atualizar=query.get('atualizar', ['0'])[0] == '1')
+        raise ValueError('Operação não encontrada.')
     if path.startswith('/api/home'):
         user = USUARIO.get()
         tools = auth.allowed(user, MODULES) if user else [m['id'] for m in MODULES if m['active']]
@@ -649,26 +662,50 @@ def refuse_existing(paths):
     taken = [p.name for p in paths if p.exists()]
     if taken: raise Conflict(f'Já existe{"m" if len(taken) > 1 else ""} na pasta: {", ".join(taken)}. Altere o nome para preservar os arquivos existentes.')
 
+def vector_source(ident):
+    """Formas do arquivo vetorial original (SVG/AI/PDF), guardadas no envio; None para bitmaps."""
+    meta = DATA / 'vetores' / (ident + '.vec.json')
+    return json.loads(meta.read_text(encoding='utf-8')) if meta.is_file() else None
+
+def vector_result(value):
+    """Peças em 12 mm de altura: do vetor original, ou redesenhadas a partir da imagem."""
+    ident = value.get('id')
+    stored('vetores', ident)  # valida o id e a existência da logo
+    original = vector_source(ident) if value.get('origem', 'vetor') == 'vetor' else None
+    if original:
+        return vector.summary(vector.geometry_from_parts(original)) | {'origem': 'vetor', 'threshold': None}
+    traced = vector.trace(stored('vetores', ident), value.get('settings'))
+    return vector.summary(vector.geometry_from_contours(traced['contours']), traced['notes']) | {'origem': 'imagem', 'threshold': traced['threshold']}
+
 def vector_api(path, query, value, raw):
     if path == '/api/vector/upload':
         ident, name, im = receive_logo('vetores', query, raw, vector.SUPPORTED, 'Logo para vetorização')
-        return {'id': ident, 'name': name, 'width': im.width, 'height': im.height}
+        ext, motivo = Path(name).suffix.lower(), None
+        if ext in ('.svg', '.ai', '.pdf'):
+            with LEVE: geom, motivo = vector.vector_parts(raw, ext)
+            if geom is not None:
+                (DATA / 'vetores' / (ident + '.vec.json')).write_text(json.dumps(vector.summary(geom)['parts']), encoding='utf-8')
+        return {'id': ident, 'name': name, 'width': im.width, 'height': im.height,
+                'vetor': vector_source(ident) is not None, 'motivoVetor': motivo}
     if path == '/api/vector/trace':
-        with LEVE: result = vector.trace(stored('vetores', value.get('id')), value.get('settings'))
-        return {k: result[k] for k in ('width', 'height', 'threshold', 'points', 'notes')} | {'contours': len(result['contours']), 'path': vector.svg_path(result['contours'])}
+        with LEVE: return vector_result(value)
+    if path == '/api/vector/edit':
+        with LEVE: return vector.summary(vector.edit(value.get('parts'), value.get('op'), value.get('alvo'), value.get('quantidade')))
     if path == '/api/vector/export':
         folder, name = directory(value['folder']), clean(value['name'])
         dest = folder / (name + '.dxf')
         refuse_existing([dest])
         with LEVE:
-            result = vector.trace(stored('vetores', value.get('id')), value.get('settings'))
-            data = vector.dxf(result['contours'])
+            # o desenho editado na tela é o que vai para o laser; sem edição, o resultado automático
+            result = vector.summary(vector.geometry_from_parts(value['parts'])) if value.get('parts') else vector_result(value)
+            data = vector.dxf(vector.contours_from_parts(result['parts']))
         try: write_new(dest, data)
         except Exception as exc:
             with connect() as db: event(db, None, 'Falha na exportação DXF', {'arquivo': str(dest), 'motivo': str(exc)})
             raise
         with connect() as db:
-            event(db, None, 'DXF exportado', {'arquivo': str(dest), 'origem': str(value.get('source', ''))[:180], 'mm': [result['width'], result['height']], 'contornos': len(result['contours']), 'ajustes': vector.settings(value.get('settings'))})
+            event(db, None, 'DXF exportado', {'arquivo': str(dest), 'origem': str(value.get('source', ''))[:180], 'mm': [result['width'], result['height']],
+                                             'contornos': result['contours'], 'editado': bool(value.get('parts')), 'ajustes': vector.settings(value.get('settings'))})
         return {'name': dest.name, 'path': str(dest), 'width': result['width'], 'height': result['height']}
     raise ValueError('Operação não encontrada.')
 
@@ -717,6 +754,10 @@ def eap_api(path, query, value, raw):
             event(db, None, 'Logo EAP exportada', {'arquivo': str(files[0][0]), 'arquivos': [str(f) for f, _ in files], 'origem': str(value.get('source', ''))[:180], 'ajustes': s})
         return {'files': saved, 'folder': str(folder)}
     raise ValueError('Operação não encontrada.')
+
+def registra_tempo(user):
+    """Com o cronômetro ligado, quem tem login registra as atividades; o cargo de marca EAP é outro centro de custos e fica de fora."""
+    return bool(CRONOMETRO and AUTH and user and auth.brand(user) != 'eap')
 
 def send_range(environ, start_response, video, mime):
     """Envia um arquivo de mídia aceitando Range, para o player do navegador avançar e voltar."""
@@ -802,6 +843,16 @@ def app(environ, start_response):
             if tool not in home.TOOLS: raise FileNotFoundError()
             if AUTH and tool not in auth.allowed(user, MODULES): raise auth.Denied('Seu cargo não tem acesso a este tutorial.')
             return send_range(environ, start_response, home.tutorial_path(tool), 'video/mp4')
+        elif path.startswith('/relatorios/'):
+            match = re.fullmatch(r'/relatorios/relatorio-(\d{4}-\d{2})\.(xlsx|pdf)', path)
+            if not match: raise FileNotFoundError()
+            if not (AUTH and user and user['superadmin']): raise auth.Denied('Só superadmins exportam os relatórios.')
+            dados = clockify.relatorio(relatorios.mes_valido(match.group(1)))
+            data = relatorios_export.excel(dados) if match.group(2) == 'xlsx' else relatorios_export.pdf(dados)
+            content_type = 'application/pdf' if match.group(2) == 'pdf' else 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+            start_response('200 OK', [('Content-Type', content_type), ('Content-Length', str(len(data))), ('Cache-Control', 'no-store'),
+                                      ('Content-Disposition', f'attachment; filename="{path.rsplit("/", 1)[1]}"'), ('X-Content-Type-Options', 'nosniff')])
+            return [data]
         elif path.startswith('/home/foto/'):
             ident = path.split('/')[-1]
             if not re.fullmatch(r'[0-9a-f]{32}', ident): raise ValueError('Foto inválida.')
@@ -823,7 +874,7 @@ def app(environ, start_response):
             content_type = 'image/png'
         else:
             name = 'index.html' if path == '/' else path.lstrip('/')
-            if name not in ('index.html','app.js','video-controls.js','composition-controls.js','project-controls.js','editor-layout.js','audio-panels.js','transform-controls.js','clip-dialogs.js','editing-tabs.js','preview-ruler.js','icons.js', 'edition-names.js','export-progress.js','undo-history.js','vector.js','eap.js','style.css','favicon.svg','logo-indoor.png','ofertas.js','ofertas.css','tarefas.js','tarefas.css','login.html','login.js','admin.js','acesso.css','conta.js','home.js','eap-icon.svg'): raise FileNotFoundError()
+            if name not in ('index.html','app.js','video-controls.js','composition-controls.js','project-controls.js','editor-layout.js','audio-panels.js','transform-controls.js','clip-dialogs.js','editing-tabs.js','preview-ruler.js','icons.js', 'edition-names.js','export-progress.js','undo-history.js','vector.js','eap.js','style.css','favicon.svg','logo-indoor.png','ofertas.js','ofertas.css','tarefas.js','tarefas.css','login.html','login.js','admin.js','acesso.css','conta.js','home.js','eap-icon.svg','atividades.js','relatorios.js'): raise FileNotFoundError()
             data = (ROOT / 'static' / name).read_bytes()
             content_type = mimetypes.guess_type(name)[0] or 'application/octet-stream'
     except Conflict as exc:

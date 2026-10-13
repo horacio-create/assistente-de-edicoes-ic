@@ -1,4 +1,24 @@
-# Verificação da versão oficial 1.10.0
+# Verificação da versão oficial 1.11.0
+
+## Relatórios do Clockify e edição de vetores M6S — 13/10/2026
+
+- 199 testes Python no Windows, nenhuma falha; 21 pulados (motor de Ofertas sem Node.js e
+  encartes de referência). Novos testes: relatório do Clockify com registros simulados (totais,
+  tarefas repetidas, alterações pela descrição e pela etiqueta, projeto vazio, cronômetro ligado
+  limitado ao fim do mês, cache de 2 minutos e Atualizar), só para superadmin, Excel e PDF
+  válidos, mês inválido, chave ausente com mensagem clara, intervalo do mês em UTC (inclusive
+  dezembro); cronômetro desligado por padrão. O cronômetro guardado continua testado ligado.
+- Dados reais do Clockify (setembro e outubro de 2026): total de setembro igual ao do próprio
+  Clockify (527h21, 774 registros); PDF conferido em imagem.
+- Navegador, servidor com login: sem cronômetro e sem caixa ao abrir as ferramentas; tela
+  Relatórios com números, barras, registros e filtro; downloads de PDF e Excel; Atualizar.
+- Vetorização M6S: testes de altura 12 mm com largura proporcional (JPG e DXF), SVG com furo
+  branco e retângulo mantidos como vetor, SVG com texto recusado como vetor com motivo, e
+  edições (apagar, preencher, suavizar, engrossar, mover) mantendo 12 mm e exportando o
+  editado. No navegador: apagar um ponto solto, preencher o miolo de um anel, engrossar,
+  desfazer e arrastar pontos, com a altura sempre em 12 mm e a seleção seguindo a peça movida.
+
+# Verificação da versão 1.10.0
 
 ## Tela Home e marca por cargo — 09/10/2026
 

@@ -34,14 +34,15 @@ class VectorTests(unittest.TestCase):
     def trace(self, data, ext='.png', **settings):
         return vector.trace(vector.load(data, ext), settings)
 
-    def test_colored_jpg_becomes_closed_contours_at_requested_width(self):
-        r = self.trace(ring(fmt='JPEG', quality=60), '.jpg', widthMm=40)
+    def test_colored_jpg_becomes_closed_contours_12mm_high(self):
+        r = self.trace(ring(fmt='JPEG', quality=60), '.jpg')
         self.assertEqual(len(r['contours']), 3)
         xs = [x for c in r['contours'] for x, _ in c]; ys = [y for c in r['contours'] for _, y in c]
-        self.assertAlmostEqual(max(xs) - min(xs), 40, delta=.1)
+        self.assertAlmostEqual(max(ys) - min(ys), 12, delta=.1)  # altura fixa do M6S
         self.assertAlmostEqual((max(xs) + min(xs)) / 2, 0, delta=.1)  # centralizado na origem
         self.assertAlmostEqual((max(ys) + min(ys)) / 2, 0, delta=.1)
-        self.assertAlmostEqual(r['height'], 40 * 320 / 680, delta=.2)  # margens não contam
+        self.assertAlmostEqual(r['width'], 12 * 680 / 320, delta=.2)  # largura proporcional; margens não contam
+        self.assertEqual(r['height'], 12)
 
     def test_transparent_png_and_light_logo_on_dark_background(self):
         self.assertEqual(len(self.trace(ring(bg=(0, 0, 0, 0), ink=(20, 20, 80, 255), mode='RGBA'))['contours']), 3)
@@ -70,37 +71,37 @@ class VectorTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'Nenhuma arte'): self.trace(b.getvalue())
 
     def test_dxf_is_r12_with_closed_polylines_and_extents(self):
-        r = self.trace(ring(), widthMm=25)
+        r = self.trace(ring())
         doc = read_dxf(vector.dxf(r['contours']))
         entities = list(doc.modelspace())
         self.assertEqual(doc.dxfversion, 'AC1009')
         self.assertEqual(len(entities), 3)
         self.assertTrue(all(e.dxftype() == 'POLYLINE' and e.is_closed and e.dxf.layer == vector.LAYER for e in entities))
-        self.assertAlmostEqual(doc.header['$EXTMAX'][0] - doc.header['$EXTMIN'][0], 25, delta=.05)
+        self.assertAlmostEqual(doc.header['$EXTMAX'][1] - doc.header['$EXTMIN'][1], 12, delta=.05)
 
     def test_settings_are_validated(self):
-        for bad in ({'widthMm': 0}, {'widthMm': 'nan'}, {'smooth': 3}, {'threshold': 0}, {'detailMm': -1}):
+        for bad in ({'smooth': 'nan'}, {'smooth': 3}, {'threshold': 0}, {'detailMm': -1}):
             with self.assertRaises(ValueError): vector.settings(bad)
 
     def test_export_writes_new_file_and_never_overwrites(self):
         ident = api('/api/vector/upload', query={'name': ['logo.png']}, raw=ring())['id']
-        traced = api('/api/vector/trace', {'id': ident, 'settings': {'widthMm': 30}})
-        self.assertEqual(traced['contours'], 3)
+        traced = api('/api/vector/trace', {'id': ident, 'settings': {}})
+        self.assertEqual((traced['contours'], traced['height'], traced['origem']), (3, 12, 'imagem'))
         with tempfile.TemporaryDirectory() as folder:
-            body = {'id': ident, 'settings': {'widthMm': 30}, 'folder': folder, 'name': 'M6S - Cliente'}
+            body = {'id': ident, 'settings': {}, 'folder': folder, 'name': 'M6S - Cliente'}
             result = api('/api/vector/export', body)
             dest = Path(folder) / 'M6S - Cliente.dxf'
             self.assertEqual(result['name'], dest.name)
             original = dest.read_bytes()
             self.assertEqual(len(list(read_dxf(original).modelspace())), 3)
-            with self.assertRaises(server.Conflict): api('/api/vector/export', body | {'settings': {'widthMm': 60}})
+            with self.assertRaises(server.Conflict): api('/api/vector/export', body | {'settings': {'smooth': .5}})
             self.assertEqual(dest.read_bytes(), original)
             self.assertEqual(sorted(p.name for p in Path(folder).iterdir()), [dest.name])
 
     def test_network_export_goes_to_browser_delivery_and_is_cleaned(self):
         ident = api('/api/vector/upload', query={'name': ['logo.png']}, raw=ring())['id']
         token = 'ab' * 16
-        api('/api/vector/export', {'id': ident, 'settings': {'widthMm': 30}, 'folder': 'navegador:' + token, 'name': 'M6S - Rede'})
+        api('/api/vector/export', {'id': ident, 'settings': {}, 'folder': 'navegador:' + token, 'name': 'M6S - Rede'})
         self.assertEqual(server.api('GET', '/api/entrega', {'token': [token]}, b''), ['M6S - Rede.dxf'])
         env = {'REQUEST_METHOD': 'GET', 'PATH_INFO': '/entrega', 'HTTP_HOST': 'localhost:8080',
                'QUERY_STRING': f'token={token}&name=M6S%20-%20Rede.dxf'}
@@ -125,6 +126,41 @@ class VectorTests(unittest.TestCase):
         self.assertEqual(status('GET', '/', 'navigate'), '200 OK')
         self.assertEqual(status('GET', '/api/history', 'cors'), '400 Bad Request')
         self.assertEqual(status('POST', '/api/history-delete', 'navigate'), '400 Bad Request')
+
+    def test_vector_files_keep_their_shapes_and_white_cuts_holes(self):
+        svg = (b'<svg xmlns="http://www.w3.org/2000/svg" width="200" height="100"><circle cx="50" cy="50" r="40" fill="#c00"/>'
+               b'<circle cx="50" cy="50" r="20" fill="#fff"/><rect x="110" y="20" width="70" height="60" fill="navy"/></svg>')
+        up = api('/api/vector/upload', query={'name': ['logo.svg']}, raw=svg)
+        self.assertTrue(up['vetor'])
+        r = api('/api/vector/trace', {'id': up['id'], 'settings': {}})
+        self.assertEqual((r['origem'], len(r['parts']), [len(p['holes']) for p in r['parts']], r['height']), ('vetor', 2, [1, 0], 12))
+        self.assertAlmostEqual(r['width'], 12 * 170 / 80, delta=.05)
+        self.assertEqual(api('/api/vector/trace', {'id': up['id'], 'origem': 'imagem', 'settings': {}})['origem'], 'imagem')
+        texto = api('/api/vector/upload', query={'name': ['texto.svg']}, raw=b'<svg xmlns="http://www.w3.org/2000/svg" width="200" height="60"><text x="10" y="40" font-size="30">Loja</text></svg>')
+        self.assertFalse(texto['vetor']); self.assertIn('textos', texto['motivoVetor'])
+
+    def test_manual_edits_keep_12mm_and_export_what_was_edited(self):
+        ident = api('/api/vector/upload', query={'name': ['logo.png']}, raw=ring())['id']
+        parts = api('/api/vector/trace', {'id': ident, 'settings': {}})['parts']
+        self.assertEqual([len(p['holes']) for p in parts], [1, 0])
+        filled = api('/api/vector/edit', {'parts': parts, 'op': 'preencher', 'alvo': {'part': 0, 'hole': 0}})
+        self.assertEqual([len(p['holes']) for p in filled['parts']], [0, 0])
+        erased = api('/api/vector/edit', {'parts': parts, 'op': 'apagar', 'alvo': [1]})
+        self.assertEqual((len(erased['parts']), erased['height']), (1, 12))
+        self.assertAlmostEqual(erased['width'], 12, delta=.1)  # sobrou o anel, redondo: 12 × 12 mm
+        thick = api('/api/vector/edit', {'parts': parts, 'op': 'engrossar', 'alvo': [], 'quantidade': .2})
+        smooth = api('/api/vector/edit', {'parts': parts, 'op': 'suavizar', 'alvo': [0], 'quantidade': .1})
+        self.assertEqual((thick['height'], smooth['height'], len(smooth['parts'])), (12, 12, 2))
+        moved = [dict(p) for p in parts]; moved[1] = {'outer': [[x * 1.5, y] for x, y in parts[1]['outer']], 'holes': []}
+        self.assertGreater(api('/api/vector/edit', {'parts': moved, 'op': 'normalizar'})['width'], erased['width'])
+        for bad in ({'parts': parts, 'op': 'apagar', 'alvo': [0, 1]}, {'parts': parts, 'op': 'apagar', 'alvo': []},
+                    {'parts': parts, 'op': 'engrossar', 'quantidade': 5}, {'parts': [{'outer': [[0, 0], ['x', 1], [1, 1]]}], 'op': 'normalizar'}):
+            with self.assertRaises(ValueError): api('/api/vector/edit', bad)
+        with tempfile.TemporaryDirectory() as folder:
+            api('/api/vector/export', {'id': ident, 'settings': {}, 'parts': filled['parts'], 'folder': folder, 'name': 'M6S - Editado'})
+            doc = read_dxf((Path(folder) / 'M6S - Editado.dxf').read_bytes())
+            self.assertEqual(len(list(doc.modelspace())), 2)  # o furo preenchido não vai para o laser
+            self.assertAlmostEqual(doc.header['$EXTMAX'][1] - doc.header['$EXTMIN'][1], 12, delta=.05)
 
     def test_invalid_ids_and_formats_are_rejected(self):
         for ident in ('../../segredo', 'x' * 32, None):

@@ -1,5 +1,34 @@
 # Histórico de versões
 
+## 1.11.0 — Relatórios do Clockify e edição de vetores M6S — 13/10/2026
+
+### Relatórios
+
+- Nova tela Relatórios (só superadmin), com os dados do Clockify pela API: horas, tarefas,
+  alterações e colaboradores do mês; horas por etiqueta, projeto, colaborador e tarefa; tarefas
+  com mais alterações; todos os registros com filtro. Botão Atualizar.
+- Exporta PDF (resumo com gráficos) e Excel (resumo, cortes, alterações e todos os registros).
+- Alteração: tarefa com "alteração" na descrição ou numa etiqueta; conta para a tarefa original.
+- Chave em CLOCKIFY_API_KEY (no servidor, em deploy/.env); sem ela, a tela explica o que falta.
+- O cronômetro próprio (caixa "Nova atividade" antes das ferramentas, etiquetas, pausa e
+  correções) fica guardado e desligado: a equipe registra o tempo no Clockify.
+  INDOOR_CRONOMETRO=1 religa.
+- Nova dependência: openpyxl 3.1.5, para gerar a planilha.
+
+### Vetorização M6S
+
+- Altura fixa de 12 mm, a medida do microfone M6S; a largura acompanha a proporção da logo,
+  sem limite. O campo de largura saiu da tela.
+- SVG, AI e PDF com formas vetoriais usam as curvas do próprio arquivo, sem redesenhar; partes
+  brancas viram furos. Texto não convertido em curvas, imagem embutida ou só linhas fazem o
+  sistema redesenhar a partir da imagem, com o motivo explicado. Dá para escolher a origem.
+- Nova seção "Editar vetores": clique numa parte da prévia para Apagar parte ou Preencher furo;
+  Suavizar bordas e Engrossar traços (na parte escolhida ou no desenho todo); Mover pontos
+  (avançado) com pontos verdes arrastáveis; Desfazer (Ctrl+Z) e Voltar ao automático.
+  Toda edição recalcula a largura mantendo 12 mm, e o DXF exporta o que foi editado.
+- Aviso de traços com menos de 0,1 mm sugere usar "Engrossar traços".
+- Nova dependência: shapely 2.1.2, para as operações de forma.
+
 ## 1.10.0 — Tela Home e marca por cargo — 09/10/2026
 
 - Tela Home, aberta ao entrar, pela logo do menu ou pelo novo ícone de casa no topo da barra:

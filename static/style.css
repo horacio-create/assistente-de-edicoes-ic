@@ -825,3 +825,118 @@ body:not(.video-workspace) .filmstrip-track{grid-template-columns:auto minmax(0,
 .ac-brand img{width:20px;height:20px;border-radius:5px}
 .ac-brand-tag{margin-left:8px;vertical-align:middle}
 .home-videos{grid-template-columns:repeat(auto-fit,minmax(280px,340px));justify-content:center}
+
+/* Cronômetro de atividades (Relatórios): pílula no cabeçalho; na Home fica fixa no topo. */
+.atv-timer{display:flex;align-items:center;gap:8px;min-width:0;max-width:min(560px,48vw);height:40px;padding:0 6px 0 12px;border:1px solid var(--line);border-radius:999px;background:#fff;font-size:12px;color:var(--ink)}
+.atv-timer[hidden]{display:none}
+main>header>.atv-timer{order:2;flex:0 1 auto;align-self:center}
+.secao-home main>header{display:flex;position:fixed;top:12px;right:clamp(14px,2.3vw,36px);z-index:40;margin:0;padding:0;min-height:0;background:transparent;pointer-events:none}
+.secao-home main>header>*:not(.atv-timer){display:none}
+.secao-home main>header>.atv-timer{pointer-events:auto;box-shadow:0 6px 18px #14142a33}
+.secao-home .home-manage{top:auto;bottom:16px}
+.atv-dot{flex:none;width:9px;height:9px;border-radius:50%;background:#2e9e4f;box-shadow:0 0 0 3px #2e9e4f33}
+.atv-timer.is-paused .atv-dot{background:#e8a20a;box-shadow:0 0 0 3px #e8a20a33}
+.atv-timer.is-idle .atv-dot{background:#a3a3b5;box-shadow:none}
+.atv-clock{flex:none;font-size:14px;font-variant-numeric:tabular-nums}
+.atv-what{min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;color:#4a4a62}
+.atv-what b{color:var(--ink)}
+.atv-idle{color:#55556d}
+.atv-tags{display:inline-flex;flex-wrap:wrap;gap:4px;align-items:center}
+.atv-btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;flex:none;min-height:30px;padding:0 12px;border:1px solid var(--line);border-radius:999px;background:#fff;color:var(--ink);font-size:12px;font-weight:600;white-space:nowrap}
+.atv-btn:hover{background:#f3f3f8}
+.atv-primary{border-color:var(--ink);background:var(--ink);color:#fff}
+.atv-primary:hover{background:#3a3a5c}
+.atv-icon{width:30px;padding:0}
+.atv-ico svg{display:block;width:16px;height:16px}
+/* Etiquetas: a cor da etiqueta na borda e num fundo claro; o texto fica escuro para leitura. */
+.atv-tag{display:inline-flex;align-items:center;gap:6px;min-height:24px;padding:0 10px;border:1px solid var(--tag);border-radius:999px;background:color-mix(in srgb,var(--tag) 12%,#fff);color:#20203c;font-size:12px;font-weight:600;white-space:nowrap}
+.atv-tag::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--tag)}
+.atv-tag.is-dot{width:12px;min-height:12px;padding:0;border:0;background:var(--tag);font-size:0}
+.atv-tag.is-dot::before{display:none}
+.atv-choose{min-height:36px;padding:0 14px;cursor:pointer}
+.atv-choose[aria-pressed=true]{background:var(--tag);color:#fff}
+.atv-choose[aria-pressed=true]::before{background:#fff}
+.atv-dialog{width:min(560px,calc(100vw - 32px))}
+.atv-dialog form{display:flex;flex-direction:column;gap:14px}
+.atv-dialog .dialog-head p{margin:4px 0 0;color:#55556d;font-size:13px}
+.atv-field{display:flex;flex-direction:column;gap:6px;font-size:13px;font-weight:600}
+.atv-field input{min-height:40px}
+.atv-chips{display:flex;flex-wrap:wrap;gap:8px}
+.atv-error{margin:0;color:#b42318;font-size:13px}
+.atv-confirm p{line-height:1.5}
+.atv-mine{width:min(720px,calc(100vw - 32px))}
+.atv-mine-list{display:flex;flex-direction:column;gap:2px;max-height:60vh;margin:12px 0 0;padding:0;overflow:auto;list-style:none}
+.atv-mine-list li{padding:10px 4px;border-bottom:1px solid #efeff5}
+.atv-mine-row{display:flex;align-items:center;gap:12px}
+.atv-mine-row>div{display:flex;flex:1;flex-direction:column;gap:4px;min-width:0}
+.atv-mine-row small{color:#55556d}
+.atv-mine-time{font-variant-numeric:tabular-nums;font-weight:600}
+.atv-fix{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:8px}
+.atv-fix input[type=number]{width:90px}
+.atv-fix input:not([type]){flex:1;min-width:180px}
+.atv-fix[hidden]{display:none}
+.atv-empty{color:#55556d}
+
+/* Tela Relatórios */
+.rel-page{display:flex;flex-direction:column;gap:20px;padding-bottom:48px}
+.rel-toolbar{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-end;gap:12px}
+.rel-month{display:flex;flex-direction:column;gap:6px;font-size:13px;font-weight:600}
+.rel-month input{min-height:40px}
+.rel-actions{display:flex;flex-wrap:wrap;gap:8px}
+.rel-download{display:inline-flex;align-items:center;gap:8px;min-height:40px;padding:0 16px;border-radius:10px;background:var(--ink);color:#fff;font-size:13px;font-weight:600;text-decoration:none}
+.rel-download:hover{background:#3a3a5c;color:#fff}
+.rel-source{flex:1;margin:0 0 10px;color:var(--muted);font-size:13px}
+.rel-actions .atv-btn{min-height:40px;display:inline-flex;align-items:center;gap:8px}
+.rel-error p{margin:0;color:var(--muted)}
+.rel-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px}
+.rel-kpi{display:flex;flex-direction:column;gap:4px;padding:16px 18px;border:1px solid var(--line);border-radius:14px;background:#fff}
+.rel-kpi strong{font-size:28px;font-variant-numeric:tabular-nums}
+.rel-kpi span{color:#55556d;font-size:13px}
+.rel-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(420px,1fr));gap:16px}
+.rel-box{display:flex;flex-direction:column;gap:12px;padding:18px 20px;border:1px solid var(--line);border-radius:14px;background:#fff;min-width:0}
+.rel-box h2{margin:0;font-size:16px}
+.rel-note{margin:0;color:#55556d;font-size:12px}
+.rel-bars{display:flex;flex-direction:column;gap:8px;margin:0;padding:0;list-style:none}
+.rel-bars li{display:grid;grid-template-columns:minmax(0,160px) minmax(0,1fr) auto;align-items:center;gap:10px;font-size:13px}
+.rel-bar-name{overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.rel-bar-track{height:12px;border-radius:6px;background:#f0f0f6;overflow:hidden}
+.rel-bar{display:block;height:100%;border-radius:6px;background:var(--bar)}
+.rel-bar-value{color:#55556d;font-size:12px;font-variant-numeric:tabular-nums;white-space:nowrap}
+.rel-list{display:flex;flex-direction:column;margin:0;padding:0;list-style:none}
+.rel-list li{display:flex;justify-content:space-between;gap:12px;padding:8px 0;border-bottom:1px solid #efeff5;font-size:13px}
+.rel-records-head{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:12px}
+.rel-records-head input{min-width:min(320px,100%);min-height:38px}
+.rel-table{overflow-x:auto}
+.rel-table table{width:100%;min-width:860px;border-collapse:collapse;font-size:13px}
+.rel-table th{padding:8px 10px;border-bottom:1px solid var(--line);color:#55556d;font-size:12px;font-weight:600;text-align:left}
+.rel-table td{padding:10px;border-bottom:1px solid #efeff5;vertical-align:top}
+.rel-table td small{display:block;color:#55556d}
+.rel-num{font-variant-numeric:tabular-nums;white-space:nowrap}
+/* A pílula também é uma div do cabeçalho: vence as regras de coluna do cabeçalho do editor de imagens. */
+main>header>div.atv-timer:not([hidden]){display:flex;flex-direction:row;align-items:center;flex:0 1 auto;gap:8px}
+.atv-timer .atv-tags{flex:none;flex-wrap:nowrap}
+
+/* Vetorização M6S: tamanho fixo e mini seção "Editar vetores" (peças clicáveis na prévia). */
+.vector-size-fixed{display:flex;flex-direction:column;gap:2px;margin:0 0 6px;font-size:13px}
+.vector-size-fixed strong{font-size:16px}
+.vector-size-fixed span{color:#55556d}
+#vector-svg .vector-part{cursor:pointer;transition:fill .12s}
+#vector-svg .vector-part:hover{fill:#44465a}
+#vector-svg .vector-part.is-selected{fill:#6967c9}
+#vector-svg .vector-hole{fill:transparent;stroke:none;cursor:pointer}
+#vector-svg .vector-hole:hover{fill:#6967c933}
+#vector-svg .vector-hole.is-selected{fill:#6967c966;stroke:#6967c9;stroke-width:var(--stroke,.08)}
+.vector-shell.outline #vector-svg .vector-part.is-selected{fill:#6967c94d}
+.vector-shell.outline #vector-svg .vector-hole{fill:transparent;stroke:none}
+#vector-svg .vector-handle-line{fill:none;stroke:#2e9e4f;stroke-width:calc(var(--stroke,.08)*1.5);pointer-events:none}
+#vector-svg .vector-handle{fill:#fff;stroke:#2e9e4f;stroke-width:var(--stroke,.08);cursor:grab;touch-action:none}
+#vector-svg .vector-handle:active{cursor:grabbing;fill:#2e9e4f}
+.vector-edit{display:flex;flex-direction:column;gap:10px}
+.vector-edit h3{margin:0}
+.vector-edit .help{margin:0}
+.vector-edit-row{display:flex;align-items:center;gap:8px}
+.vector-edit-row .range-track{flex:1}
+.vector-edit-row>button{flex:none}
+.vector-edit-row:first-of-type>button{flex:1;padding-inline:8px;white-space:nowrap}
+.vector-edit summary{cursor:pointer;font-size:13px;font-weight:600}
+.vector-edit details p{margin-top:8px}
