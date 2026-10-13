@@ -997,12 +997,18 @@ function planoEt() {
   const total = itensDoLote().length, sobra = passo > 1 ? total % passo : 0;
   const impar = et.impar === 'sozinho' && !incompleto ? 'repetir' : et.impar || (incompleto ? 'sozinho' : 'repetir');
   const n = impar === 'fora' && sobra && total > passo ? total - sobra : total;
-  const cartelas = Math.min(gmax, Math.max(gmin, Math.round(Number(et.cartelas) || gmax)));
-  const tamanhos = tamanhosDosVideos(n, lista, cartelas);
+  const cartelas = Math.min(gmax, Math.max(gmin, Math.round(Number(et.cartelas) || 3)));  // padrão do Encarte Studio: 3 cartelas de 5s
+  const tamanhos = tamanhosCompletando(n, lista, cartelas);
   if (impar === 'sozinho' && sobra) tamanhos[tamanhos.length - 1] -= passo - sobra;
   return { lista, passo, gmin, gmax, incompleto, total, sobra, n, impar, cartelas, tamanhos, repetidos: tamanhos.reduce((a, b) => a + b, 0) - n };
 }
-const corpoLote = () => { const p = planoEt(); return { encartes: et.encartes, template: et.template, cartelas: p.cartelas, impar: p.impar, nome: baseNome(), numerar: true }; };
+// mesma regra do servidor (tamanhos_completando): vídeos cheios e a sobra no último (8 cartelas, 3 por vídeo: 3 + 3 + 2)
+function tamanhosCompletando(n, lista, cartelas) {
+  const passo = passoDe(lista), [gmin] = limitesCartelas(lista), grupos = Math.ceil(n / passo), out = [];
+  for (let k = 0; k < grupos; k += cartelas) out.push(Math.max(gmin, Math.min(cartelas, grupos - k)) * passo);
+  return out;
+}
+const corpoLote = () => { const p = planoEt(); return { encartes: et.encartes, template: et.template, cartelas: p.cartelas, impar: p.impar, nome: baseNome(), numerar: true, distribuir: 'completar' }; };
 // muda quando algo que aparece no vídeo muda: a prévia mostrada deixa de valer
 const chavePrevia = () => JSON.stringify([corpoLote(), itensDoLote().map(({ it }) => [it.nome, it.por, it.de, it.unidade, it.imagem])]);
 async function desenharPasso3() {
@@ -1025,11 +1031,16 @@ async function desenharPasso3() {
     el('et-dica-3').textContent = 'Escolha um template para continuar.';
   } else {
     Object.assign(el('et-cartelas'), { min: p.gmin, max: p.gmax, value: p.cartelas });
-    el('et-cartelas-ajuda').textContent = p.gmin === p.gmax ? `Fixo neste template (${p.gmax}).` : `De ${p.gmin} a ${p.gmax} por vídeo.`;
+    el('et-cartelas-ajuda').textContent = (p.gmin === p.gmax ? `Fixo neste template (${p.gmax}).` : `De ${p.gmin} a ${p.gmax} por vídeo.`)
+      + ` ${plural(p.passo, 'produto', 'produtos')} por cartela.`;
     el('et-impar-sozinho').hidden = !p.incompleto;
     document.querySelector(`input[name=of-et-impar][value=${p.impar}]`).checked = true;
     const nomeGrupo = (p.lista.grupo?.rotulo || 'cartela').toLowerCase();
-    el('et-plano').innerHTML = p.tamanhos.map((t, k) => `<li><b>${esc(nomeNumerado(baseNome(), k))}</b><span>${plural(Math.ceil(t / p.passo), nomeGrupo, nomeGrupo + 's')} · ${plural(t, 'produto', 'produtos')}</span></li>`).join('');
+    const duracao = esquemasEt[et.template].duracao;
+    el('et-plano').innerHTML = p.tamanhos.map((t, k) => {
+      const c = Math.ceil(t / p.passo), seg = (duracao / c).toLocaleString('pt-BR', { maximumFractionDigits: 1 });
+      return `<li><b>${esc(nomeNumerado(baseNome(), k))}</b><span>${plural(c, nomeGrupo, nomeGrupo + 's')} · ${plural(t, 'produto', 'produtos')} · ${seg}s cada</span></li>`;
+    }).join('');
     const notas = [];
     if (p.repetidos) notas.push(`${plural(p.repetidos, 'produto se repete', 'produtos se repetem')} para completar ${p.repetidos > p.sobra ? 'os vídeos' : 'a cartela'} (a partir do 1º do lote).`);
     if (p.impar === 'sozinho' && p.sobra) notas.push(`O último produto aparece sozinho, centralizado, na última ${nomeGrupo}.`);
