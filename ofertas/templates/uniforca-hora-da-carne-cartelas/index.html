@@ -1063,7 +1063,11 @@
 
       function montarProduto(n) {
         const p = document.getElementById("tpl-produto").content.firstElementChild.cloneNode(true);
-        p.querySelector(".nome").textContent = campo(n, "nome");
+        const nome = p.querySelector(".nome");
+        nome.textContent = campo(n, "nome");
+        // nomes longos (até 80 caracteres) diminuem a letra para caber em 2 linhas sem cobrir a foto
+        const letras = String(campo(n, "nome") || "").length;
+        nome.style.fontSize = (letras <= 34 ? 30 : letras <= 60 ? 23 : 21) + "px";
         const foto = p.querySelector(".foto");
         foto.src = campo(n, "imagem");
         foto.style.width = foto.style.height = (Number(campo(n, "tamanho")) || 1) * 100 + "%";
