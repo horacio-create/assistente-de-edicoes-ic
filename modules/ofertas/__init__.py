@@ -767,6 +767,8 @@ def preview(pedido_id, resto):
     return alvo.read_bytes(), mimetypes.guess_type(alvo.name)[0] or 'application/octet-stream'
 
 def video(environ, ident):
+    """-> (blocos, headers, status). O arquivo é enviado em blocos enquanto é lido: antes ele era lido inteiro
+    para a memória e o download só começava depois disso (um MP4 por download, por thread do waitress)."""
     if not ID.fullmatch(ident): raise FileNotFoundError()
     arquivo = PASTA / 'renders' / ident / 'video.mp4'
     if not arquivo.is_file(): raise FileNotFoundError()
@@ -774,18 +776,26 @@ def video(environ, ident):
     faixa = re.fullmatch(r'bytes=(\d*)-(\d*)', environ.get('HTTP_RANGE', ''))
     inicio, fim = 0, tamanho - 1
     if faixa and (faixa[1] or faixa[2]):
-        inicio = int(faixa[1]) if faixa[1] else tamanho - int(faixa[2])
+        inicio = int(faixa[1]) if faixa[1] else max(0, tamanho - int(faixa[2]))
         fim = min(int(faixa[2]), tamanho - 1) if faixa[1] and faixa[2] else tamanho - 1
-    with arquivo.open('rb') as f:
-        f.seek(inicio)
-        data = f.read(fim - inicio + 1)
-    headers = [('Accept-Ranges', 'bytes')]
+        if inicio > fim or inicio >= tamanho:
+            return [], [('Content-Range', f'bytes */{tamanho}'), ('Content-Length', '0')], '416 Range Not Satisfiable'
+    def blocos():
+        with arquivo.open('rb') as f:
+            f.seek(inicio)
+            resta = fim - inicio + 1
+            while resta:
+                bloco = f.read(min(256 * 1024, resta))
+                if not bloco: break
+                resta -= len(bloco)
+                yield bloco
+    headers = [('Accept-Ranges', 'bytes'), ('Content-Length', str(fim - inicio + 1))]
     if faixa: headers.append(('Content-Range', f'bytes {inicio}-{fim}/{tamanho}'))
     if 'baixar=1' in environ.get('QUERY_STRING', ''):
         with connect() as db: row = db.execute('SELECT titulo FROM ofertas_renders WHERE id=?', (ident,)).fetchone()
         nome = re.sub(r'[<>:"/\\|?*\x00-\x1f]', '-', row['titulo'] if row else 'video').strip(' .') or 'video'
         headers.append(('Content-Disposition', f"attachment; filename*=UTF-8''{quote(nome + '.mp4')}"))
-    return data, headers, '206 Partial Content' if faixa else '200 OK'
+    return blocos(), headers, '206 Partial Content' if faixa else '200 OK'
 
 def arquivo(environ, path):
     """-> (status, content_type, data, extra_headers, csp, frame)"""
@@ -818,6 +828,7 @@ def arquivo(environ, path):
 
 def handle(environ):
     """Atende rotas do módulo. -> (status, headers, corpo) ou None se a rota não é deste módulo.
+    O corpo é bytes, ou um iterável de blocos no caso do vídeo.
     Host e origem já foram validados pelo server.py."""
     path = environ['PATH_INFO']
     if not (path.startswith('/api/ofertas/') or path.startswith('/ofertas/')): return None
@@ -848,6 +859,8 @@ def handle(environ):
         etag = '"' + hashlib.sha1(data).hexdigest()[:20] + '"'
         extra = [*extra, ('ETag', etag)]
         if etag in environ.get('HTTP_IF_NONE_MATCH', ''): status_http, data = '304 Not Modified', b''
-    headers = [('Content-Type', tipo), ('Content-Length', str(len(data))), ('Cache-Control', cache), ('X-Content-Type-Options', 'nosniff'),
-               ('X-Frame-Options', frame), ('Content-Security-Policy', csp), *[h for h in extra if h[0] != 'Cache-Control']]
+    # o vídeo vem em blocos (gerador) e já informa o próprio Content-Length; o resto vem em bytes
+    tamanho = next((v for k, v in extra if k == 'Content-Length'), None) or str(len(data))
+    headers = [('Content-Type', tipo), ('Content-Length', tamanho), ('Cache-Control', cache), ('X-Content-Type-Options', 'nosniff'),
+               ('X-Frame-Options', frame), ('Content-Security-Policy', csp), *[h for h in extra if h[0] not in ('Cache-Control', 'Content-Length')]]
     return status_http, headers, data

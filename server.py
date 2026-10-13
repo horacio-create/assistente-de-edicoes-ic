@@ -825,7 +825,7 @@ def app(environ, start_response):
         resposta = ofertas.handle(environ)  # /api/ofertas/* e /ofertas/*; o módulo trata os próprios erros
         if resposta:
             start_response(resposta[0], resposta[1])
-            return [resposta[2]]
+            return [resposta[2]] if isinstance(resposta[2], bytes) else resposta[2]
         if path.startswith('/api/'):
             if method == 'POST' and environ.get('HTTP_X_INDOOR') != '1': raise ValueError('Requisição inválida.')
             length = int(environ.get('CONTENT_LENGTH') or 0)
