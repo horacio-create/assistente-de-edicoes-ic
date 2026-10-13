@@ -30,7 +30,7 @@
           "tipo": "texto",
           "rotulo": "Nome",
           "max": 80,
-          "ajuda": "Até 80 caracteres. Nomes longos ficam com letra menor, em até 2 linhas."
+          "ajuda": "Até 80 caracteres. O nome quebra em linhas, sempre no mesmo tamanho."
         },
         {
           "id": "imagem",

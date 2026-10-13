@@ -851,21 +851,22 @@
       .nome {
         position: absolute;
         top: 6px;
-        left: 90px;
-        right: 90px;
+        left: 150px;
+        right: 150px;
         text-align: center;
         text-wrap: balance;
-        font-weight: 900;
+        font-weight: 700;
         font-size: 30px;
-        line-height: 1.12;
+        line-height: 1.2;
+        color: #333333;
       }
       /* tábua centralizada no produto (centro x=410); selo alinhado à borda direita da tábua */
       .foto-box {
         position: absolute;
         left: 120px;
-        top: 58px;
+        top: 86px;
         width: 580px;
-        height: 300px;
+        height: 272px;
         display: flex;
         justify-content: center;
         align-items: flex-end;
@@ -881,11 +882,11 @@
       /* preço normal — medidas do VT original: dígitos ~67px de altura, 37px à esquerda do selo */
       .de {
         position: absolute;
-        right: calc(100% - 375px);
-        top: 368px;
+        right: calc(100% - 400px);
+        top: 372px;
         display: flex;
         align-items: flex-start;
-        color: #5f4535;
+        color: #2f2f2f;
         font-family: "M PLUS Rounded 1c", sans-serif;
         font-weight: 900;
       }
@@ -897,20 +898,20 @@
         margin: 16px 4px 0 0;
       }
       .de .int {
-        font-size: 90px;
+        font-size: 112px;
         line-height: 1;
-        letter-spacing: -5px;
+        letter-spacing: -6px;
       }
       .de .cent-box {
         display: block;
-        margin-left: 2px;
+        margin-left: -4px;
       }
       .de .cent {
         display: block;
-        font-size: 52px;
+        font-size: 60px;
         line-height: 1;
         letter-spacing: -3px;
-        margin-top: 8px;
+        margin-top: 10px;
       }
       .de .un {
         display: block;
@@ -923,6 +924,7 @@
         margin-top: -6px;
       }
       .seta {
+        display: none;
         position: absolute;
         left: 364px;
         top: 446px;
@@ -937,9 +939,9 @@
         top: 322px;
         width: 229px;
         height: 175px;
-        background: #5f4535;
-        border-radius: 26px 26px 46px 46px;
-        color: #5f4535;
+        background: #e6e533;
+        border-radius: 30px;
+        color: #e6e533;
       }
       .selo-titulo {
         position: absolute;
@@ -947,7 +949,7 @@
         right: 0;
         top: 9px;
         text-align: center;
-        color: #fbf5ea;
+        color: #ad3325;
         font-family: Barlow, sans-serif;
         font-weight: 700;
         font-size: 22.5px;
@@ -959,8 +961,8 @@
         right: 3px;
         top: 33px;
         bottom: 3px;
-        background: #e9e112;
-        border-radius: 42px 42px 44px 44px;
+        background: #ad3325;
+        border-radius: 24px;
         font-family: "M PLUS Rounded 1c", sans-serif;
         font-weight: 900;
       }
@@ -982,7 +984,7 @@
         top: 27px;
         display: flex;
         justify-content: center;
-        gap: 3px;
+        gap: 0;
       }
       .selo-preco .int {
         font-size: 97px;
@@ -992,6 +994,7 @@
       .selo-preco .cent-box {
         position: relative;
         display: block;
+        margin-left: -4px;
       }
       .selo-preco .cent {
         display: block;
@@ -1058,7 +1061,7 @@
           '<span class="int" data-layout-allow-overlap></span><span class="cent-box"><span class="cent" data-layout-allow-overlap></span><span class="un" data-layout-allow-overlap></span></span>';
         el.innerHTML = '<span class="rs" data-layout-allow-overlap>R$</span>' + (noSelo ? '<div class="valor">' + valor + "</div>" : valor);
         el.querySelector(".int").textContent = int;
-        el.querySelector(".cent").textContent = (noSelo ? "" : ",") + cent;
+        el.querySelector(".cent").textContent = "," + cent;
         el.querySelector(".un").textContent = unidade;
       }
 
@@ -1066,9 +1069,8 @@
         const p = document.getElementById("tpl-produto").content.firstElementChild.cloneNode(true);
         const nome = p.querySelector(".nome");
         nome.textContent = campo(n, "nome");
-        // nomes longos (até 80 caracteres) diminuem a letra para caber em 2 linhas sem cobrir a foto
-        const letras = String(campo(n, "nome") || "").length;
-        nome.style.fontSize = (letras <= 34 ? 30 : letras <= 60 ? 23 : 21) + "px";
+        // tamanho único (30px), quebrando em linhas equilibradas; nomes de 3 linhas empurram a foto para baixo
+        if (String(campo(n, "nome") || "").length > 60) Object.assign(p.querySelector(".foto-box").style, { top: "122px", height: "236px" });
         const foto = p.querySelector(".foto");
         foto.src = campo(n, "imagem");
         foto.style.width = foto.style.height = (Number(campo(n, "tamanho")) || 1) * 100 + "%";
