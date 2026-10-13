@@ -903,13 +903,15 @@ function montarRender(card, r, media) {
   card.dataset.pedido = r.pedido;
   card.innerHTML = `<summary><span class="seta" aria-hidden="true"></span>
       <span class="titulo"><strong>${esc(r.titulo)}</strong><small>${origem(r.titulo, r.template)}<span class="info">${infoRender(r, media)}</span></small></span>
-      <span class="acoes"><span class="status ${r.status}">${STATUS[r.status]}</span>
+      <span class="acoes">${r.status === 'pronto' ? `<label class="check selecionar"><input type="checkbox" ${selecionados.has(r.id) ? 'checked' : ''}> Selecionar</label>` : ''}<span class="status ${r.status}">${STATUS[r.status]}</span>
       ${r.status === 'pronto' ? `<a class="primary botao-link" href="/ofertas/video/${r.id}.mp4?baixar=1">Baixar MP4</a>` : ''}
       ${['na_fila', 'gerando'].includes(r.status) ? '<button type="button" class="secondary cancelar">Cancelar</button>' : ''}
       <button type="button" class="text-button abrir">Abrir pedido</button></span>
       ${r.status === 'gerando' ? `<span class="progresso"><i style="width:${Math.min(95, (segundos(r) / media) * 100)}%"></i></span>` : ''}</summary>
     <div class="corpo">${corpoRender(r, media)}</div>`;
   card.querySelector('.abrir').onclick = async (e) => { e.preventDefault(); try { abrirPedido(await api('/pedido?id=' + r.pedido)); } catch (err) { falha(err); } };
+  const sel = card.querySelector('.selecionar input');
+  if (sel) sel.onchange = () => { if (sel.checked) selecionados.add(r.id); else selecionados.delete(r.id); desenharBaixarVarios(); };
   const c = card.querySelector('.cancelar');
   if (c) c.onclick = async (e) => { e.preventDefault(); await api('/render-cancelar', { body: { id: r.id } }).catch(falha); carregarFila(); };
   const tocar = card.querySelector('.tocar');
@@ -953,7 +955,50 @@ function desenharFila(renders, media) {
     existentes.delete(r.id);
   });
   existentes.forEach((c) => c.remove());
+  prontos = renders.filter((r) => r.status === 'pronto');
+  selecionados.forEach((id) => { if (!prontos.some((r) => r.id === id)) selecionados.delete(id); });
+  desenharBaixarVarios();
 }
+// ---------- baixar vários: ZIP com os nomes em sequência ("VT 1 - Carnes", "VT 2 - Carnes"…) ----------
+const selecionados = new Set();
+let prontos = [];
+const NOME_ZIP_CHAVE = 'ofertas-nome-zip';
+// mesma regra do servidor (nome_numerado): o primeiro número do nome avança; sem número, ganha " 1", " 2"…
+function nomeNumerado(primeiro, k) {
+  const m = /(?<!\w)\d{1,6}(?!\w)/.exec(primeiro);
+  if (!m) return `${primeiro} ${k + 1}`;
+  const n = String(Number(m[0]) + k).padStart(m[0].startsWith('0') ? m[0].length : 0, '0');
+  return primeiro.slice(0, m.index) + n + primeiro.slice(m.index + m[0].length);
+}
+function desenharBaixarVarios() {
+  const n = selecionados.size;
+  el('baixar-varios').hidden = !prontos.length;
+  el('selecionados').textContent = n ? `${n} selecionado${n > 1 ? 's' : ''}` : 'Nenhum selecionado';
+  el('selecionar-prontos').checked = n > 0 && n === prontos.length;
+  el('selecionar-prontos').indeterminate = n > 0 && n < prontos.length;
+  el('baixar-zip').disabled = !n;
+  const nome = el('nome-zip').value.trim();
+  el('nomes-zip').textContent = !n ? 'Marque os vídeos que vão no ZIP.'
+    : !nome ? 'Sem nome, cada arquivo leva o título do vídeo.'
+    : n > 1 ? `Nomes: ${nomeNumerado(nome, 0)}, ${nomeNumerado(nome, 1)}${n > 2 ? ` … ${nomeNumerado(nome, n - 1)}` : ''}` : `Nome: ${nomeNumerado(nome, 0)}`;
+}
+el('selecionar-prontos').addEventListener('change', (e) => {
+  prontos.forEach((r) => (e.target.checked ? selecionados.add(r.id) : selecionados.delete(r.id)));
+  el('lista-renders').querySelectorAll('details.render').forEach((card) => {
+    const sel = card.querySelector('.selecionar input');
+    if (sel) sel.checked = selecionados.has(card.dataset.id);
+  });
+  desenharBaixarVarios();
+});
+try { el('nome-zip').value = localStorage.getItem(NOME_ZIP_CHAVE) || ''; } catch {}
+el('nome-zip').addEventListener('input', () => { try { localStorage.setItem(NOME_ZIP_CHAVE, el('nome-zip').value); } catch {} desenharBaixarVarios(); });
+el('baixar-zip').addEventListener('click', () => {
+  // o servidor põe os vídeos na ordem em que foram gerados: o vídeo (1) do lote recebe o primeiro nome
+  const a = document.createElement('a');
+  a.href = `/ofertas/videos.zip?ids=${[...selecionados].join(',')}&nome=${encodeURIComponent(el('nome-zip').value.trim())}`;
+  document.body.append(a); a.click(); a.remove();
+  aviso(`Baixando ${selecionados.size} vídeo(s) em ZIP.`);
+});
 function todosCards(abrir) {
   el('lista-renders').querySelectorAll('details.render').forEach((d) => (d.open = abrir));
 }
