@@ -155,8 +155,9 @@ mesma tarefa); alteração é a tarefa com "alteração" na descrição ou numa 
 memória; **Atualizar** busca de novo. Cronômetro esquecido ligado conta só até o fim do mês do relatório.
 
 - **Chave:** variável de ambiente `CLOCKIFY_API_KEY` (Clockify → Preferências → Avançado → Gerar chave de API). No
-  servidor, uma linha `CLOCKIFY_API_KEY=...` em `deploy/.env` na VM (fora do git; o deploy preserva o arquivo) e um
-  `docker compose -f deploy/compose.yaml up -d`. A chave nunca vai para o repositório.
+  servidor, ela vem do secret `CLOCKIFY_API_KEY` do GitHub: a cada deploy a CI grava `deploy/.env` no pacote enviado
+  à VM, e o `compose.yaml` a repassa ao sistema. Trocou a chave? Atualize o secret; ela chega ao servidor no
+  próximo push na `main`. A chave nunca vai para o repositório.
 - **Espaço de trabalho:** o ativo do dono da chave; `CLOCKIFY_WORKSPACE` fixa outro pelo id.
 - Para ver a equipe inteira, a chave precisa ser de um administrador do espaço de trabalho no Clockify.
 - O cronômetro próprio do sistema (caixa "Nova atividade" antes das ferramentas) está guardado e desligado;

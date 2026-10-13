@@ -15,7 +15,7 @@ services:
       INDOOR_ALLOWED_HOSTS: "*"           # qualquer nome que chegue pelo proxy (a 8080 não é exposta)
       INDOOR_AUTH: "1"                    # login, cargos e convites (ver README, "Usuários e acesso")
       INDOOR_TRUSTED_PROXY: "*"           # confia no X-Forwarded-Proto do Caddy: cookie de sessão só em HTTPS
-      # Relatórios: chave de API do Clockify, lida de deploy/.env na VM (fora do git; o deploy preserva o arquivo)
+      # Relatórios: chave de API do Clockify, lida de deploy/.env (a CI grava o arquivo a partir do secret do GitHub)
       CLOCKIFY_API_KEY: ${CLOCKIFY_API_KEY:-}
       # Trabalhos simultâneos, dimensionados para uma e2-standard-4 (4 vCPU, 16 GB). Ao trocar de máquina, ajuste
       # estes números junto com cpus/mem_limit abaixo. Sem eles (app local), valem os padrões entre parênteses.

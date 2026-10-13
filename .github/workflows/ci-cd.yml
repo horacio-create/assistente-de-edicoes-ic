@@ -107,11 +107,20 @@ jobs:
         env:
           DEPLOY_HOST: ${{ vars.DEPLOY_HOST }}
           DEPLOY_USER: ${{ vars.DEPLOY_USER }}
-        # o script na VM recebe o código pelo stdin; a chave só tem permissão de rodar ele (command= no authorized_keys)
+          CLOCKIFY_API_KEY: ${{ secrets.CLOCKIFY_API_KEY }}
+        # o script na VM recebe o código pelo stdin; a chave só tem permissão de rodar ele (command= no authorized_keys).
+        # Com o secret CLOCKIFY_API_KEY, o pacote leva deploy/.env (lido pelo compose.yaml); o arquivo da VM é substituído.
         run: |
-          git archive --format=tar.gz HEAD |
+          git archive --format=tar HEAD > release.tar
+          if [ -n "$CLOCKIFY_API_KEY" ]; then
+            mkdir -p segredos/deploy && umask 077
+            printf 'CLOCKIFY_API_KEY=%s\n' "$CLOCKIFY_API_KEY" > segredos/deploy/.env
+            tar -rf release.tar -C segredos deploy/.env && rm -rf segredos
+          fi
+          gzip -c release.tar |
             ssh -i ~/.ssh/deploy -o BatchMode=yes -o StrictHostKeyChecking=yes -o ConnectTimeout=20 \
               "$DEPLOY_USER@$DEPLOY_HOST" deploy "$GITHUB_SHA"
+          rm -f release.tar
       - name: Conferir pelo endereço público
         run: |
           curl -fsS --retry 5 --retry-delay 5 https://assistente-edicao.indoorchannel.com.br/api/info | tee /dev/stderr | grep -q '"auth": true'
