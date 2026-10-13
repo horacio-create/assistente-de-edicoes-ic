@@ -850,23 +850,27 @@
       }
       .nome {
         position: absolute;
-        top: 6px;
-        left: 150px;
-        right: 150px;
+        top: 4px;
+        left: 90px;
+        right: 90px;
         text-align: center;
         text-wrap: balance;
-        font-weight: 700;
-        font-size: 30px;
-        line-height: 1.2;
-        color: #333333;
+        font-weight: 900;
+        /* tamanho fixo: até 80 caracteres em no máximo 2 linhas, acima da foto */
+        font-size: 25px;
+        line-height: 1.08;
+        display: -webkit-box;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 2;
+        overflow: hidden;
       }
       /* tábua centralizada no produto (centro x=410); selo alinhado à borda direita da tábua */
       .foto-box {
         position: absolute;
         left: 120px;
-        top: 86px;
+        top: 58px;
         width: 580px;
-        height: 272px;
+        height: 300px;
         display: flex;
         justify-content: center;
         align-items: flex-end;
@@ -1069,8 +1073,6 @@
         const p = document.getElementById("tpl-produto").content.firstElementChild.cloneNode(true);
         const nome = p.querySelector(".nome");
         nome.textContent = campo(n, "nome");
-        // tamanho único (30px), quebrando em linhas equilibradas; nomes de 3 linhas empurram a foto para baixo
-        if (String(campo(n, "nome") || "").length > 60) Object.assign(p.querySelector(".foto-box").style, { top: "122px", height: "236px" });
         const foto = p.querySelector(".foto");
         foto.src = campo(n, "imagem");
         foto.style.width = foto.style.height = (Number(campo(n, "tamanho")) || 1) * 100 + "%";

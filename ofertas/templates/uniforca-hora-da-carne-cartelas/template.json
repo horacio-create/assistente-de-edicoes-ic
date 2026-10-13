@@ -30,7 +30,7 @@
           "tipo": "texto",
           "rotulo": "Nome",
           "max": 80,
-          "ajuda": "Até 80 caracteres. O nome quebra em linhas, sempre no mesmo tamanho."
+          "ajuda": "Até 80 caracteres, em no máximo 2 linhas, sempre no mesmo tamanho."
         },
         {
           "id": "imagem",
