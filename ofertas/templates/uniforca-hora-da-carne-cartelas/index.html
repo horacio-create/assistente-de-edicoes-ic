@@ -2,7 +2,8 @@
 <!--
   TEMPLATE: Hora da Carne · cartelas variáveis (Rede Uniforça) — 15s, 1 a 6 cartelas de 2 produtos.
   Cópia do Hora da Carne: o vídeo tem sempre 15s, divididos entre as cartelas que vieram (produtos_total);
-  um produto sem par fica sozinho, centralizado. Visual e animação iguais aos do original.
+  um produto sem par fica sozinho, centralizado. Visual do original; entrada suave (produto cresce no lugar,
+  nome digitado, selo abre), como nos VTs da Uniforça, sem o produto passar por cima dos textos.
   Contrato da Fábrica de Vídeos: todo o conteúdo vem de window.__hyperframes.getVariables()
   (campos descritos em template.json). Não edite produtos aqui — use o sistema / dados.json.
 -->
@@ -1080,46 +1081,53 @@
       const tl = gsap.timeline({ paused: true });
 
       // Cartelas que vieram: 15s divididos entre elas (3 cartelas = 5s cada, como no original; 2 = 7,5s).
-      // Cada cartela começa 0,35s antes da anterior sair (transição sobreposta), como no original.
+      // Troca seca entre cartelas (a nova começa vazia e os produtos crescem no lugar), como nos VTs da Uniforça.
       const TOTAL = Math.max(1, Number(v.produtos_total) || 6);
       const N = Math.ceil(TOTAL / POR_PAINEL);
       const D = 15 / N;
-      const SOBREPOSICAO = 0.35;
-      // a animação foi feita para cartelas de 5s: as mais curtas aceleram; as mais longas mantêm o ritmo e quicam por mais tempo
+      // a entrada foi pensada para cartelas de 5s: nas mais curtas ela acelera
       const RITMO = Math.min(1, D / 5);
 
-      function animarProduto(alvo, p, inicio, D, i) {
-        const t = inicio + i * 0.14;
+      // nome digitado letra a letra; as palavras não quebram no meio
+      function letras(nome) {
+        const texto = nome.textContent;
+        nome.textContent = "";
+        const spans = [];
+        texto.split(/(\s+)/).forEach((parte) => {
+          if (!parte) return;
+          if (/^\s+$/.test(parte)) return nome.append(" ");
+          const palavra = document.createElement("span");
+          palavra.style.whiteSpace = "nowrap";
+          for (const ch of parte) {
+            const s = document.createElement("span");
+            s.textContent = ch;
+            palavra.append(s);
+            spans.push(s);
+          }
+          nome.append(palavra);
+        });
+        return spans;
+      }
+
+      // Entrada suave: cada elemento só cresce ou aparece dentro da própria área (escala de 0 a 1, sem passar do
+      // tamanho final e sem deslocamento), então o produto nunca passa por cima do nome nem dos preços.
+      function animarProduto(alvo, p, inicio, i) {
+        const t = inicio + 0.15 + i * 0.12;
         const box = p.querySelector(".foto-box");
-        const foto = p.querySelector(".foto");
-        const nome = p.querySelector(".nome");
         const selo = p.querySelector(".selo");
+        const conteudoSelo = [...selo.children];
         const precoNormal = [...p.querySelectorAll(".de, .seta")];
+        const nome = letras(p.querySelector(".nome"));
 
-        // ENTRADA — produto cai do topo e quica no quadro
-        alvo.fromTo(box, { y: -620, rotation: i ? 8 : -8 }, { y: 0, rotation: 0, duration: 1.0, ease: "bounce.out" }, t);
-        // squash & stretch nos impactos do bounce
-        alvo.fromTo(foto, { scaleY: 1.12, scaleX: 0.92 }, { scaleY: 1, scaleX: 1, duration: 0.18, ease: "sine.out" }, t + 0.36)
-          .to(foto, { scaleY: 0.9, scaleX: 1.08, duration: 0.07, ease: "sine.in" }, t + 0.54)
-          .to(foto, { scaleY: 1, scaleX: 1, duration: 0.25, ease: "elastic.out(1.2,0.4)" }, t + 0.61);
-        alvo.fromTo(nome, { y: -30, opacity: 0 }, { y: 0, opacity: 1, duration: 0.45, ease: "power3.out" }, t + 0.4);
-
-        // selo pula para dentro; preço normal desliza; seta aparece
-        alvo.fromTo(selo, { scale: 0, rotation: -12 }, { scale: 1, rotation: 0, duration: 0.6, ease: "back.out(2.6)" }, t + 0.75);
-        precoNormal.forEach((el, k) =>
-          alvo.fromTo(el, { x: k ? -14 : -40, opacity: 0 }, { x: 0, opacity: 1, duration: 0.4, ease: k ? "back.out(2)" : "power2.out" }, t + 0.9 + k * 0.25),
-        );
-
-        // VIDA — quiques leves até a saída (repeat ímpar = termina em repouso)
-        const meios = Math.floor((D - 0.5 - 1.35 - i * 0.14) / 0.42);
-        alvo.to(box, { y: -18, duration: 0.42, ease: "sine.out", yoyo: true, repeat: Math.max(1, meios % 2 ? meios - 2 : meios - 1) }, t + 1.35);
-        alvo.to(selo, { scale: 1.08, duration: 0.2, ease: "sine.inOut", yoyo: true, repeat: 1 }, t + 2.1);
-        alvo.to(selo, { scale: 1.08, duration: 0.2, ease: "sine.inOut", yoyo: true, repeat: 1 }, t + D - 1.6);
-
-        // SAÍDA — itens saltam e saem pela esquerda enquanto a próxima cartela cai
-        const saida = inicio + D - 0.5 + i * 0.06;
-        alvo.to(box, { y: -120, x: -260, rotation: -18, scale: 0.7, opacity: 0, duration: 0.42, ease: "back.in(1.6)" }, saida);
-        alvo.to([nome, selo, ...precoNormal], { x: -180, opacity: 0, duration: 0.3, ease: "power2.in" }, saida + 0.05);
+        // produto cresce no lugar, com um leve giro
+        alvo.fromTo(box, { scale: 0, rotation: -28, transformOrigin: "50% 60%" }, { scale: 1, rotation: 0, duration: 0.45, ease: "power3.out" }, t);
+        // nome aparece letra a letra
+        if (nome.length) alvo.fromTo(nome, { opacity: 0 }, { opacity: 1, duration: 0.01, stagger: Math.min(0.03, 0.5 / nome.length) }, t + 0.4);
+        // selo abre para os lados; depois aparecem o texto e o preço dentro dele
+        alvo.fromTo(selo, { scaleX: 0, transformOrigin: "50% 50%" }, { scaleX: 1, duration: 0.3, ease: "power2.out" }, t + 0.55);
+        alvo.fromTo(conteudoSelo, { opacity: 0 }, { opacity: 1, duration: 0.25, ease: "none" }, t + 0.8);
+        // preço normal e seta
+        if (precoNormal.length) alvo.fromTo(precoNormal, { opacity: 0 }, { opacity: 1, duration: 0.3, ease: "none" }, t + 0.8);
       }
 
       document.querySelectorAll(".painel").forEach((painel, k) => {
@@ -1127,15 +1135,14 @@
         painel.style.opacity = 0;
         if (k >= N) return;
         const inicio = k * D;
-        const fim = k < N - 1 ? inicio + D + SOBREPOSICAO : 15;
         tl.set(painel, { opacity: 1 }, inicio);
-        if (k < N - 1) tl.set(painel, { opacity: 0 }, fim);
-        // a cartela é animada no ritmo de 5s e acelerada para caber na sua janela
+        if (k < N - 1) tl.set(painel, { opacity: 0 }, inicio + D);
+        // a entrada é montada no ritmo de 5s e acelerada quando a cartela é mais curta
         const local = gsap.timeline();
         for (let i = 0; i < POR_PAINEL && k * POR_PAINEL + i < TOTAL; i++) {
           const p = montarProduto(k * POR_PAINEL + i + 1);
           painel.appendChild(p); // produto sozinho: o painel (flex, space-around) o centraliza
-          animarProduto(local, p, 0, (fim - inicio) / RITMO, i);
+          animarProduto(local, p, 0, i);
         }
         tl.add(local.timeScale(1 / RITMO), inicio);
       });
