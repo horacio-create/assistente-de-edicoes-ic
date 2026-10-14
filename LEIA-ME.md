@@ -128,6 +128,21 @@ Ajustes: **Sensibilidade** do fundo; **Preservar áreas internas da cor do fundo
 
 Em **Exportar logos**, escolha a pasta, o nome base e as versões. Os arquivos saem como `EAP - Cliente - fundo branco.png`, `… - fundo preto.png`, `… - transparente.png` e, no modo vetor, `EAP - Cliente.svg`. Arquivos existentes nunca são substituídos.
 
+## Molduras de TV — V1.12.0
+
+Abra **Molduras de TV** na barra lateral e clique em **Nova moldura**.
+
+1. **Cliente e TV:** nome do cliente, tamanho da TV (os sete em uso já estão na lista), quantidade e material. Para outra TV, escolha **Outro tamanho…**, digite as polegadas, clique em **Sugerir medida**, confira com a TV de verdade e clique em **Usar esta medida**.
+2. **Logo do cliente:** arraste ou escolha a logo. PDF, AI ou SVG saem nítidos em qualquer tamanho. Ajuste o tamanho e, se a logo sumir no fundo, ligue um **Fundo atrás da logo**.
+3. **Cores:** a moldura já segue as cores da logo. Clique numa cor para trocá-la, ou escolha uma cor da lista e clique numa sugestão. Referências (prints de posts, fachada) acrescentam sugestões.
+4. **Layout:** escolha o ramo do cliente e um dos quatro layouts.
+5. **Pattern:** escolha um dos prontos do ramo ou **Importar pattern** (SVG, AI ou PDF continuam vetoriais e mudam de cor; PNG e JPG entram como imagem). Aplique no fundo ou numa forma clicada na prévia e ajuste tamanho, espaçamento, giro e opacidade. Para não chamar atenção, use **Tom suave** ou diminua a opacidade. Clique num pattern aplicado para ajustá-lo ou removê-lo.
+6. **Editar desenho:** clique numa forma para trocar a cor, mudar a ordem, duplicar, apagar ou arrastar. **Mover pontos (avançado)** mostra os pontos da forma. **Desfazer** (Ctrl+Z) e **Voltar ao layout original**.
+
+**Zoom:** lupa no canto inferior direito ou Alt + roda do mouse (até 800%). Com zoom, segure **Espaço** e arraste, ou arraste com o botão da roda, para mover a vista. Vale também na Vetorização M6S.
+
+**Exportar PDFs** gera a folha de impressão e a faca de corte com os nomes no padrão da equipe. A moldura fica salva em **Molduras salvas** para reabrir ou gerar outro tamanho.
+
 ## Relatórios — V1.11.0
 
 Só para superadmins. Abra **Relatórios** na barra lateral e escolha o mês. Os números vêm do Clockify, onde a equipe registra o tempo: horas, tarefas, alterações e colaboradores; barras por etiqueta, projeto, colaborador e tarefa; e a lista de registros com filtro. **Atualizar** busca os dados mais recentes. **Exportar PDF** e **Exportar Excel** baixam o mês. Correções de tempo são feitas no próprio Clockify.

@@ -4,6 +4,7 @@
 const vectorDefaults={threshold:null,invert:false,smooth:1,detailMm:.08,denoise:true};
 let vec=null,vecSettings={...vectorDefaults},vecResult=null,vecSerial=0,vecTimer,vecFolder='',vecView='engrave';
 let vecParts=null,vecHistory=[],vecSel=null,vecOrigem='vetor',vecDrag=null;
+const vecZoom=criarZoom($('vector-svg'),document.querySelector('.vector-shell'));
 
 function vectorSync(){
  const s=vecSettings,fromVector=vec?.vetor&&vecOrigem==='vetor';
@@ -39,7 +40,7 @@ const svgNS='http://www.w3.org/2000/svg';
 function ringPath(r){return 'M'+r.map(([x,y])=>`${x.toFixed(3)} ${(-y).toFixed(3)}`).join(' L')+' Z';}
 function drawVector(){
  const r=vecResult,m=Math.max(r.width,r.height)*.04,svg=$('vector-svg'),g=$('vector-parts');
- svg.setAttribute('viewBox',`${-r.width/2-m} ${-r.height/2-m} ${r.width+2*m} ${r.height+2*m}`);
+ vecZoom.definir(-r.width/2-m,-r.height/2-m,r.width+2*m,r.height+2*m);
  svg.style.setProperty('--stroke',Math.max(r.width,r.height)/500);
  const nodes=[];
  vecParts.forEach((p,i)=>{
@@ -114,7 +115,7 @@ function simplifiedRing(r){let t=.03,s=simplify(r,t);while(s.length>80&&t<2){t*=
 function drawHandles(){
  const layer=$('vector-handles');layer.replaceChildren();
  if(!$('vector-advanced').open||!vecSel||vecSel.hole!=null||!vecParts?.[vecSel.part])return;
- const part=vecParts[vecSel.part],rings=[part.outer,...part.holes].map(simplifiedRing),size=Math.max(vecResult.width,vecResult.height)/90;
+ const part=vecParts[vecSel.part],rings=[part.outer,...part.holes].map(simplifiedRing),size=vecZoom.px(4);  // 4 px na tela, com ou sem zoom
  const outline=document.createElementNS(svgNS,'path');outline.setAttribute('d',rings.map(ringPath).join(' '));outline.classList.add('vector-handle-line');layer.append(outline);
  rings.forEach((ringPts,ri)=>ringPts.forEach(([x,y],pi)=>{
   const c=document.createElementNS(svgNS,'circle');c.setAttribute('cx',x);c.setAttribute('cy',-y);c.setAttribute('r',size);c.classList.add('vector-handle');
@@ -142,7 +143,7 @@ async function uploadVector(file){
   toast(`Abrindo ${file.name}…`);
   const response=await fetch(`/api/vector/upload?name=${encodeURIComponent(file.name)}`,{method:'POST',headers:{'X-Indoor':'1','Content-Type':'application/octet-stream'},body:file});
   const data=await response.json();if(!response.ok)throw new Error(data.error);
-  vec=data;vecResult=null;vecParts=null;vecHistory=[];vecSel=null;vecOrigem='vetor';vecSettings={...vectorDefaults};$('toast').hidden=true;
+  vec=data;vecZoom.novo();vecResult=null;vecParts=null;vecHistory=[];vecSel=null;vecOrigem='vetor';vecSettings={...vectorDefaults};$('toast').hidden=true;
   $('vector-name').textContent=vec.name;$('vector-original').src=`/vetor/${vec.id}`;$('vector-parts').replaceChildren();
   vectorSync();queueTrace();
  });
@@ -193,4 +194,5 @@ $('vector-save').onclick=()=>guard(async()=>{
  }catch(e){$('vector-result').textContent=e.message;throw e;}
 });
 $('vector-filename').oninput=()=>{$('vector-save').disabled=false;$('vector-result').hidden=true;};
+$('vector-svg').addEventListener('zoom',()=>{if(!vecDrag)drawHandles();});
 setVectorView('engrave');vectorSync();

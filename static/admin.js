@@ -1,5 +1,5 @@
 // Tela Usuários (só superadmin, com login no servidor): lista de pessoas + painel com convite, convites pendentes e cargos.
-const ADMIN_TOOLS = {images: 'Imagens', video: 'Vídeos', offers: 'Ofertas', eap: 'Logo EAP', ms6: 'Vetorização M6S'};
+const ADMIN_TOOLS = {images: 'Imagens', video: 'Vídeos', offers: 'Ofertas', eap: 'Logo EAP', ms6: 'Vetorização M6S', molduras: 'Molduras de TV'};
 const ADMIN_BRANDS = {indoor: {name: 'Indoor Channel', icon: '/favicon.svg?v=13'}, eap: {name: 'EAP', icon: '/eap-icon.svg'}};
 let adminEditing = null;  // id do cargo aberto para edição ('novo' = criando)
 const adminLinks = {};    // links gerados (convite e nova senha) continuam à vista quando a tela re-renderiza

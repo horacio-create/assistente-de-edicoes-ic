@@ -7,7 +7,8 @@ const HOME_TOOLS = {
  video: {name: 'Vídeos', icon: 'video', kind: 'video', view: 'studio', text: 'Monte vídeos com cortes, camadas, áudio, logo e fundo desfocado; exporte em MP4 dentro do tamanho máximo.'},
  offers: {name: 'Ofertas', icon: 'tag', view: 'ofertas', text: 'Gere vídeos de ofertas de supermercado a partir de templates e encartes.'},
  ms6: {name: 'Vetorização M6S', icon: 'spline', view: 'vector', text: 'Transforma a logo do cliente em contornos DXF para gravar o microfone M6S no laser.'},
- eap: {name: 'Logo EAP', icon: 'hexagon', view: 'eap', text: 'Limpa ou vetoriza a logo do cliente e entrega os PNGs em 1024 × 1024 prontos para uso.'}
+ eap: {name: 'Logo EAP', icon: 'hexagon', view: 'eap', text: 'Limpa ou vetoriza a logo do cliente e entrega os PNGs em 1024 × 1024 prontos para uso.'},
+ molduras: {name: 'Molduras de TV', icon: 'moldura', view: 'molduras', text: 'Cria a moldura da TV na identidade do cliente e gera a folha de impressão e a faca de corte em PDF.'}
 };
 const HOME_BRAND = {
  indoor: {eyebrow: 'Indoor Channel · Assistente de Edições', text: 'Prepare artes, vídeos, ofertas e logos para as telas da Indoor Channel, direto no navegador. Escolha uma ferramenta abaixo ou veja um tutorial antes de começar.'},

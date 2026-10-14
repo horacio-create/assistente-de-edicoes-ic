@@ -20,7 +20,7 @@ from version import VERSION
 from modules.images import DEFAULT, SUPPORTED, decode, dominant, encoded, render, settings
 from modules import ofertas
 from modules import videos, audio, composition, naming, export_progress, export_queue, projects, import_tasks
-from modules import eap, vector, auth, home, relatorios, relatorios_export, clockify
+from modules import eap, vector, auth, home, relatorios, relatorios_export, clockify, molduras_api
 from PIL import Image
 from storage import DATA, FERRAMENTA, ROOT, USUARIO, connect, event, get_job, init, mine, now, owner, uid
 
@@ -59,7 +59,7 @@ def validate_host(host):
             raise ValueError()
     except ValueError:
         raise ValueError('Host não autorizado.') from None
-MODULES = [{'id': 'images', 'name': 'Imagens', 'active': True}, {'id': 'video', 'name': 'Vídeos', 'active': True}, {'id': 'conteudos', 'name': 'Conteúdos Indoor', 'active': False}, {'id': 'offers', 'name': 'Ofertas de supermercados', 'active': True}, {'id': 'eap', 'name': 'Logo EAP', 'active': True}, {'id': 'ms6', 'name': 'Vetorização M6S', 'active': True}]
+MODULES = [{'id': 'images', 'name': 'Imagens', 'active': True}, {'id': 'video', 'name': 'Vídeos', 'active': True}, {'id': 'conteudos', 'name': 'Conteúdos Indoor', 'active': False}, {'id': 'offers', 'name': 'Ofertas de supermercados', 'active': True}, {'id': 'eap', 'name': 'Logo EAP', 'active': True}, {'id': 'ms6', 'name': 'Vetorização M6S', 'active': True}, {'id': 'molduras', 'name': 'Molduras de TV', 'active': True}]
 
 # login só no servidor (deploy/compose.yaml); o app local/portátil continua aberto
 AUTH = os.environ.get('INDOOR_AUTH') == '1'
@@ -67,7 +67,7 @@ AUTH = os.environ.get('INDOOR_AUTH') == '1'
 CRONOMETRO = os.environ.get('INDOOR_CRONOMETRO') == '1'
 PUBLIC = ('/login.html', '/login.js', '/style.css', '/acesso.css', '/favicon.svg', '/logo-indoor.png', '/api/info')
 # ferramenta exigida por prefixo; o resto do /api e as mídias são do editor (Imagens ou Vídeos)
-TOOLS = [(('/api/history', '/api/home', '/home/', '/api/atividades', '/api/relatorios', '/relatorios/'), None), (('/api/ofertas/', '/ofertas/'), {'offers'}), (('/api/vector/', '/vetor/'), {'ms6'}), (('/api/eap/', '/eap/'), {'eap'}),
+TOOLS = [(('/api/history', '/api/home', '/home/', '/api/atividades', '/api/relatorios', '/relatorios/'), None), (('/api/ofertas/', '/ofertas/'), {'offers'}), (('/api/vector/', '/vetor/'), {'ms6'}), (('/api/molduras/', '/molduras/'), {'molduras'}), (('/api/eap/', '/eap/'), {'eap'}),
          (('/api/', '/media/', '/logo/', '/video/', '/audio/', '/entrega'), {'images', 'video'})]
 
 class Conflict(Exception): pass
@@ -357,7 +357,7 @@ def run_export(token, row, plan):
     return response
 
 def api(method, path, query, raw, environ=None, background=False):
-    value = json.loads(raw) if raw and path not in ('/api/upload', '/api/logo', '/api/vector/upload', '/api/eap/upload', '/api/home/foto', '/api/home/tutorial') else {}
+    value = json.loads(raw) if raw and path not in ('/api/upload', '/api/logo', '/api/vector/upload', '/api/eap/upload', '/api/home/foto', '/api/home/tutorial', '/api/molduras/logo', '/api/molduras/referencia', '/api/molduras/padrao') else {}
     if path == '/api/info':
         user = USUARIO.get()
         if AUTH and not user: return dict(version=VERSION, auth=True, user=None)
@@ -374,6 +374,10 @@ def api(method, path, query, raw, environ=None, background=False):
             mes = relatorios.mes_valido(query.get('mes', [now()[:7]])[0])
             return clockify.relatorio(mes, atualizar=query.get('atualizar', ['0'])[0] == '1')
         raise ValueError('Operação não encontrada.')
+    if path.startswith('/api/molduras/'):
+        if path in ('/api/molduras/logo', '/api/molduras/referencia', '/api/molduras/exportar', '/api/molduras/gerar', '/api/molduras/padrao', '/api/molduras/padrao-aplicar'):
+            with LEVE: return molduras_api.api(method, path, value, query, raw, USUARIO.get(), salvar_molduras)
+        return molduras_api.api(method, path, value, query, raw, USUARIO.get(), salvar_molduras)
     if path.startswith('/api/home'):
         user = USUARIO.get()
         tools = auth.allowed(user, MODULES) if user else [m['id'] for m in MODULES if m['active']]
@@ -627,6 +631,15 @@ def api(method, path, query, raw, environ=None, background=False):
         return eap_api(path, query, value, raw)
     raise ValueError('Operação não encontrada.')
 
+def salvar_molduras(folder, arquivos):
+    """Grava a folha de impressão e a faca de corte, sem substituir arquivos existentes."""
+    pasta = directory(folder)
+    destinos = [pasta / clean(nome) for nome, _ in arquivos]
+    refuse_existing(destinos)
+    for dest, (_, data) in zip(destinos, arquivos): write_new(dest, data)
+    with connect() as db: event(db, None, 'Moldura exportada', {'arquivos': [str(d) for d in destinos]})
+    return [str(d) for d in destinos]
+
 def stored(folder, ident):
     if not isinstance(ident, str) or not re.fullmatch(r'[0-9a-f]{32}', ident): raise ValueError('Logo inválida.')
     source = DATA / folder / (ident + '.png')
@@ -805,7 +818,7 @@ def app(environ, start_response):
             raise ValueError('Origem não autorizada.')
         user = auth.user_from(environ) if AUTH else None
         USUARIO.set(user)  # a thread do waitress é reaproveitada: sempre redefinir
-        FERRAMENTA.set(next((t for prefix, t in (('/api/ofertas/', 'offers'), ('/api/vector/', 'ms6'), ('/api/eap/', 'eap')) if path.startswith(prefix)), None))
+        FERRAMENTA.set(next((t for prefix, t in (('/api/ofertas/', 'offers'), ('/api/vector/', 'ms6'), ('/api/eap/', 'eap'), ('/api/molduras/', 'molduras')) if path.startswith(prefix)), None))
         if AUTH and path.startswith(('/api/auth/', '/api/admin/')):
             if method == 'POST' and environ.get('HTTP_X_INDOOR') != '1': raise ValueError('Requisição inválida.')
             length = int(environ.get('CONTENT_LENGTH') or 0)
@@ -853,6 +866,10 @@ def app(environ, start_response):
             start_response('200 OK', [('Content-Type', content_type), ('Content-Length', str(len(data))), ('Cache-Control', 'no-store'),
                                       ('Content-Disposition', f'attachment; filename="{path.rsplit("/", 1)[1]}"'), ('X-Content-Type-Options', 'nosniff')])
             return [data]
+        elif path.startswith('/molduras/padrao/'):
+            data, content_type = molduras_api.previa_padrao(path.split('/')[-1]), 'image/png'
+        elif path.startswith('/molduras/logo/'):
+            data, content_type = molduras_api.previa_logo(path.split('/')[-1]), 'image/png'
         elif path.startswith('/home/foto/'):
             ident = path.split('/')[-1]
             if not re.fullmatch(r'[0-9a-f]{32}', ident): raise ValueError('Foto inválida.')
@@ -874,7 +891,7 @@ def app(environ, start_response):
             content_type = 'image/png'
         else:
             name = 'index.html' if path == '/' else path.lstrip('/')
-            if name not in ('index.html','app.js','video-controls.js','composition-controls.js','project-controls.js','editor-layout.js','audio-panels.js','transform-controls.js','clip-dialogs.js','editing-tabs.js','preview-ruler.js','icons.js', 'edition-names.js','export-progress.js','undo-history.js','vector.js','eap.js','style.css','favicon.svg','logo-indoor.png','ofertas.js','ofertas.css','tarefas.js','tarefas.css','login.html','login.js','admin.js','acesso.css','conta.js','home.js','eap-icon.svg','atividades.js','relatorios.js'): raise FileNotFoundError()
+            if name not in ('index.html','app.js','video-controls.js','composition-controls.js','project-controls.js','editor-layout.js','audio-panels.js','transform-controls.js','clip-dialogs.js','editing-tabs.js','preview-ruler.js','icons.js', 'edition-names.js','export-progress.js','undo-history.js','vector.js','eap.js','style.css','favicon.svg','logo-indoor.png','ofertas.js','ofertas.css','tarefas.js','tarefas.css','login.html','login.js','admin.js','acesso.css','conta.js','home.js','eap-icon.svg','atividades.js','relatorios.js','molduras.js','zoom.js'): raise FileNotFoundError()
             data = (ROOT / 'static' / name).read_bytes()
             content_type = mimetypes.guess_type(name)[0] or 'application/octet-stream'
     except Conflict as exc:

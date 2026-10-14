@@ -1,5 +1,39 @@
 # Histórico de versões
 
+## 1.12.0 — Molduras de TV — 14/10/2026
+
+- Nova ferramenta Molduras de TV (permissão própria por cargo): moldura personalizada na identidade
+  do cliente, com folha de impressão e faca de corte em PDF.
+- Medidas tiradas das facas reais: janela = medida da TV; bordas fixas de 5,5 cm (4,5 cm na de 32");
+  aba da logo de 58,5 × 5,5 cm, ampliada nas molduras maiores que 105,5 cm; folha com 1,25 cm de
+  margem, sangria de 0,5 cm e marcas de corte. Os sete tamanhos em uso já vêm na lista; para outra
+  TV, as polegadas sugerem a medida (≈ 2,2 cm por polegada) e a medida real pode ser corrigida.
+- 40 layouts vetoriais, 4 por ramo: supermercados, academias, restaurantes, lanchonetes, clínicas,
+  salões de beleza, padarias, confeitarias, conveniências e ambientes corporativos. Cada um usa cinco papéis
+  de cor; trocar uma cor recolore a moldura inteira.
+- Cores do cliente lidas da logo e de referências (prints de posts, fachada, cardápio), com
+  distribuição automática; sem identidade visual, cada ramo tem uma paleta própria.
+- Logo do cliente na aba, com tamanho ajustável e fundo opcional (placa, círculo ou forma orgânica);
+  PDF, AI e SVG continuam vetoriais no arquivo final. Aviso quando a logo fica com pouco contraste.
+- Logo Indoor Channel automática: branca sobre fundo escuro e escura sobre fundo claro.
+- Editar desenho: clicar numa forma, trocar a cor, trazer para frente, enviar para trás, duplicar,
+  apagar, arrastar e mover pontos (avançado); desfazer e voltar ao layout original.
+- PDFs em CMYK no tamanho real, com a caixa Cliente/Tamanho/Quantidade/Material; nomes no padrão
+  "Folha de Impressão <Cliente> - <N> Polegadas (L x A cm)" e "Faca de Corte ...".
+- Patterns: um grafismo repetido no fundo ou dentro de uma forma, com tamanho, espaçamento, giro,
+  opacidade e cor (paleta, branco, cores originais, qualquer cor ou "Tom suave", perto da cor de fundo).
+  Quatro prontos por ramo (espiga, pão, baguete, grão de café, halter, cruz, cupcake...) e importação
+  de SVG, AI e PDF (vetoriais, recortados no contorno, recoloríveis) ou PNG e JPG (imagem).
+  Lista "Patterns aplicados" no passo 5 para editar ou remover cada um, ou remover todos.
+- Molduras salvas por cliente, para a equipe toda reabrir, ajustar ou gerar outro tamanho.
+- Prévia "Faca de corte" só com o guia de corte (contorno, janela e identificação): sem logo Indoor
+  Channel e sem as etapas de logo, cores, layout e desenho, que ficam na folha de impressão.
+- Ícone da ferramenta no formato da moldura Indoor Channel, com a aba da logo.
+- Zoom nas prévias da Vetorização M6S e das Molduras: lupa no canto inferior direito ou Alt + roda
+  do mouse, de 100% a 800%. Com zoom, a vista se move segurando Espaço e arrastando, arrastando
+  com o botão da roda ou com Alt + arrastar.
+- Pontos de âncora de "Mover pontos" menores e sempre do mesmo tamanho na tela, em qualquer zoom.
+
 ## 1.11.0 — Relatórios do Clockify e edição de vetores M6S — 13/10/2026
 
 ### Relatórios

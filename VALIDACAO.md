@@ -1,4 +1,27 @@
-# Verificação da versão oficial 1.11.0
+# Verificação da versão oficial 1.12.0
+
+## Molduras de TV — 14/10/2026
+
+- 211 testes Python no Windows, nenhuma falha; 21 pulados (motor de Ofertas sem Node.js e
+  encartes de referência). Patterns: os prontos de todos os ramos ficam dentro da folha e nada fica
+  escondido atrás da tela; pattern dentro de uma forma fica recortado nela; SVG de duas cores vira dois
+  grupos (a cor de cima vaza a de baixo, como no arquivo); PNG vira camada única no PDF; fonte e
+  arquivo inválidos recusados. Novos testes: folhas de 32", 39", 40", 43" e 46" iguais às facas reais;
+  TV de 60" sugerida e bordas fixas; os 36 layouts em quatro tamanhos (32" a 60") viram PDF válido;
+  tudo em CMYK; logo Indoor Channel clara ou escura conforme o fundo; cores da logo distribuídas
+  nos papéis; caminhos e cores inválidos recusados; fluxo completo (logo PNG e SVG, referência,
+  sugestão de cores, fundo da logo, salvar, listar, abrir, renomear, exportar, não substituir
+  arquivos, excluir) e dados inválidos.
+- Arquivos gerados conferidos em imagem: faca com o mesmo contorno das facas reais (aba à esquerda);
+  folha com sangria, marcas de corte, logo Indoor Channel e caixa de identificação.
+- Navegador: nova moldura, logo enviada com cores aplicadas, troca de ramo e layout, cores
+  automáticas, seleção, recolorir, arrastar, mover pontos e desfazer; zoom de 100% a 800% com Alt +
+  roda e pela lupa; pan com Espaço + arrastar e com o botão da roda, sem mexer no desenho; pontos de
+  âncora com 8 px na tela em qualquer zoom, também na Vetorização M6S. Patterns: espiga no fundo
+  (50% de opacidade, girada), SVG de duas cores dentro das listras do toldo, PNG no fundo; PDF igual à
+  prévia; troca de cor na hora, cor livre, tom suave, cores originais e desfazer.
+
+# Verificação da versão 1.11.0
 
 ## Relatórios do Clockify e edição de vetores M6S — 13/10/2026
 

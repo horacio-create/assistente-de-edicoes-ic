@@ -8,7 +8,7 @@ import threading
 from PIL import Image, ImageOps
 from storage import DATA, uid
 
-TOOLS = ('images', 'video', 'offers', 'ms6', 'eap')
+TOOLS = ('images', 'video', 'offers', 'ms6', 'eap', 'molduras')
 MAX_FOTOS = 12
 LOCK = threading.Lock()
 

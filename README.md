@@ -1,4 +1,4 @@
-# Assistente de Edições — versão web V1.11.0
+# Assistente de Edições — versão web V1.12.0
 
 Aplicação web local de padronização de imagens e montagem de vídeos da Indoor Channel.
 
@@ -145,6 +145,16 @@ No servidor (`deploy/`), `INDOOR_AUTH=1` liga o login; no PC e no executável po
 - **Esqueceu a senha:** na tela Usuários, **Redefinir senha** gera um link (7 dias, uso único) para a pessoa definir uma senha nova; ao usar, as sessões abertas em outros aparelhos são encerradas.
 - Desativar um usuário encerra as sessões dele na hora. Cinco senhas erradas seguidas bloqueiam o e-mail por 15 minutos.
 
+## Molduras de TV
+
+Cria a moldura personalizada da TV do cliente e gera os dois arquivos de produção: folha de impressão e
+faca de corte, em PDF CMYK no tamanho real. Geometria em `modules/molduras_geometria.py` (medida nas
+facas reais), layouts em `modules/molduras_layouts.py` (4 por ramo, só formas vetoriais com papéis de
+cor), patterns em `modules/molduras_padroes.py` (módulo repetido e recortado com Shapely; imagens viram
+uma camada no PDF), cores, logo e PDFs em `modules/molduras.py`, rotas em `modules/molduras_api.py` e tela em
+`static/molduras.js`. A logo Indoor Channel vetorial está em `modules/molduras_dados/logo_indoor.json`.
+Molduras salvas ficam na tabela `molduras` e são da equipe toda; logos em `dados/molduras/logos`.
+
 ## Relatórios (Clockify)
 
 A equipe registra o tempo no Clockify; a tela **Relatórios** (só superadmins, no servidor com login) lê os registros
@@ -202,7 +212,7 @@ node tests/test_undo.cjs
 cd ofertas/motor && npm test   # contrato de templates de Ofertas
 ```
 
-A V1.11.0 tem 199 testes Python, incluindo os do módulo Ofertas (os 20 que dependem do motor são pulados sem Node.js e o do extrator com encartes reais conferidos é pulado sem `OFERTAS_ENCARTES`), além de cinco testes JavaScript e oito testes do contrato em `ofertas/motor`. Os testes de vídeo usam
+A V1.12.0 tem 211 testes Python, incluindo os do módulo Ofertas (os 20 que dependem do motor são pulados sem Node.js e o do extrator com encartes reais conferidos é pulado sem `OFERTAS_ENCARTES`), além de cinco testes JavaScript e oito testes do contrato em `ofertas/motor`. Os testes de vídeo usam
 FFmpeg e arquivos sintéticos temporários. Node.js é necessário apenas para os testes JavaScript.
 O teste de navegador em `tests/test_composition_browser.cjs` usa Playwright, uma instância
 isolada, um vídeo sintético de cinco segundos e imagens verdes/amarelas ao lado dele.
