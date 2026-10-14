@@ -110,10 +110,11 @@ function syncEditorKind() {
   $('empty').querySelector('p:not(.help)').textContent = video ? 'Arraste vídeos para esta área ou clique para escolher.' : 'Arraste imagens para esta área ou clique para escolher.';
   $('add-files').textContent = video ? 'Escolher vídeos' : 'Escolher imagens';
   const formats = video ? 'MP4, MOV, MKV, AVI, WebM e outros vídeos' : 'JPG, PNG, WebP, BMP, TIFF e PDF';
-  $('empty').querySelector('.help').textContent = formats + ' · até 100 MB por arquivo';
+  const limite = video ? 'até 200 MB por arquivo' : 'até 100 MB por arquivo';
+  $('empty').querySelector('.help').textContent = formats + ' · ' + limite;
   $('editor').querySelector('.step-label').textContent = video ? 'Ajustar vídeo' : 'Ajustar imagem';
   $('filmstrip').querySelector('.step-label').textContent = video ? 'Vídeos adicionados' : 'Imagens adicionadas';
-  $('filmstrip').querySelector('.section-title p').textContent = `Arraste mais ${video ? 'vídeos' : 'imagens'} aqui ou use o botão +. ${formats} · até 100 MB por arquivo.`;
+  $('filmstrip').querySelector('.section-title p').textContent = `Arraste mais ${video ? 'vídeos' : 'imagens'} aqui ou use o botão +. ${formats} · ${limite}.`;
   $('format').replaceChildren();
   for (const [value, label] of video ? [['mp4', 'MP4 · compatível com as telas']] : [['jpg', 'JPG · alta qualidade'], ['png', 'PNG · sem perdas']]) {
     const option = document.createElement('option'); option.value = value; option.textContent = label; $('format').append(option);

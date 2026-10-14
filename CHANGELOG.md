@@ -1,5 +1,15 @@
 # Histórico de versões
 
+## 1.12.1 — Vídeos de até 200 MB — 14/10/2026
+
+- Editor de vídeos aceita arquivos de até 200 MB (antes, 100 MB). Imagens, logos, patterns e as outras
+  ferramentas continuam com 100 MB.
+- No servidor, o limite do proxy (Caddy) vem de INDOOR_UPLOAD_MAX no compose.yaml (210 MB): mudar a
+  variável recria o proxy no deploy, o que só editar o Caddyfile não fazia.
+- Teste de carga com vídeos 2K (2560 × 1440) e o servidor preso a 4 núcleos, como a VM: 187 MB / 100 s
+  importado em 16 s; 174 MB / 10 min em 60 s; os dois ao mesmo tempo em 36 s e 73 s. Pico de memória
+  ~1 GB no total (de 12 GB); o sistema seguiu respondendo em 0,1 s; quadros da prévia em menos de 1 s.
+
 ## 1.12.0 — Molduras de TV — 14/10/2026
 
 - Nova ferramenta Molduras de TV (permissão própria por cargo): moldura personalizada na identidade

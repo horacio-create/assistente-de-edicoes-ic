@@ -1,4 +1,13 @@
-# Verificação da versão oficial 1.12.0
+# Verificação da versão oficial 1.12.1
+
+## Vídeos de até 200 MB — 14/10/2026
+
+- 211 testes Python, nenhuma falha (21 pulados, como antes).
+- Carga, servidor de teste limitado a 4 núcleos (como a e2-standard-4): vídeos 2K de 187 MB (100 s) e
+  174 MB (10 min) importados em 16 s e 60 s; simultâneos em 36 s e 73 s; pico de memória do servidor
+  516 MB e do FFmpeg 478 MB; API respondendo em até 0,1 s durante as importações; prévia em 0,35–0,8 s.
+
+# Verificação da versão 1.12.0
 
 ## Molduras de TV — 14/10/2026
 

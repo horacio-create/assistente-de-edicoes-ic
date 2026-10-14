@@ -151,7 +151,7 @@ syncEditorKind=function(){
   $('files').accept='.mp4,.mov,.m4v,.mkv,.avi,.webm,.wmv,.mpg,.mpeg,.mp3,.wav,.m4a,.aac,.ogg,.oga,.flac,.opus,.wma,.aif,.aiff,.jpg,.jpeg,.png,.webp,.bmp,.tif,.tiff,.pdf';
   $('empty').querySelector('h2').textContent='Traga seus vídeos, imagens ou áudios.';$('add-files').textContent='Escolher mídias';
   $('empty').querySelector('p:not(.help)').textContent='Adicione vídeos, imagens e áudios à biblioteca para montar seu vídeo.';
-  $('empty').querySelector('.help').textContent='Vídeos, imagens, áudios e páginas de PDF · até 100 MB por arquivo';
+  $('empty').querySelector('.help').textContent='Vídeos, imagens, áudios e páginas de PDF · até 200 MB por arquivo';
   document.querySelector('.export-bar > div > span:last-child').textContent='Uma montagem em MP4 · confira o áudio antes de exportar';
  }
 };
@@ -412,7 +412,7 @@ upload=async function(files){
   if(!job)job=await request('/api/jobs',{kind:'video'});ensureProject();markDirty();await save();const failures=[];let firstAdded=false;
   for(let i=0;i<files.length;i++){
    if(session.cancelled)break;const f=files[i];$('import-modal-detail').textContent=`${i+1} de ${files.length}: ${f.name}`;
-   if(f.size>100*1024*1024){failures.push(f.name+': acima de 100 MB.');continue;}
+   if(f.size>200*1024*1024){failures.push(f.name+': acima de 200 MB.');continue;}
    const known=new Set(job.media.map(m=>m.id));
    try{
     const data=await fetchImportFile(f);job=data.job;if(data.cancelled)break;

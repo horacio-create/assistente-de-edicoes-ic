@@ -1,4 +1,4 @@
-# Assistente de Edições — versão web V1.12.0
+# Assistente de Edições — versão web V1.12.1
 
 Aplicação web local de padronização de imagens e montagem de vídeos da Indoor Channel.
 
@@ -28,7 +28,7 @@ Logo EAP e Vetorização M6S também estão disponíveis na barra lateral.
 
 ## Vídeos
 A seção Vídeos fica abaixo de Imagens na barra lateral. Importa MP4, AVI, MOV, MKV e WebM,
-além de M4V, WMV e MPEG, até 100 MB por arquivo. A compatibilidade depende também do codec
+além de M4V, WMV e MPEG, até 200 MB por arquivo. A compatibilidade depende também do codec
 e da integridade do arquivo. Os originais são preservados.
 
 Também aceita músicas em MP3, WAV, M4A, AAC, OGG, FLAC, Opus, WMA e AIFF.

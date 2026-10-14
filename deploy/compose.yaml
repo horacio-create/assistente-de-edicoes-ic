@@ -40,6 +40,8 @@ services:
     container_name: assistente-edicoes-acesso
     restart: unless-stopped
     depends_on: [assistente]
+    environment:
+      INDOOR_UPLOAD_MAX: "210MB"          # corpo máximo aceito (Caddyfile); vídeos de até 200 MB
     ports:
       - "80:80"
       - "443:443"

@@ -31,7 +31,8 @@ EXPORTAR = threading.Semaphore(export_queue.WORKERS)                   # exporta
 IMPORTAR = threading.Semaphore(int(os.environ.get('INDOOR_IMPORTS', '2')))  # importar: recodifica o vídeo enviado
 LEVE = threading.Semaphore(int(os.environ.get('INDOOR_LEVES', '4')))       # prévia, logos de M6S/EAP, vetorização
 PICKER = threading.Lock()
-MAX_UPLOAD = 100 * 1024 * 1024
+MAX_UPLOAD = 200 * 1024 * 1024        # vídeos do editor de vídeos (/api/upload em trabalho de vídeo)
+MAX_ARQUIVO = 100 * 1024 * 1024       # demais envios: imagens, logos, patterns, fotos e tutoriais
 
 def local_hosts():
     names = {'localhost', '127.0.0.1', '::1', socket.gethostname().lower(), socket.getfqdn().lower()}
@@ -842,7 +843,8 @@ def app(environ, start_response):
         if path.startswith('/api/'):
             if method == 'POST' and environ.get('HTTP_X_INDOOR') != '1': raise ValueError('Requisição inválida.')
             length = int(environ.get('CONTENT_LENGTH') or 0)
-            if length > MAX_UPLOAD: raise ValueError('Limite de 100 MB por arquivo.')
+            if length > (MAX_UPLOAD if path == '/api/upload' else MAX_ARQUIVO):
+                raise ValueError('Limite de 200 MB por vídeo.' if path == '/api/upload' else 'Limite de 100 MB por arquivo.')
             body = environ['wsgi.input'].read(length)
             result = api(method, path, parse_qs(environ.get('QUERY_STRING', '')), body, environ, background=True)
             data = json.dumps(result, ensure_ascii=False).encode()

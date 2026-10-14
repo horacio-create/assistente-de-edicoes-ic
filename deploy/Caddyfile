@@ -3,8 +3,10 @@
 # O HTTP do domínio redireciona para o HTTPS sozinho. O login é do próprio sistema (INDOOR_AUTH no compose.yaml).
 
 assistente-edicao.indoorchannel.com.br {
+	# limite do corpo: vem de INDOOR_UPLOAD_MAX no compose.yaml (vídeos de até 200 MB + folga). Mudar a variável
+	# recria este contêiner no deploy; só editar este arquivo não basta, o Caddy não relê sozinho.
 	request_body {
-		max_size 110MB
+		max_size {$INDOOR_UPLOAD_MAX:210MB}
 	}
 	# comprime HTML/JS/JSON (o runtime do HyperFrames da prévia cai de ~490 KB para ~150 KB)
 	encode zstd gzip
