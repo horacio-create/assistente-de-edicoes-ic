@@ -25,6 +25,9 @@
   Quatro prontos por ramo (espiga, pão, baguete, grão de café, halter, cruz, cupcake...) e importação
   de SVG, AI e PDF (vetoriais, recortados no contorno, recoloríveis) ou PNG e JPG (imagem).
   Lista "Patterns aplicados" no passo 5 para editar ou remover cada um, ou remover todos.
+- Editor de molduras na altura da janela, sem rolar a página (como o editor de vídeos): a prévia
+  cresce, a barra de exportação fica sempre visível e só o painel de ajustes rola. Botão
+  "Exportar PDFs" numa linha só.
 - Molduras salvas por cliente, para a equipe toda reabrir, ajustar ou gerar outro tamanho.
 - Prévia "Faca de corte" só com o guia de corte (contorno, janela e identificação): sem logo Indoor
   Channel e sem as etapas de logo, cores, layout e desenho, que ficam na folha de impressão.

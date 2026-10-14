@@ -27,7 +27,7 @@ async function moldCatalogo() { if (!moldCat) moldCat = await request('/api/mold
 // ---------- lista de molduras salvas ----------
 async function moldInicio() {
  await moldCatalogo();
- $('mold-editor').hidden = true; $('mold-start').hidden = false;
+ $('mold-editor').hidden = true; $('mold-start').hidden = false; document.body.classList.remove('mold-workspace');
  const {projetos} = await request('/api/molduras/projetos');
  $('mold-list').replaceChildren(projetos.length ? moldHtml('ul', {className: 'mold-saved'}, ...projetos.map(p => moldHtml('li', {},
   moldHtml('span', {className: 'mold-dots', ariaHidden: 'true'}, ...Object.values(p.cores).map(c => moldHtml('i', {style: `background:${c}`}))),
@@ -70,7 +70,7 @@ async function moldAbrir(id) {
 }
 
 function moldAbrirEditor() {
- $('mold-start').hidden = true; $('mold-editor').hidden = false;
+ $('mold-start').hidden = true; $('mold-editor').hidden = false; document.body.classList.add('mold-workspace');
  moldPreencherCampos(); moldRender(); moldMiniaturas();
  moldPadrao = null; moldSyncPadrao();
 }
@@ -534,6 +534,8 @@ function moldEventos() {
 const moldShowView = showView;
 showView = async function (view) {
  const r = await moldShowView(view);
+ // a tela cheia (sem rolar a página) vale só com o editor de molduras aberto
+ document.body.classList.toggle('mold-workspace', view === 'molduras' && !$('molduras').hidden && !$('mold-editor').hidden);
  if (view === 'molduras' && !$('molduras').hidden && (!mold || $('mold-editor').hidden)) moldInicio().catch(e => toast(e.message));
  return r;
 };
