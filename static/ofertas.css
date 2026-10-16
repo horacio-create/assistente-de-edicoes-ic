@@ -116,6 +116,11 @@ body:not(.sidebar-collapsed) .sidebar .nav[data-view=ofertas].active,.sidebar-co
 #ofertas .render .tocar .play:after{content:'';position:absolute;left:26px;top:20px;border-style:solid;border-width:12px 0 12px 19px;border-color:transparent transparent transparent white}
 #ofertas .render .tocar:hover .play{transform:scale(1.08);background:#20203c}
 #ofertas .render pre{margin:0;font-family:inherit;font-size:11px;white-space:pre-wrap;color:var(--erro);background:var(--erro-fundo);padding:10px 12px;border-radius:8px}
+#ofertas .baixar-varios{display:grid;grid-template-columns:auto auto minmax(180px,320px) auto;justify-content:start;align-items:end;gap:8px 14px;border:1px solid var(--line);background:white;border-radius:13px;padding:12px 18px;margin-bottom:10px}
+#ofertas .baixar-varios>.check,#ofertas .baixar-varios>.count{align-self:center;margin:0}#ofertas .baixar-varios>.count{min-width:118px;text-align:center}
+#ofertas .baixar-varios .nome-zip{margin:0;font-size:11px}
+#ofertas .baixar-varios .nomes-zip{grid-column:1/-1;font-size:11px;color:var(--muted)}
+#ofertas .render .selecionar{margin:0 6px 0 0;cursor:pointer}
 #ofertas .progresso{display:block;grid-column:1/-1;height:5px;background:#eeeef4;border-radius:4px;overflow:hidden}
 #ofertas .progresso i{display:block;height:100%;background:var(--green);border-radius:4px;transition:width 1s linear}
 #ofertas .vazio{background:white;border:1px dashed #d1d1e5;border-radius:14px;padding:40px;text-align:center;color:var(--muted);font-size:13px}
@@ -161,7 +166,7 @@ body:not(.sidebar-collapsed) .sidebar .nav[data-view=ofertas].active,.sidebar-co
 
 @media(max-width:1100px){#ofertas .fabrica-layout{grid-template-columns:minmax(0,1fr) 330px}#ofertas .publicar-layout{grid-template-columns:1fr}}
 @media(max-width:930px){#ofertas .fabrica-layout{grid-template-columns:minmax(0,1fr)}#ofertas .formulario{max-height:none!important}}
-@media(max-width:650px){#ofertas details.render>summary{grid-template-columns:auto minmax(0,1fr)}#ofertas .render .acoes{grid-column:1/-1;justify-content:flex-start}#ofertas .render .corpo{padding-left:18px}#ofertas .dupla{grid-template-columns:1fr}#ofertas .template-linha{grid-template-columns:1fr}#ofertas .image-grid{grid-template-columns:repeat(auto-fill,minmax(128px,1fr))}#of-imagem-dialog .section-title,#of-imagem-dialog .dialog-footer{flex-direction:column;align-items:stretch}#ofertas #of-grade-dialog{max-height:36vh}#of-imagem-dialog .dialog-footer .toolbar>*{flex:1}}
+@media(max-width:650px){#ofertas .baixar-varios{grid-template-columns:1fr}#ofertas details.render>summary{grid-template-columns:auto minmax(0,1fr)}#ofertas .render .acoes{grid-column:1/-1;justify-content:flex-start}#ofertas .render .corpo{padding-left:18px}#ofertas .dupla{grid-template-columns:1fr}#ofertas .template-linha{grid-template-columns:1fr}#ofertas .image-grid{grid-template-columns:repeat(auto-fill,minmax(128px,1fr))}#of-imagem-dialog .section-title,#of-imagem-dialog .dialog-footer{flex-direction:column;align-items:stretch}#ofertas #of-grade-dialog{max-height:36vh}#of-imagem-dialog .dialog-footer .toolbar>*{flex:1}}
 /* conferência do encarte: avisos nos cards, ações e diálogo com a página */
 #ofertas .encarte-acoes{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin:0 0 10px}
 #ofertas .encarte-acoes .encarte-dica{margin:0}

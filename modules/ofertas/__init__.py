@@ -797,6 +797,67 @@ def video(environ, ident):
         headers.append(('Content-Disposition', f"attachment; filename*=UTF-8''{quote(nome + '.mp4')}"))
     return blocos(), headers, '206 Partial Content' if faixa else '200 OK'
 
+def nome_arquivo(valor):
+    """Nome digitado pela pessoa, seguro para arquivo no Windows (sem extensão)."""
+    valor = re.sub(r'\.(mp4|zip)$', '', str(valor or '').strip(), flags=re.I)
+    valor = re.sub(r'[<>:"/\\|?*\x00-\x1f\x7f]', '-', valor).strip().rstrip('. ')[:140].rstrip('. ')
+    if re.fullmatch(r'(CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9])(\..*)?', valor, re.I): valor = '_' + valor
+    return valor
+
+def nome_numerado(primeiro, k):
+    """Nome do k-ésimo arquivo (0 = o primeiro) a partir do nome do primeiro: "VT 1 - Carnes" → "VT 2 - Carnes".
+    O primeiro número do nome avança (zeros à esquerda mantidos: "VT 01" → "VT 02"); sem número, ganha " 1", " 2"…"""
+    m = re.search(r'(?<!\w)\d{1,6}(?!\w)', primeiro)
+    if not m: return f'{primeiro} {k + 1}'
+    numero = str(int(m[0]) + k).zfill(len(m[0]) if m[0].startswith('0') else 0)
+    return primeiro[:m.start()] + numero + primeiro[m.end():]
+
+class _SaidaZip:
+    """Destino sem seek para o zipfile: guarda o que foi escrito até o gerador entregar."""
+    def __init__(self): self.partes, self.posicao = [], 0
+    def write(self, b):
+        self.partes.append(bytes(b)); self.posicao += len(b)
+        return len(b)
+    def tell(self): return self.posicao
+    def flush(self): pass
+    def tirar(self):
+        data = b''.join(self.partes); self.partes.clear()
+        return data
+
+def videos_zip(query):
+    """ZIP dos vídeos prontos escolhidos, na ordem em que foram pedidos (o "Gerar todos" pede na ordem do encarte:
+    o vídeo (1) recebe o nome do primeiro arquivo).
+    Montado enquanto é enviado: o download começa na hora, sem arquivo temporário. Sem compressão: MP4 já é comprimido.
+    -> (blocos, nome do .zip, quantidade)"""
+    ids = list(dict.fromkeys(i for i in (query.get('ids', [''])[0]).split(',') if i))
+    if not ids or len(ids) > 200 or not all(ID.fullmatch(i) for i in ids): raise ValueError('Escolha de 1 a 200 vídeos prontos.')
+    with connect() as db:
+        marcas = ','.join('?' * len(ids))
+        rows = [dict(r) for r in db.execute(f"SELECT id, titulo FROM ofertas_renders WHERE id IN ({marcas}) AND status='pronto' AND (? IS NULL OR owner=?) ORDER BY criado, rowid",
+                                            (*ids, owner(), owner()))]
+    rows = [r for r in rows if (PASTA / 'renders' / r['id'] / 'video.mp4').is_file()]
+    if len(rows) != len(ids): raise ValueError('Algum vídeo escolhido não está pronto ou foi apagado. Atualize a lista e tente de novo.')
+    primeiro = nome_arquivo(query.get('nome', [''])[0])
+    nomes, usados = [], set()
+    for k, r in enumerate(rows):
+        base = nome_numerado(primeiro, k) if primeiro else (nome_arquivo(r['titulo']) or 'video')
+        nome, n = base, 2
+        while nome.lower() in usados: nome, n = f'{base} ({n})', n + 1  # títulos iguais sem nome escolhido
+        usados.add(nome.lower()); nomes.append(nome + '.mp4')
+    def blocos():
+        saida = _SaidaZip()
+        with zipfile.ZipFile(saida, 'w', zipfile.ZIP_STORED) as z:
+            for r, nome in zip(rows, nomes):
+                arquivo = PASTA / 'renders' / r['id'] / 'video.mp4'
+                info = zipfile.ZipInfo.from_file(arquivo, nome)  # data do vídeo, não 1980
+                with arquivo.open('rb') as origem, z.open(info, 'w', force_zip64=True) as destino:
+                    while bloco := origem.read(256 * 1024):
+                        destino.write(bloco)
+                        if saida.partes: yield saida.tirar()
+                if saida.partes: yield saida.tirar()
+        if saida.partes: yield saida.tirar()  # diretório central do ZIP, escrito ao fechar
+    return blocos(), (primeiro or 'videos-ofertas') + '.zip', len(rows)
+
 def arquivo(environ, path):
     """-> (status, content_type, data, extra_headers, csp, frame)"""
     if path.startswith('/ofertas/preview/'):
@@ -804,6 +865,9 @@ def arquivo(environ, path):
         if len(partes) < 5: raise FileNotFoundError()
         data, tipo = preview(partes[3], partes[4])
         return '200 OK', tipo, data, [], CSP_PREVIEW, 'SAMEORIGIN'
+    if path == '/ofertas/videos.zip':
+        blocos, nome, _ = videos_zip(parse_qs(environ.get('QUERY_STRING', '')))
+        return '200 OK', 'application/zip', blocos, [('Content-Disposition', f"attachment; filename*=UTF-8''{quote(nome)}")], CSP_APP, 'DENY'
     if path.startswith('/ofertas/video/') and path.endswith('.jpg'):
         return '200 OK', 'image/jpeg', miniatura_video(path.split('/')[-1].removesuffix('.jpg')), [('Cache-Control', 'private, max-age=86400')], CSP_APP, 'DENY'
     if path.startswith('/ofertas/video/'):
@@ -854,13 +918,14 @@ def handle(environ):
     cache = next((v for k, v in extra if k == 'Cache-Control'), 'no-store')
     # arquivos (prévia, capas, runtime): o navegador guarda e pergunta se mudou — sem isso cada edição
     # baixava de novo fontes, fundo e imagens do template (~5 MB)
-    if status_http == '200 OK' and path.startswith('/ofertas/') and not path.endswith('.mp4'):
+    if status_http == '200 OK' and path.startswith('/ofertas/') and isinstance(data, bytes):
         if cache == 'no-store': cache = 'private, no-cache'
         etag = '"' + hashlib.sha1(data).hexdigest()[:20] + '"'
         extra = [*extra, ('ETag', etag)]
         if etag in environ.get('HTTP_IF_NONE_MATCH', ''): status_http, data = '304 Not Modified', b''
-    # o vídeo vem em blocos (gerador) e já informa o próprio Content-Length; o resto vem em bytes
-    tamanho = next((v for k, v in extra if k == 'Content-Length'), None) or str(len(data))
-    headers = [('Content-Type', tipo), ('Content-Length', tamanho), ('Cache-Control', cache), ('X-Content-Type-Options', 'nosniff'),
+    # vídeo e ZIP vêm em blocos (gerador): o vídeo informa o próprio Content-Length; o ZIP, montado durante o envio,
+    # vai sem (o waitress envia em partes). O resto vem em bytes.
+    tamanho = next((v for k, v in extra if k == 'Content-Length'), None) or (str(len(data)) if isinstance(data, bytes) else None)
+    headers = [('Content-Type', tipo), *([('Content-Length', tamanho)] if tamanho else []), ('Cache-Control', cache), ('X-Content-Type-Options', 'nosniff'),
                ('X-Frame-Options', frame), ('Content-Security-Policy', csp), *[h for h in extra if h[0] not in ('Cache-Control', 'Content-Length')]]
     return status_http, headers, data

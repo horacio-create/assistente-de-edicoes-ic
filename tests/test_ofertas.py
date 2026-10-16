@@ -240,6 +240,7 @@ class FluxoTests(unittest.TestCase):
         self.assertEqual(chamar('GET', f'/ofertas/video/{uid()}.jpg')[0], 404)
 
     def test_download_do_video_em_blocos(self):
+        ofertas.garantir()  # tabelas do módulo, mesmo rodando este teste sozinho
         from storage import uid, now
         ident = uid()
         pasta = ofertas.PASTA / 'renders' / ident
@@ -268,6 +269,50 @@ class FluxoTests(unittest.TestCase):
         self.assertEqual((status, data), (416, b''))
         self.assertEqual(headers['Content-Range'], f'bytes */{len(conteudo)}')
         self.assertEqual(chamar('GET', f'/ofertas/video/{uid()}.mp4')[0], 404)
+
+    def test_nomes_numerados(self):
+        self.assertEqual([ofertas.nome_numerado('VT 1 - Carnes', k) for k in range(3)], ['VT 1 - Carnes', 'VT 2 - Carnes', 'VT 3 - Carnes'])
+        self.assertEqual(ofertas.nome_numerado('VT 09 - FLV', 1), 'VT 10 - FLV')
+        self.assertEqual(ofertas.nome_numerado('VT 01 - FLV', 1), 'VT 02 - FLV')
+        self.assertEqual(ofertas.nome_numerado('Carnes', 1), 'Carnes 2')
+        self.assertEqual(ofertas.nome_numerado('Carnes 2x1 - VT 5', 1), 'Carnes 2x1 - VT 6')  # "2x1" não é um número solto
+        self.assertEqual(ofertas.nome_arquivo(' VT 1: Carnes/Aves.mp4 '), 'VT 1- Carnes-Aves')
+        self.assertEqual(ofertas.nome_arquivo('con'), '_con')
+
+    def test_baixar_videos_em_zip_com_nomes_em_sequencia(self):
+        ofertas.garantir()  # tabelas do módulo, mesmo rodando este teste sozinho
+        import time
+        from storage import uid, now
+        conteudos = {}
+        ids = []
+        for k in range(3):
+            ident = uid()
+            (ofertas.PASTA / 'renders' / ident).mkdir(parents=True)
+            conteudos[ident] = os.urandom(300 * 1024 + k)
+            (ofertas.PASTA / 'renders' / ident / 'video.mp4').write_bytes(conteudos[ident])
+            with connect() as db:
+                db.execute("INSERT INTO ofertas_renders(id,pedido,template,titulo,revision,status,criado,iniciado,terminado) VALUES(?,?,?,?,?,'pronto',?,?,?)",
+                           (ident, 'p', MODELO.name, 'Carnes', 1, now(), now(), now()))
+            ids.append(ident)
+            time.sleep(0.01)
+        status, data, headers = chamar('GET', f'/ofertas/videos.zip?ids={",".join(reversed(ids))}&nome=VT%201%20-%20Carnes')
+        self.assertEqual(status, 200)
+        self.assertEqual(headers['Content-Type'], 'application/zip')
+        self.assertNotIn('Content-Length', headers)  # montado durante o envio
+        self.assertIn("filename*=UTF-8''VT%201%20-%20Carnes.zip", headers['Content-Disposition'])
+        with zipfile.ZipFile(io.BytesIO(data)) as z:
+            # ordem de geração, não a ordem da seleção
+            self.assertEqual(z.namelist(), ['VT 1 - Carnes.mp4', 'VT 2 - Carnes.mp4', 'VT 3 - Carnes.mp4'])
+            self.assertEqual([z.read(n) for n in z.namelist()], [conteudos[i] for i in ids])
+        # sem nome: o título de cada vídeo, sem repetir nomes dentro do ZIP
+        status, data, headers = chamar('GET', f'/ofertas/videos.zip?ids={ids[0]},{ids[1]}')
+        self.assertIn("filename*=UTF-8''videos-ofertas.zip", headers['Content-Disposition'])
+        with zipfile.ZipFile(io.BytesIO(data)) as z: self.assertEqual(z.namelist(), ['Carnes.mp4', 'Carnes (2).mp4'])
+        # vídeo que não está pronto, id inválido ou lista vazia: recusado
+        with connect() as db: db.execute("UPDATE ofertas_renders SET status='falhou' WHERE id=?", (ids[2],))
+        self.assertEqual(chamar('GET', f'/ofertas/videos.zip?ids={ids[0]},{ids[2]}')[0], 400)
+        self.assertEqual(chamar('GET', '/ofertas/videos.zip?ids=../x')[0], 400)
+        self.assertEqual(chamar('GET', '/ofertas/videos.zip')[0], 400)
 
     def esperar_encarte(self, ident):
         import time
