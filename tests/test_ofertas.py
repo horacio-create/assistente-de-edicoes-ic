@@ -239,6 +239,36 @@ class FluxoTests(unittest.TestCase):
         self.assertTrue((pasta / 'capa.jpg').is_file())  # fica em cache
         self.assertEqual(chamar('GET', f'/ofertas/video/{uid()}.jpg')[0], 404)
 
+    def test_download_do_video_em_blocos(self):
+        from storage import uid, now
+        ident = uid()
+        pasta = ofertas.PASTA / 'renders' / ident
+        pasta.mkdir(parents=True)
+        conteudo = os.urandom(700 * 1024)  # maior que um bloco (256 KB): o envio precisa juntar vários
+        (pasta / 'video.mp4').write_bytes(conteudo)
+        with connect() as db:
+            db.execute("INSERT INTO ofertas_renders(id,pedido,template,titulo,revision,status,criado,iniciado,terminado) VALUES(?,?,?,?,?,'pronto',?,?,?)", (ident, 'p', MODELO.name, 'VT 1 - Carnes', 0, now(), now(), now()))
+        # o corpo é entregue em blocos, sem ler o arquivo inteiro antes
+        _, _, corpo = ofertas.handle({'REQUEST_METHOD': 'GET', 'PATH_INFO': f'/ofertas/video/{ident}.mp4', 'QUERY_STRING': ''})
+        self.assertNotIsInstance(corpo, bytes)
+        status, data, headers = chamar('GET', f'/ofertas/video/{ident}.mp4?baixar=1')
+        self.assertEqual(status, 200)
+        self.assertEqual(data, conteudo)
+        self.assertEqual(headers['Content-Length'], str(len(conteudo)))
+        self.assertEqual(headers['Content-Type'], 'video/mp4')
+        self.assertIn("filename*=UTF-8''VT%201%20-%20Carnes.mp4", headers['Content-Disposition'])
+        status, data, headers = chamar('GET', f'/ofertas/video/{ident}.mp4', headers={'HTTP_RANGE': 'bytes=100-299999'})
+        self.assertEqual(status, 206)
+        self.assertEqual(data, conteudo[100:300000])
+        self.assertEqual(headers['Content-Length'], str(299900))
+        self.assertEqual(headers['Content-Range'], f'bytes 100-299999/{len(conteudo)}')
+        status, data, _ = chamar('GET', f'/ofertas/video/{ident}.mp4', headers={'HTTP_RANGE': 'bytes=-500'})
+        self.assertEqual((status, data), (206, conteudo[-500:]))
+        status, data, headers = chamar('GET', f'/ofertas/video/{ident}.mp4', headers={'HTTP_RANGE': f'bytes={len(conteudo)}-'})
+        self.assertEqual((status, data), (416, b''))
+        self.assertEqual(headers['Content-Range'], f'bytes */{len(conteudo)}')
+        self.assertEqual(chamar('GET', f'/ofertas/video/{uid()}.mp4')[0], 404)
+
     def esperar_encarte(self, ident):
         import time
         for _ in range(200):
