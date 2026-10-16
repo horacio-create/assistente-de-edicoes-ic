@@ -16,6 +16,7 @@ A primeira remoção de fundo baixa um modelo de IA local (~168 MB, uma vez).
 
 | Aba | Para quê |
 |---|---|
+| Do encarte ao vídeo | Fluxo em etapas (vindo do Encarte Studio): 1. um ou mais encartes, em ordem (os produtos seguem em sequência de um encarte para o outro) → 2. conferir e aprovar em grupo → 3. template, cartelas, nome do 1º arquivo e prévia ao vivo do 1º vídeo → 4. gerar todos, acompanhar, personalizar um vídeo no editor e baixar o ZIP (VT 1, VT 2…). O andamento fica salvo no navegador |
 | Novo vídeo | Catálogo de templates → formulário gerado do `template.json` + prévia ao vivo + importar encarte (PDF) |
 | Pedidos recentes | Retomar um vídeo (salvo automaticamente) |
 | Vídeos gerados | Fila de geração, progresso, prévia e download do MP4 |

@@ -205,16 +205,16 @@ body:not(.sidebar-collapsed) .sidebar .nav[data-view=ofertas].active,.sidebar-co
 #of-lote-dialog .lote-campos .lote-nome{grid-column:1/-1}
 #of-lote-dialog .lote-campos input{font-size:16px;font-weight:700;margin-top:7px}
 #of-lote-dialog .lote-campos small{display:block;margin-top:6px;font-size:11px;font-weight:550;color:var(--muted)}
-#of-lote-dialog .lote-impar{border:1px solid var(--line);border-radius:12px;padding:12px 16px 14px;margin:0 0 18px;display:grid;gap:10px}
-#of-lote-dialog .lote-impar legend{font-size:12px;font-weight:750;color:#40405a;padding:0 6px}
-#of-lote-dialog .lote-impar .check{font-size:12px;font-weight:600;align-items:flex-start;gap:9px}
-#of-lote-dialog .lote-impar small{color:var(--muted);font-weight:550}
-#of-lote-dialog .lote-impar input[type=radio]{display:block;width:16px;height:16px;min-height:0;margin:1px 0 0;padding:0;flex:none;accent-color:#6967c9}
-#of-lote-dialog .lote-impar .check span{line-height:1.45}
-#of-lote-dialog .lote-resumo{background:#f4faf3;border-radius:12px;padding:14px 16px}
-#of-lote-dialog .lote-resumo ol{list-style:none;margin:10px 0 0;padding:0;display:grid;gap:6px}
-#of-lote-dialog .lote-resumo li{display:flex;justify-content:space-between;gap:12px;font-size:13px;padding:8px 12px;background:white;border-radius:8px}
-#of-lote-dialog .lote-resumo li span{color:#55556f}
+:is(#of-lote-dialog,#of-etapas) .lote-impar{border:1px solid var(--line);border-radius:12px;padding:12px 16px 14px;margin:0 0 18px;display:grid;gap:10px}
+:is(#of-lote-dialog,#of-etapas) .lote-impar legend{font-size:12px;font-weight:750;color:#40405a;padding:0 6px}
+:is(#of-lote-dialog,#of-etapas) .lote-impar .check{font-size:12px;font-weight:600;align-items:flex-start;gap:9px}
+:is(#of-lote-dialog,#of-etapas) .lote-impar small{color:var(--muted);font-weight:550}
+:is(#of-lote-dialog,#of-etapas) .lote-impar input[type=radio]{display:block;width:16px;height:16px;min-height:0;margin:1px 0 0;padding:0;flex:none;accent-color:#6967c9}
+:is(#of-lote-dialog,#of-etapas) .lote-impar .check span{line-height:1.45}
+:is(#of-lote-dialog,#of-etapas) .lote-resumo{background:#f4faf3;border-radius:12px;padding:14px 16px}
+:is(#of-lote-dialog,#of-etapas) .lote-resumo ol{list-style:none;margin:10px 0 0;padding:0;display:grid;gap:6px}
+:is(#of-lote-dialog,#of-etapas) .lote-resumo li{display:flex;justify-content:space-between;gap:12px;font-size:13px;padding:8px 12px;background:white;border-radius:8px}
+:is(#of-lote-dialog,#of-etapas) .lote-resumo li span{color:#55556f}
 #of-lote-dialog #of-lote-nota{font-size:11px;color:#55556f;margin:10px 0 0}#of-lote-dialog #of-lote-nota:empty{display:none}
 #of-lote-dialog .warning{margin:14px 0 0;font-size:12px}
 #of-lote-dialog .dialog-footer>span{overflow-wrap:anywhere}
@@ -247,3 +247,64 @@ body:not(.sidebar-collapsed) .sidebar .nav[data-view=ofertas].active,.sidebar-co
 #ofertas .barra-lista{align-items:center;flex-wrap:wrap;gap:var(--ui-gap-wide)}
 #of-conferir-dialog .dupla{grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--ui-gap-wide)}
 #of-conferir-dialog .preco>span{margin-top:0;line-height:1}
+/* do encarte ao vídeo (etapas) */
+#of-etapas .et-passos{list-style:none;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin:0 0 18px;padding:0}
+#of-etapas .et-passos button{display:flex;align-items:center;gap:10px;width:100%;text-align:left;padding:11px 14px;border-radius:12px;background:white;color:#55556f;font-size:12px}
+#of-etapas .et-passos b{display:grid;place-items:center;flex:none;width:24px;height:24px;border-radius:50%;background:#e6e6f0;color:#40405a;font-size:11px}
+#of-etapas .et-passos button[aria-current=step]{border-color:var(--ofertas);color:var(--ink);box-shadow:inset 0 -3px 0 var(--ofertas)}
+#of-etapas .et-passos button[aria-current=step] b,#of-etapas .et-passos button.feito b{background:var(--ofertas);color:var(--ofertas-texto)}
+#of-etapas .et-passos button:disabled{opacity:.55}
+#of-etapas .et-passo>.section-title{margin-top:18px}
+#of-etapas .et-encartes{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+#of-etapas .et-encartes li{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:14px;background:white;border:1px solid var(--line);border-radius:12px;padding:10px 14px}
+#of-etapas .et-encartes li.falhou{border-color:#e6b9c4}
+#of-etapas .et-encartes li.vazio{display:block;border-style:dashed;text-align:center;color:var(--muted);font-size:12px;padding:22px}
+#of-etapas .et-num{display:grid;place-items:center;width:26px;height:26px;border-radius:50%;background:#ededfa;color:#53519d;font-size:12px;font-weight:800}
+#of-etapas .et-enc-nome strong{display:block;font-size:13px;overflow-wrap:anywhere}#of-etapas .et-enc-nome small{font-size:11px;color:var(--muted)}
+#of-etapas .et-encartes li.falhou small{color:var(--erro)}
+#of-etapas .et-encartes .secondary{padding:6px 10px}
+#of-etapas .et-recentes{margin-top:14px}#of-etapas .et-recentes summary{cursor:pointer;font-size:12px;font-weight:700;color:#514fa5;margin-bottom:10px}
+#of-etapas .et-rodape{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:14px;border-top:1px solid var(--line);margin-top:20px;padding:14px 0 6px}
+#of-etapas .et-dica{font-size:12px;color:var(--muted);text-align:center}
+#of-etapas .et-barra{position:sticky;top:0;z-index:2;display:flex;align-items:center;gap:12px;flex-wrap:wrap;background:#f5f5f9f2;backdrop-filter:blur(12px);border:1px solid var(--line);border-radius:12px;padding:10px 14px;margin-bottom:14px}
+#of-etapas .et-barra .count{min-width:118px;text-align:center;margin:0}
+#of-etapas .et-barra .toolbar{margin-left:auto;gap:8px}
+#of-etapas .et-progresso{font-size:12px;font-weight:700;color:#53519d}#of-etapas .et-progresso.completo{color:#2f6a31}
+#of-etapas .et-grupo{margin-bottom:18px}
+#of-etapas .et-grupo-titulo{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:8px}
+#of-etapas .et-grupo-titulo strong{display:block;font-size:13px}#of-etapas .et-grupo-titulo small{font-size:11px;color:var(--muted)}
+#of-etapas .et-card{position:relative;display:flex;flex-direction:column;cursor:default}
+#of-etapas .et-card.ok{border-color:#b9dfb8}
+#of-etapas .et-card .et-sel{position:absolute;left:6px;top:6px;z-index:1;margin:0;padding:4px;border-radius:5px;background:white;display:flex;cursor:pointer;box-shadow:0 1px 4px #20203c22}
+#of-etapas .et-card .et-pos{position:absolute;right:6px;top:6px;z-index:1;min-width:22px;height:22px;padding:0 6px;border-radius:11px;background:#20203cc0;color:white;font-size:10px;font-weight:800;display:grid;place-items:center}
+#of-etapas .et-card .alerta{max-width:calc(100% - 12px);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#of-etapas .image-grid .et-card .conferir{align-self:flex-start;margin:0 4px 6px;padding:5px 6px;opacity:1}
+#of-etapas .et-template-layout{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);gap:22px;align-items:start}
+#of-etapas .et-config-coluna h2{font-size:15px;margin-bottom:10px}
+#of-etapas .et-templates{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;margin-bottom:16px}
+#of-etapas .et-template{display:flex;flex-direction:column;text-align:left;padding:0;border-radius:12px;overflow:hidden;background:white}
+#of-etapas .et-template img,#of-etapas .et-template .sem-capa{display:block;width:100%;aspect-ratio:16/9;object-fit:cover;background:#eeeef4}
+#of-etapas .et-template .sem-capa{display:grid;place-items:center;font-size:11px;color:var(--muted)}
+#of-etapas .et-template>span:last-child{padding:9px 12px 11px}
+#of-etapas .et-template strong{display:block;font-size:12px;color:var(--ink)}#of-etapas .et-template small{font-size:10px;color:var(--muted)}
+#of-etapas .et-template[aria-pressed=true]{border-color:var(--ofertas);box-shadow:0 0 0 2px var(--ofertas)}
+#of-etapas .et-config{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:12px;margin-bottom:14px}
+#of-etapas .et-config small{display:block;font-size:10px;color:var(--muted);font-weight:550;margin-top:4px}
+#of-etapas .lote-resumo{background:#f4faf3;border-radius:12px;padding:14px 16px}
+#of-etapas .et-previa{position:sticky;top:12px}
+#of-etapas .et-previa .canvas-shell{position:relative}
+#of-etapas .et-previa-vazia{position:absolute;inset:16px;display:grid;place-items:center;text-align:center;padding:20px;border-radius:6px;background:#20203c;color:#d2d2e5;font-size:12px}
+#of-etapas .et-previa-acoes{display:flex;gap:8px;align-items:center;margin-top:10px}
+#of-etapas .et-previa .et-dica{text-align:left;margin:8px 0 0}
+#of-etapas .et-gerar{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) auto;gap:18px;align-items:start;background:white;border:1px solid var(--line);border-radius:14px;padding:18px 20px;margin-bottom:16px}
+#of-etapas .et-gerar h2{font-size:18px;margin:6px 0 4px}#of-etapas .et-gerar p{font-size:12px;color:var(--muted);margin:0}
+#of-etapas .et-nomes{margin:0;padding-left:20px;font-size:12px;line-height:1.7;max-height:160px;overflow-y:auto}
+#of-etapas .et-videos{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+#of-etapas .et-videos li{display:grid;grid-template-columns:minmax(0,1fr) auto auto;align-items:center;gap:12px;background:white;border:1px solid var(--line);border-radius:12px;padding:10px 14px}
+#of-etapas .et-videos strong{display:block;font-size:13px}#of-etapas .et-videos small{font-size:11px;color:var(--muted)}
+#of-etapas .et-videos .botao-link{margin:0;padding:7px 12px;font-size:12px}
+@media(max-width:900px){#of-etapas .et-template-layout,#of-etapas .et-gerar{grid-template-columns:1fr}#of-etapas .et-previa{position:static}}
+@media(max-width:650px){#of-etapas .et-passos{grid-template-columns:1fr 1fr}#of-etapas .et-encartes li,#of-etapas .et-videos li{grid-template-columns:auto minmax(0,1fr)}#of-etapas .et-encartes .toolbar,#of-etapas .et-videos .toolbar{grid-column:1/-1}#of-etapas .et-rodape{grid-template-columns:1fr}#of-etapas .et-config{grid-template-columns:1fr}}
+#of-etapas .et-longos{margin-top:12px;font-size:12px}#of-etapas .et-longos ul{margin:6px 0 0;padding-left:18px}#of-etapas .et-longos .text-button{padding:3px 0;text-align:left;font-size:12px}
+#of-etapas .lote-resumo p{font-size:12px;color:#55556f;margin:10px 0 0;line-height:1.5}
+#of-etapas .et-videos .status{justify-self:start}

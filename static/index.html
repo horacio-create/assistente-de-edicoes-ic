@@ -45,14 +45,45 @@
 <div id="of-indisponivel" class="notice indisponivel" hidden></div>
 <div id="of-conteudo">
 <nav class="abas" role="tablist" aria-label="Ofertas de supermercados">
-<button class="aba" role="tab" data-tela="catalogo" aria-selected="true"><svg class="line-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m16 13l5.223 3.482a.5.5 0 0 0 .777-.416V7.87a.5.5 0 0 0-.752-.432L16 10.5"/><rect width="14" height="12" x="2" y="6" rx="2"/></svg>Novo vídeo</button>
+<button class="aba" role="tab" data-tela="etapas" aria-selected="true"><svg class="line-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m3 17 2 2 4-4"/><path d="m3 7 2 2 4-4"/><path d="M13 6h8"/><path d="M13 12h8"/><path d="M13 18h8"/></svg>Do encarte ao vídeo</button>
+<button class="aba" role="tab" data-tela="catalogo" aria-selected="false"><svg class="line-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m16 13l5.223 3.482a.5.5 0 0 0 .777-.416V7.87a.5.5 0 0 0-.752-.432L16 10.5"/><rect width="14" height="12" x="2" y="6" rx="2"/></svg>Novo vídeo</button>
 <button class="aba" role="tab" data-tela="pedidos" aria-selected="false"><svg class="line-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3 12a9 9 0 1 0 9-9a9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5m4-1v5l4 2"/></svg>Pedidos recentes</button>
 <button class="aba" role="tab" data-tela="fila" aria-selected="false"><svg class="line-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3 5h.01M3 12h.01M3 19h.01M8 5h13M8 12h13M8 19h13"/></svg>Vídeos gerados<i id="of-fila-contador" class="contador" hidden></i></button>
 <button class="aba" role="tab" data-tela="biblioteca" aria-selected="false"><svg class="line-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15l-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>Biblioteca</button>
 <button class="aba" role="tab" data-tela="templates" aria-selected="false"><svg class="line-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/></svg>Templates</button>
 </nav>
 
-<div id="of-catalogo" class="of-tela"><div id="of-lista-templates" class="template-grid"></div></div>
+<div id="of-etapas" class="of-tela">
+<ol class="et-passos" aria-label="Etapas"><li><button type="button" data-passo="1"><b>1</b><span>Encartes</span></button></li><li><button type="button" data-passo="2"><b>2</b><span>Conferir ofertas</span></button></li><li><button type="button" data-passo="3"><b>3</b><span>Template e prévia</span></button></li><li><button type="button" data-passo="4"><b>4</b><span>Gerar e baixar</span></button></li></ol>
+<section id="of-passo-1" class="et-passo" aria-labelledby="of-p1-titulo">
+<div id="of-et-drop" class="dropzone drop-target" role="button" tabindex="0" aria-describedby="of-et-drop-ajuda"><span class="upload-icon">+</span><div><strong id="of-p1-titulo">Arraste um ou mais encartes para cá</strong><p id="of-et-drop-ajuda">PDF, PNG ou JPG. Os produtos seguem a ordem dos encartes: o que ficaria sem par na cartela faz par com o primeiro do próximo encarte.</p></div><button type="button" id="of-et-escolher" class="primary">Escolher encartes</button></div>
+<input id="of-et-arquivos" type="file" accept=".pdf,.png,.jpg,.jpeg" multiple hidden>
+<div class="section-title"><div><h2>Encartes deste lote</h2><p id="of-et-resumo-1"></p></div></div>
+<ol id="of-et-encartes" class="et-encartes"></ol>
+<details id="of-et-recentes-box" class="et-recentes"><summary>Usar um encarte já importado</summary><div id="of-et-recentes" class="encarte-chips"></div></details>
+<div class="et-rodape"><span></span><span id="of-et-dica-1" class="et-dica"></span><button type="button" class="primary" data-ir="2">Conferir ofertas</button></div>
+</section>
+<section id="of-passo-2" class="et-passo" hidden>
+<div class="et-barra"><label class="check"><input id="of-et-sel-todos" type="checkbox"> Selecionar todos</label><span id="of-et-sel-contagem" class="count">Nenhum selecionado</span><span id="of-et-progresso" class="et-progresso" role="status"></span><div class="toolbar"><button type="button" id="of-et-aprovar-sel" class="secondary" disabled>Aprovar selecionados</button><button type="button" id="of-et-aprovar-todos" class="primary">Aprovar todos</button></div></div>
+<div id="of-et-ofertas"></div>
+<div class="et-rodape"><button type="button" class="secondary" data-ir="1">Voltar aos encartes</button><span id="of-et-dica-2" class="et-dica"></span><button type="button" class="primary" data-ir="3">Escolher template</button></div>
+</section>
+<section id="of-passo-3" class="et-passo" hidden>
+<div class="et-template-layout"><div class="et-config-coluna"><h2>Template</h2><div id="of-et-templates" class="et-templates"></div>
+<div class="et-config"><label class="et-nome">Nome do primeiro arquivo<input id="of-et-nome" maxlength="140" placeholder="VT 1 - Carnes" autocomplete="off"></label><label>Cartelas por vídeo<input id="of-et-cartelas" type="number" inputmode="numeric"><small id="of-et-cartelas-ajuda"></small></label></div>
+<fieldset id="of-et-impar" class="lote-impar" hidden><legend>Sobrou um produto sem par</legend><label class="check" id="of-et-impar-sozinho"><input type="radio" name="of-et-impar" value="sozinho"><span>Mostrar o último produto sozinho, centralizado na cartela</span></label><label class="check"><input type="radio" name="of-et-impar" value="repetir"><span>Completar a cartela repetindo o 1º produto</span></label><label class="check"><input type="radio" name="of-et-impar" value="fora"><span>Deixar o último produto de fora</span></label></fieldset>
+<div class="lote-resumo"><span class="eyebrow">O QUE VAI SER GERADO</span><ol id="of-et-plano"></ol><p id="of-et-plano-nota"></p></div><div id="of-et-longos" class="warning et-longos" hidden></div></div>
+<div class="et-previa"><div class="canvas-shell player-shell"><hyperframes-player id="of-et-player" controls muted></hyperframes-player><div id="of-et-previa-vazia" class="et-previa-vazia">A prévia do 1º vídeo aparece aqui, com os produtos do encarte.</div></div><div class="et-previa-acoes"><button type="button" id="of-et-ver-previa" class="secondary">Ver prévia do 1º vídeo</button></div><p id="of-et-previa-status" class="et-dica" role="status"></p></div></div>
+<div class="et-rodape"><button type="button" class="secondary" data-ir="2">Voltar à conferência</button><span id="of-et-dica-3" class="et-dica"></span><button type="button" class="primary" data-ir="4">Revisar e gerar</button></div>
+</section>
+<section id="of-passo-4" class="et-passo" hidden>
+<div id="of-et-gerar-box" class="et-gerar"><div><span class="eyebrow">PRONTO PARA GERAR</span><h2 id="of-et-gerar-titulo"></h2><p id="of-et-gerar-sub"></p></div><ol id="of-et-nomes" class="et-nomes"></ol><button type="button" id="of-et-gerar" class="primary">Gerar vídeos</button></div>
+<div id="of-et-lote" class="et-lote" hidden><div class="section-title"><div><h2>Vídeos deste lote</h2><p id="of-et-lote-status" role="status"></p></div><div class="toolbar"><button type="button" id="of-et-baixar" class="primary" disabled>Baixar todos (ZIP)</button></div></div><ul id="of-et-videos" class="et-videos"></ul></div>
+<div class="et-rodape"><button type="button" class="secondary" data-ir="3">Voltar ao template</button><span class="et-dica">Para mudar textos de um vídeo, use “Personalizar” e gere de novo só aquele vídeo.</span><button type="button" id="of-et-novo-lote" class="text-button">Começar um novo lote</button></div>
+</section>
+</div>
+
+<div id="of-catalogo" class="of-tela" hidden><div id="of-lista-templates" class="template-grid"></div></div>
 
 <div id="of-editor" class="of-tela" hidden><div class="save-status"><em id="of-save-state"></em></div>
 <div class="editor"><div class="editor-head"><div class="titulo-pedido"><span class="step-label">Nome do vídeo</span><input id="of-titulo" maxlength="160" aria-label="Nome do vídeo"></div><div class="gerar-video"><div class="gerar-status"><strong id="of-status-validacao">—</strong><span id="of-status-formato">MP4 · entra na fila de geração</span></div><button id="of-gerar" class="primary">Gerar vídeo <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M7 7h10v10M7 17L17 7"/></svg></span></button></div></div>
