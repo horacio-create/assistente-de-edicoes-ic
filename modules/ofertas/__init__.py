@@ -515,6 +515,17 @@ def itens_do_lote(value):
             nomes.append(row['nome'])
     return itens, nomes
 
+def tamanhos_completando(n, lista, cartelas=None):
+    """Como no Encarte Studio: cada vídeo leva `cartelas` cartelas e a sobra vai para o último (8 cartelas, 3 por
+    vídeo: 3 + 3 + 2). O template divide os 15s entre as cartelas que vieram. Um último vídeo abaixo do mínimo do
+    template é completado com os primeiros produtos, como em tamanhos_dos_videos."""
+    passo = (lista.get('grupo') or {}).get('tamanho') or 1
+    gmin, gmax = -(-(lista.get('min') or lista['itens']) // passo), lista['itens'] // passo
+    cartelas = min(gmax, max(gmin, 3)) if cartelas is None else int(cartelas)  # padrão: 3 cartelas por vídeo
+    if not gmin <= cartelas <= gmax: raise ValueError(f'Escolha de {gmin} a {gmax} cartelas por vídeo.')
+    grupos = -(-n // passo)
+    return [max(gmin, min(cartelas, grupos - k)) * passo for k in range(0, grupos, cartelas)]
+
 def gerar_todos(value):
     """Todos os produtos do encarte (ou dos encartes, em sequência) em vídeos (ver tamanhos_dos_videos). `impar`: com
     número ímpar de produtos a última cartela fica incompleta; "repetir" completa com o primeiro produto, "fora" deixa
@@ -536,7 +547,9 @@ def gerar_todos(value):
         raise ValueError('Este template não mostra produto sozinho na cartela.')
     passo = (lista.get('grupo') or {}).get('tamanho') or 1
     if impar == 'fora' and len(itens) > passo: itens = itens[:len(itens) - len(itens) % passo]
-    tamanhos = tamanhos_dos_videos(len(itens), lista, value.get('cartelas'))
+    # "completar" (fluxo em etapas): vídeos cheios e a sobra no último; padrão: vídeos equilibrados
+    dividir = tamanhos_completando if value.get('distribuir') == 'completar' else tamanhos_dos_videos
+    tamanhos = dividir(len(itens), lista, value.get('cartelas'))
     if impar == 'sozinho' and len(itens) % passo: tamanhos[-1] -= passo - len(itens) % passo  # última cartela incompleta
     total = len(tamanhos)
     base = str(value.get('nome') or '').strip()[:150] or Path(nomes_encartes[0]).stem  # nome escolhido no lote; " (n)" vem depois

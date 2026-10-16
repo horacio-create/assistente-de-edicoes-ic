@@ -474,6 +474,38 @@ class FluxoTests(unittest.TestCase):
         self.assertEqual(json_de('POST', '/api/ofertas/encarte-gerar-todos', dict(corpo, encartes=[a['id'], a['id']]))[0], 400)
         self.assertEqual(json_de('POST', '/api/ofertas/encarte-gerar-todos', dict(corpo, encartes=[]))[0], 400)
 
+    def test_videos_completos_e_sobra_no_ultimo(self):
+        lista = {'itens': 12, 'min': 1, 'grupo': {'tamanho': 2, 'incompleto': True}}
+        # produtos -> produtos por vídeo, como no Encarte Studio: 8 cartelas, 3 por vídeo = 3 + 3 + 2
+        self.assertEqual(ofertas.tamanhos_completando(16, lista, 3), [6, 6, 4])
+        self.assertEqual(ofertas.tamanhos_completando(14, dict(lista, itens=10), 5), [10, 4])  # 7 cartelas, 5 por vídeo = 5 + 2
+        self.assertEqual(ofertas.tamanhos_completando(9, lista, 2), [4, 4, 2])  # a última cartela fica com 1 produto (sozinho)
+        self.assertEqual(ofertas.tamanhos_completando(6, {'itens': 6, 'grupo': {'tamanho': 2}}, 3), [6])  # template fixo
+        self.assertEqual(ofertas.tamanhos_completando(2, {'itens': 6, 'grupo': {'tamanho': 2}}, 3), [6])  # abaixo do mínimo: completa
+        self.assertEqual(ofertas.tamanhos_completando(16, lista), [6, 6, 4])  # sem escolha: 3 cartelas por vídeo
+        with self.assertRaises(ValueError): ofertas.tamanhos_completando(9, lista, 7)
+
+    def test_cartelas_continuas_entre_encartes_com_produto_sozinho(self):
+        """Template de cartelas variáveis: os encartes viram uma fila só; a sobra fica sozinha no último vídeo."""
+        variavel = 'uniforca-hora-da-carne-cartelas'
+        _, esquema = json_de('GET', f'/api/ofertas/esquema?template={variavel}')
+        lista = esquema['campos'][1]
+        self.assertEqual((lista['min'], lista['itens'], lista['grupo']['incompleto']), (1, 12, True))
+        ids = []
+        for nome, pdf in (('A.pdf', self.pdf_picanha()), ('B.pdf', self.pdf_produto('Coxa de Frango Kg', '12', ',90', '15,99')),
+                          ('C.pdf', self.pdf_produto('Alcatra Bovina Kg', '39', ',90', '45,99'))):
+            _, e = json_de('POST', f'/api/ofertas/encarte?nome={nome}', raw=pdf)
+            ids.append(self.esperar_encarte(e['id'])['id'])
+        corpo = {'encartes': ids, 'template': variavel, 'cartelas': 1, 'impar': 'sozinho', 'nome': 'VT 1 - Teste', 'numerar': True, 'distribuir': 'completar'}
+        _, g = json_de('POST', '/api/ofertas/encarte-gerar-todos', corpo)
+        for v in g['videos']:
+            if v['render']: json_de('POST', '/api/ofertas/render-cancelar', {'id': v['render']})
+        self.assertEqual([(v['titulo'], v['erros']) for v in g['videos']], [('VT 1 - Teste', []), ('VT 2 - Teste', [])])
+        produtos = [[p['nome'] for p in json_de('GET', f"/api/ofertas/pedido?id={v['pedido']}")[1]['dados']['produtos']] for v in g['videos']]
+        # A faz par com B (encartes diferentes, mesma cartela); C fica sozinho, sem repetir ninguém
+        self.assertEqual(produtos, [['Picanha Bovina Kg', 'Coxa de Frango Kg'], ['Alcatra Bovina Kg']])
+        self.assertEqual(g['completados'], 0)
+
     def test_template_com_quantidade_variavel_de_produtos(self):
         """Lista com "min": o pedido aceita 4 ou 6 produtos e o Gerar todos não repete produtos à toa."""
         pasta = TMP / 'variavel' / 'carne-variavel'
