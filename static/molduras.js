@@ -119,7 +119,7 @@ function moldRender() {
   camadas.push(moldEl('path', {d: `M0 0 H${W} V${H} H0 Z ${g.corte}`, 'fill-rule': 'evenodd', fill: '#f5f5f9', 'fill-opacity': .78, class: 'mold-fixo'}));
   camadas.push(moldEl('path', {d: g.corte, fill: 'none', stroke: '#E8312F', 'stroke-width': .1, 'stroke-dasharray': '.6 .4', class: 'mold-fixo'}));
  }
- const marcas = moldEl('g', {stroke: '#20203c', 'stroke-width': .075, fill: 'none', class: 'mold-fixo'});
+ const marcas = moldEl('g', {stroke: '#2d3144', 'stroke-width': .075, fill: 'none', class: 'mold-fixo'});
  for (const [x, y, sx, sy] of [[.25, .25, 1, 1], [W - .25, .25, -1, 1], [.25, H - .25, 1, -1], [W - .25, H - .25, -1, -1]])
   marcas.append(moldEl('path', {d: `M${x + sx * 1.5} ${y} L${x} ${y} L${x} ${y + sy * 1.5}`}));
  camadas.push(marcas, moldEl('g', {id: 'mold-pontos'}));
@@ -168,7 +168,7 @@ function moldEtiqueta() {
  const e = moldGeo.etiqueta, tv = mold.tv;
  const tam = `${tv.polegadas ? tv.polegadas + '" ' : ''}(${moldCm(tv.largura)} x ${moldCm(tv.altura)} cm)`;
  const g = moldEl('g', {class: 'mold-fixo', 'font-family': 'Arial, sans-serif', 'font-size': .39, fill: '#333'});
- g.append(moldEl('rect', {x: e.x0, y: e.y0, width: e.x1 - e.x0, height: e.y1 - e.y0, fill: 'none', stroke: '#20203c', 'stroke-width': .075}));
+ g.append(moldEl('rect', {x: e.x0, y: e.y0, width: e.x1 - e.x0, height: e.y1 - e.y0, fill: 'none', stroke: '#2d3144', 'stroke-width': .075}));
  [`Cliente: ${mold.cliente || '—'}`, `Tamanho: ${tam}`, `Quantidade: ${mold.quantidade}`, `Material: ${mold.material}`].forEach((t, i) => {
   const txt = moldEl('text', {x: e.x0 + .5, y: e.y0 + .75 + i * .6}); txt.textContent = t; g.append(txt);
  });

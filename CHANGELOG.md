@@ -1,5 +1,13 @@
 # Histórico de versões
 
+## 1.13.2 — Cores da marca Indoor Channel — 19/10/2026
+
+- A interface usa as cores da marca: textos em #2d3144, secundários em #626266, linhas em #dadae5,
+  fundos claros em #f9f9f9, barra lateral em #1a1a39, roxo #6a68cb (hover #4336b9), lavanda #b6b9f1 e
+  verde #46d880 (hover #75dba9). Arte de cliente, cores das camisas e cores de alerta ficam como estavam.
+- Contornos de foco finos (1,5 px, colados no elemento) em todo o sistema, inclusive no login.
+- Medida da estampa: campos menores, alinhados com "Estampa" e "cm", com arredondamento em duas casas.
+
 ## 1.13.1 — Visualizador de mockups — 19/10/2026
 
 - As setas do mockup ampliado respondem a todo clique (antes, ao apertar, a seta pulava para baixo e o

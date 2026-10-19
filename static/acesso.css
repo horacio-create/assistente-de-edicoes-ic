@@ -3,27 +3,27 @@
  * display + body: fonte do sistema (herdada de style.css) · axes: light / rounded-system-sans / chromatic-green
  * Telas de acesso (login, cadastro por convite, nova senha) e Usuários. Destaque = o verde de "Escolher mídias" (--green). */
 :root{
-  --ac-paper:oklch(97.2% 0.006 285);           /* = fundo do app (#f5f5f9) */
+  --ac-paper:#f9f9f9;           /* = fundo do app (#f9f9f9) */
   --ac-surface:oklch(99.6% 0.002 285);
   --ac-tint:oklch(95.6% 0.007 285);            /* neutro claro: faixas, campos só leitura */
   --ac-tint-2:oklch(94% 0.055 145);            /* verde bem claro: selecionado */
-  --ac-ink:oklch(25.5% 0.06 284);              /* = --ink #20203c */
+  --ac-ink:#2d3144;              /* = --ink #1a1a39 */
   --ac-ink-2:oklch(36% 0.05 284);
-  --ac-muted:oklch(50% 0.03 284);
+  --ac-muted:#626266;
   --ac-faint:oklch(64% 0.025 284);
-  --ac-rule:oklch(91.6% 0.012 285);            /* = --line */
-  --ac-rule-2:oklch(86% 0.016 285);
-  --ac-accent:oklch(81.5% 0.145 145);          /* = --green #81d680, o botão "Escolher mídias" */
-  --ac-accent-hover:oklch(85.5% 0.13 145);     /* = .primary:hover #9be19a */
+  --ac-rule:#dadae5;            /* = --line */
+  --ac-rule-2:#dadae5;
+  --ac-accent:#46d880;          /* = --green #46d880, o botão "Escolher mídias" */
+  --ac-accent-hover:#75dba9;     /* = .primary:hover #75dba9 */
   --ac-accent-ink:oklch(33% 0.07 145);         /* = texto do .primary #18391a */
   --ac-accent-line:oklch(70% 0.13 145);        /* borda de selecionado */
   --ac-link:oklch(45% 0.11 145);               /* verde escuro: texto clicável (verde claro não passa contraste) */
   --ac-rule-hover:oklch(78% 0.02 285);
-  --ac-ok:oklch(80% 0.13 145);                 /* = --green */
+  --ac-ok:#46d880;                 /* = --green */
   --ac-ok-ink:oklch(36% 0.08 145);
   --ac-danger:oklch(52% 0.17 25);
   --ac-danger-tint:oklch(96% 0.025 25);
-  --ac-focus:oklch(55% 0.13 282);             /* = --purple: o anel de foco do app inteiro */
+  --ac-focus:#6a68cb;             /* = --purple: o anel de foco do app inteiro */
   --ac-knob-shadow:0 1px 2px oklch(25% 0.06 284 / .25);
 
   --ac-space-2xs:.5rem;--ac-space-xs:.75rem;--ac-space-sm:1rem;
@@ -60,7 +60,7 @@ html,body{overflow-x:clip}
   .ac-btn-danger:hover:not(:disabled){background:var(--ac-danger-tint)}
 }
 .ac-btn:active:not(:disabled){transform:translateY(1px)}
-.ac-btn:focus-visible{outline:2px solid var(--ac-focus);outline-offset:2px}
+.ac-btn:focus-visible{outline:1.5px solid var(--ac-focus);outline-offset:1px}
 .ac-btn:disabled{opacity:.5;cursor:not-allowed}
 .ac-btn[aria-busy=true]{opacity:1;cursor:progress}
 .ac-btn[aria-busy=true]::before{content:'';width:14px;height:14px;border-radius:50%;border:2px solid currentColor;border-right-color:transparent;animation:ac-spin .7s linear infinite}
@@ -73,7 +73,7 @@ html,body{overflow-x:clip}
 .ac-switch input::after{content:'';position:absolute;top:3px;left:3px;width:14px;height:14px;border-radius:50%;background:var(--ac-surface);box-shadow:var(--ac-knob-shadow);transition:transform var(--ac-dur) var(--ac-ease-out)}
 .ac-switch input:checked{background:var(--ac-accent)}
 .ac-switch input:checked::after{transform:translateX(14px)}
-.ac-switch input:focus-visible{outline:2px solid var(--ac-focus);outline-offset:2px}
+.ac-switch input:focus-visible{outline:1.5px solid var(--ac-focus);outline-offset:1px}
 .ac-switch input:disabled{opacity:.5;cursor:not-allowed;background:var(--ac-rule-2)!important}
 .ac-switch input:disabled:checked{background:var(--ac-accent)!important}  /* style.css pinta todo input:disabled com !important */
 .ac-switch.is-wrap{white-space:normal;line-height:1.35}
@@ -84,7 +84,7 @@ html,body{overflow-x:clip}
 .ac-chip input{position:absolute;opacity:0;inset:0;margin:0;cursor:pointer}
 .ac-chip:has(input:checked){background:var(--ac-tint-2);border-color:var(--ac-accent-line);color:var(--ac-accent-ink)}
 .ac-chip:has(input:checked)::before{content:'✓';margin-right:6px;font-weight:800;color:var(--ac-accent-ink)}
-.ac-chip:has(input:focus-visible){outline:2px solid var(--ac-focus);outline-offset:2px}
+.ac-chip:has(input:focus-visible){outline:1.5px solid var(--ac-focus);outline-offset:1px}
 @media(hover:hover){.ac-chip:hover{border-color:var(--ac-rule-hover)}}
 .ac-tag{display:inline-flex;align-items:center;min-height:24px;padding:0 var(--ac-space-2xs);border-radius:var(--ac-radius-pill);background:var(--ac-tint);color:var(--ac-ink-2);font-size:var(--ac-text-xs);font-weight:650;white-space:nowrap}
 .ac-tag.is-accent{background:var(--ac-tint-2);color:var(--ac-accent-ink)}
@@ -197,7 +197,7 @@ body.acesso{margin:0;min-height:100dvh;background:var(--ac-paper);color:var(--ac
 .ac-menu-item{display:flex;align-items:center;gap:var(--ac-space-xs);width:100%;min-height:40px;margin:0;padding:0 var(--ac-space-xs);border:0;border-radius:var(--ac-radius-input);background:transparent;color:var(--ac-ink-2);font:inherit;font-size:var(--ac-text-sm);font-weight:650;text-align:left;cursor:pointer}
 .ac-menu-item svg{width:18px;height:18px;flex:none;color:var(--ac-muted)}
 @media(hover:hover){.ac-menu-item:hover{background:var(--ac-tint);color:var(--ac-ink)}}
-.ac-menu-item:focus-visible{outline:2px solid var(--ac-focus);outline-offset:-2px}
+.ac-menu-item:focus-visible{outline:1.5px solid var(--ac-focus);outline-offset:-2px}
 .ac-menu-item:active{background:var(--ac-tint-2)}
 @media(max-width:650px){.ac-menu{left:8px;bottom:84px}}
 

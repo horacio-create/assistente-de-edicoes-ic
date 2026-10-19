@@ -138,13 +138,16 @@ function estMedida(campo) {
  const v = Number(String($(campo).value).replace(',', '.'));
  const t = estTam(estVista.tipo, estVista.tamanho), [aw, ah] = t.locais[p.local].area;
  const {wMax} = estColocar(p.arte, aw, ah, p.ajuste);
- if (!(v > 0)) { estRender(); return; }
+ if (!(v > 0)) { const a = estColocar(p.arte, aw, ah, p.ajuste); $('est-larg').value = Math.round(a.lw * 100) / 100; $('est-alt').value = Math.round(a.lh * 100) / 100; return; }
  const larg = campo === 'est-larg' ? v : v * p.arte.proporcao;
  let escala = larg / wMax;
  if (escala > 1 + 1e-6) toast(`Nesta área cabe no máximo ${estCm(wMax)} × ${estCm(wMax / p.arte.proporcao)} cm.`);
  if (escala < .2 - 1e-6) toast(`O mínimo é ${estCm(wMax * .2)} cm de largura (20% da área).`);
  escala = estLimitar(escala, .2, 1);
  if (estAjustar({escala}, true)) estConferir();
+ // a prévia não reescreve o campo em uso; aqui ele volta com a medida final, em até duas casas
+ const {lw, lh} = estColocar(p.arte, aw, ah, p.ajuste);
+ $('est-larg').value = Math.round(lw * 100) / 100; $('est-alt').value = Math.round(lh * 100) / 100;
 }
 for (const c of ['est-larg', 'est-alt']) {
  $(c).onchange = () => estMedida(c);
@@ -156,10 +159,10 @@ function estRender() {
  const t = estTam(estVista.tipo, estVista.tamanho), [w, h] = t.camisa, loc = t.locais[estVista.local];
  const svg = $('est-svg'), m = w / 2;
  svg.setAttribute('viewBox', `${-w * .85} ${-4} ${w * 1.7} ${h + 9}`);
- const tinta = '#20203c', cor = estCorHex(), traco = estLum(cor) > .18 ? tinta : '#e6e6ee';
+ const tinta = '#2d3144', cor = estCorHex(), traco = estLum(cor) > .18 ? tinta : '#e6e6ee';
  // marcações (medidas e área segura): vermelho, ou a primeira cor que se destaca na camisa escolhida
  const contraste = (a, b) => { const [x, y] = [estLum(a), estLum(b)].sort((p, q) => q - p); return (x + .05) / (y + .05); };
- const vermelho = ['#d7192d', '#1f6fd1', '#20203c', '#ffffff'].find(c => contraste(c, cor) >= 2.4) || '#20203c';
+ const vermelho = ['#d7192d', '#1f6fd1', '#2d3144', '#ffffff'].find(c => contraste(c, cor) >= 2.4) || '#2d3144';
  // desenho da equipe: a silhueta recebe a cor da camisa e as linhas vêm por cima, na cor que contrasta
  const fio = estEl('g', {}, estEl('path', {d: loc.contorno, fill: cor}),
   estEl('path', {d: loc.linhas, fill: 'none', stroke: traco, 'stroke-width': loc.espessura, 'stroke-linecap': 'round', 'stroke-linejoin': 'round'}));
@@ -181,8 +184,8 @@ function estRender() {
   const img = estEl('image', {href: `/estampas/arte/${p.arte.id}`, x, y, width: lw, height: lh, preserveAspectRatio: 'xMidYMid meet', class: 'est-arte'});
   img.addEventListener('pointerdown', e => estPegar(e, 'mover', p, g));
   camadas.push(img);
-  if (p !== sel) { camadas.push(estEl('rect', {x, y, width: lw, height: lh, fill: 'none', stroke: '#6967c9', 'stroke-width': .12, 'stroke-dasharray': '.5 .4', class: 'est-moldura est-outra'})); continue; }
-  const canto = estEl('rect', {x: x + lw - alca / 2, y: y + lh - alca / 2, width: alca, height: alca, fill: '#fff', stroke: '#6967c9', 'stroke-width': .2, class: 'est-alca'});
+  if (p !== sel) { camadas.push(estEl('rect', {x, y, width: lw, height: lh, fill: 'none', stroke: '#6a68cb', 'stroke-width': .12, 'stroke-dasharray': '.5 .4', class: 'est-moldura est-outra'})); continue; }
+  const canto = estEl('rect', {x: x + lw - alca / 2, y: y + lh - alca / 2, width: alca, height: alca, fill: '#fff', stroke: '#6a68cb', 'stroke-width': .2, class: 'est-alca'});
   canto.addEventListener('pointerdown', e => estPegar(e, 'tamanho', p, g));
   const r = alca * .62, cx = x + lw, cy = y;
   const fechar = estEl('g', {class: 'est-remover', role: 'button', 'aria-label': `Remover ${estRotulo(p)}`},
@@ -190,7 +193,7 @@ function estRender() {
    estEl('circle', {cx, cy, r, fill: '#fff', stroke: '#d7192d', 'stroke-width': .2}),
    estEl('path', {d: `M${cx - r * .42} ${cy - r * .42}L${cx + r * .42} ${cy + r * .42}M${cx + r * .42} ${cy - r * .42}L${cx - r * .42} ${cy + r * .42}`, stroke: '#d7192d', 'stroke-width': .22, 'stroke-linecap': 'round'}));
   fechar.addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); estRemover(p); });
-  camadas.push(estEl('rect', {x, y, width: lw, height: lh, fill: 'none', stroke: '#6967c9', 'stroke-width': .18, class: 'est-moldura'}), canto, fechar);
+  camadas.push(estEl('rect', {x, y, width: lw, height: lh, fill: 'none', stroke: '#6a68cb', 'stroke-width': .18, class: 'est-moldura'}), canto, fechar);
   $('est-escala').value = p.ajuste.escala; $('est-escala-v').textContent = Math.round(p.ajuste.escala * 100) + '%';
   for (const [c, v] of [['est-larg', lw], ['est-alt', lh]]) if (document.activeElement !== $(c)) $(c).value = Math.round(v * 100) / 100;
  }
