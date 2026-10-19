@@ -277,13 +277,21 @@ async function estMockGerar() {
 // navegação entre as vistas na janela ampliada (setas na tela ou do teclado)
 function estMockMostrar(i) {
  const n = estMockVistas.length; if (!n) return;
- estMockI = (i + n) % n; const v = estMockVistas[estMockI];
- $('est-mock-titulo').textContent = `${estMockTitulo} · ${v.nome}`; $('est-mock-img').src = v.imagem; $('est-mock-img').alt = `Mockup ${estMockTitulo}, ${v.nome}`;
+ const antes = estMockI; estMockI = estLimitar(i, 0, n - 1); const v = estMockVistas[estMockI], img = $('est-mock-img');
+ $('est-mock-titulo').textContent = `${estMockTitulo} · ${v.nome}`; img.src = v.imagem; img.alt = `Mockup ${estMockTitulo}, ${v.nome}`;
  $('est-mock-pos').textContent = `${estMockI + 1} de ${n}`;
+ // sem volta: na primeira vista some a seta da esquerda, na última a da direita
+ // (o foco sai antes da seta sumir: o navegador o jogaria para fora da janela)
+ const ant = $('est-mock-ant'), prox = $('est-mock-prox'), focada = document.activeElement;
+ if (focada === ant && estMockI === 0 && n > 1) prox.focus();
+ if (focada === prox && estMockI === n - 1 && n > 1) ant.focus();
+ ant.hidden = estMockI === 0; prox.hidden = estMockI === n - 1;
+ if (antes !== estMockI) { img.classList.remove('troca'); void img.offsetWidth; img.classList.add('troca'); }
 }
 $('est-mock-ant').onclick = () => estMockMostrar(estMockI - 1);
 $('est-mock-prox').onclick = () => estMockMostrar(estMockI + 1);
-$('est-mock-dialog').addEventListener('keydown', e => {
+document.addEventListener('keydown', e => {
+ if (!$('est-mock-dialog').open || e.target.closest?.('input, select, textarea')) return;
  if (e.key === 'ArrowLeft') { e.preventDefault(); estMockMostrar(estMockI - 1); }
  if (e.key === 'ArrowRight') { e.preventDefault(); estMockMostrar(estMockI + 1); }
 });

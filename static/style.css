@@ -1074,14 +1074,19 @@ main>header>div.atv-timer:not([hidden]){display:flex;flex-direction:row;align-it
 .est-mock-grid img{width:100%;height:100%;object-fit:cover;display:block}
 .est-mock-grid span{position:absolute;left:4px;bottom:4px;font-size:10px;padding:1px 6px;border-radius:6px;background:rgba(255,255,255,.88);color:#43436a}
 .est-mock-grid.carregando{opacity:.55}.est-mock-grid p{grid-column:1/-1;margin:0}
-.est-mock-dialog{max-width:min(92vw,620px);overflow:hidden}
-.est-mock-palco{position:relative;display:flex;justify-content:center}
-.est-mock-dialog img{display:block;max-width:100%;height:auto;max-height:calc(100vh - 190px);object-fit:contain;border-radius:12px}
-.est-mock-seta{position:absolute;top:50%;transform:translateY(-50%);width:40px;height:40px;border-radius:50%;border:0;padding:0;display:grid;place-items:center;
- background:rgba(255,255,255,.92);color:#20203c;box-shadow:0 2px 10px rgba(20,20,50,.22);cursor:pointer}
-.est-mock-seta:hover{background:#fff}.est-mock-seta svg{width:20px;height:20px}
+.est-mock-dialog{max-width:min(92vw,620px);overflow:hidden;padding-bottom:18px;user-select:none}
+/* palco com altura fixa (4:5 das fotos): trocar a imagem não mexe no tamanho da janela nem no lugar das setas */
+.est-mock-palco{position:relative;display:flex;justify-content:center;align-items:center;height:min(calc(100vh - 210px),700px);aspect-ratio:4/5;max-width:100%;margin:0 auto}
+.est-mock-dialog img{display:block;width:100%;height:100%;object-fit:contain;border-radius:12px}
+.est-mock-dialog img.troca{animation:est-mock-troca .22s var(--motion,ease-out)}
+@keyframes est-mock-troca{from{opacity:.4;transform:scale(.96)}to{opacity:1;transform:none}}
+/* centradas sem transform: o :active geral dos botões (translateY) não as tira de baixo do cursor no meio do clique */
+.est-mock-seta{position:absolute;top:calc(50% - 20px);width:40px;height:40px;border-radius:50%;border:0;padding:0;display:grid;place-items:center;
+ background:rgba(255,255,255,.92);color:#20203c;box-shadow:0 2px 10px rgba(20,20,50,.22);cursor:pointer;transition:transform .12s,background-color .2s}
+.est-mock-seta:hover{background:#fff}.est-mock-seta:active{transform:scale(.92)}.est-mock-seta svg{width:20px;height:20px}
+.est-mock-seta[hidden]{display:none}
 #est-mock-ant{left:10px}#est-mock-prox{right:10px}
-.est-mock-pos{margin:8px 0 0;text-align:center;font-size:12px;color:#6b6b80}
+.est-mock-pos{margin:12px 0 0;text-align:center;font-size:12px;line-height:16px;color:#6b6b80}
 .est-medida{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:700;color:#20203c}
 #est-medida-campos{display:flex;align-items:center;gap:6px}
 .est-medida input{width:64px;padding:4px 6px;font:inherit;font-weight:600;border:1px solid var(--line);border-radius:7px;text-align:right}

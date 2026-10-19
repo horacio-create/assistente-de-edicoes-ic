@@ -1,5 +1,12 @@
 # Histórico de versões
 
+## 1.13.1 — Visualizador de mockups — 19/10/2026
+
+- As setas do mockup ampliado respondem a todo clique (antes, ao apertar, a seta pulava para baixo e o
+  clique podia se perder); a janela não muda de tamanho ao trocar de vista nem seleciona texto no duplo clique.
+- Troca de vista com uma animação de escala simples; a seta some na primeira e na última vista.
+- Mais espaço entre a contagem ("1 de 4") e a borda da janela.
+
 ## 1.13.0 — Estampas de camisa — 19/10/2026
 
 - Nova ferramenta Estampas de camisa (permissão própria por cargo): a arte do cliente vira um PDF por
