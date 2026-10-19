@@ -1,4 +1,29 @@
-# Verificação da versão oficial 1.12.1
+# Verificação da versão oficial 1.13.0
+
+## Estampas de camisa — 19/10/2026
+
+- 222 testes Python, nenhuma falha (21 pulados, como antes). Novos desde a primeira rodada: pastas por
+  tipo de camisa acima de 6 tamanhos, .zip com a mesma organização e entrega pela rede com subpastas;
+  mockups das 32 fotos (a arte só na vista do seu local e só dentro da camisa; recolorir muda só a
+  camisa); duas estampas no mesmo lado viram um PDF do tamanho do conjunto, e sobreposição bloqueia a
+  exportação; cargo Colaborador EAP com as estampas, liberado uma vez só.
+- Mockups conferidos nas 32 fotos com as máscaras da equipe, em branco, preta, vermelha, azul-marinho,
+  azul royal, verde, roxa e amarela: bordas sem fio claro, estampas no lugar em todos os tamanhos, curva
+  do tronco e volume do busto sem degraus. Cerca de 0,35 s na primeira vista de cada foto e 0,07 s depois.
+- Navegador: duas logos na frente com medida digitada em cm, bloqueio de sobreposição com o aviso, X para
+  remover, prévia dos mockups com troca de tamanho e setas na vista ampliada.
+
+## Estampas de camisa — primeira rodada (15/10/2026)
+
+- 220 testes Python, nenhuma falha (21 pulados, como antes). Novos: tabela de áreas; ajuste de tamanho e posição sempre dentro da área; cores da camisa e aviso de contraste (com os "a
+  confirmar"); a arte nunca passa da área nem distorce, em todos os tamanhos, locais e proporções; manga
+  esquerda à direita na vista de frente; resolução e fundo branco de imagens, remoção do fundo mantendo
+  o miolo branco da arte; vetor continua vetor e acusa traço fino; exportação de 16 PDFs + conferência
+  com nomes e medidas conferidos página a página; não substitui arquivos; dados inválidos recusados.
+- Navegador: importação com a janela de locais, frente e costas, remoção de fundo branco, conferência,
+  troca de tamanho e local na prévia; tela na altura da janela, sem rolar a página.
+
+# Verificação da versão 1.12.1
 
 ## Vídeos de até 200 MB — 14/10/2026
 

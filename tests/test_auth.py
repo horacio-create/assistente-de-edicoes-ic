@@ -189,10 +189,14 @@ class AuthTests(unittest.TestCase):
             return int(out['status'][:3]), json.loads(body)
         roles = call('GET', '/api/admin/dados', cookie=self.admin_cookie)[1]['roles']
         eap_role = next(r for r in roles if r['brand'] == 'eap')
-        self.assertEqual((eap_role['name'], sorted(eap_role['modules'])), ('Colaborador EAP', ['eap', 'ms6']))
+        self.assertEqual((eap_role['name'], sorted(eap_role['modules'])), ('Colaborador EAP', ['eap', 'estampas', 'ms6']))
         _, cookie = signup('eap@x.com', 'Marina Souza', eap_role['id'])
         info = call('GET', '/api/info', cookie=cookie)[1]
-        self.assertEqual((info['brand'], sorted(m['id'] for m in info['modules'])), ('eap', ['eap', 'ms6']))
+        self.assertEqual((info['brand'], sorted(m['id'] for m in info['modules'])), ('eap', ['eap', 'estampas', 'ms6']))
+        # a migração das estampas roda uma vez: se o administrador tirar a permissão, ela não volta ao reiniciar
+        self.assertEqual(call('POST', '/api/admin/cargo-salvar', {'id': eap_role['id'], 'name': 'Colaborador EAP', 'modules': ['ms6', 'eap'], 'brand': 'eap'}, self.admin_cookie)[0], 200)
+        auth.init()
+        self.assertEqual(sorted(m['id'] for m in call('GET', '/api/info', cookie=cookie)[1]['modules']), ['eap', 'ms6'])
         self.assertEqual(call('GET', '/api/info', cookie=self.admin_cookie)[1]['brand'], 'indoor')
         image = io.BytesIO(); Image.new('RGB', (40, 30), 'red').save(image, 'PNG')
         self.assertEqual(raw('/api/home/foto', image.getvalue(), self.admin_cookie)[0], 200)

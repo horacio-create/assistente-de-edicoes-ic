@@ -37,7 +37,14 @@ def init():
         if 'brand' not in {c[1] for c in db.execute('PRAGMA table_info(roles)')}:
             db.execute("ALTER TABLE roles ADD COLUMN brand TEXT NOT NULL DEFAULT 'indoor'")
             # uma vez, junto da coluna: o cargo da EAP já vem pronto (pode ser editado ou excluído depois)
-            db.execute("INSERT INTO roles(id,name,modules,brand) VALUES(?,?,?,'eap')", (uid(), 'Colaborador EAP', json.dumps(['ms6', 'eap'])))
+            db.execute("INSERT INTO roles(id,name,modules,brand) VALUES(?,?,?,'eap')", (uid(), 'Colaborador EAP', json.dumps(['ms6', 'eap', 'estampas'])))
+        # migrações que rodam uma vez só: depois o administrador pode tirar a permissão sem ela voltar
+        db.execute('CREATE TABLE IF NOT EXISTS migracoes (nome TEXT PRIMARY KEY)')
+        if db.execute("INSERT OR IGNORE INTO migracoes VALUES('estampas-eap')").rowcount:
+            # 1.13.0: os cargos da marca EAP passam a usar também as Estampas de camisa
+            for r in db.execute("SELECT id, modules FROM roles WHERE brand='eap'").fetchall():
+                mods = json.loads(r['modules'])
+                if 'estampas' not in mods: db.execute('UPDATE roles SET modules=? WHERE id=?', (json.dumps(mods + ['estampas']), r['id']))
 
 def digest(token): return hashlib.sha256(token.encode()).hexdigest()
 def later(days): return (datetime.now(timezone.utc) + timedelta(days=days)).isoformat()

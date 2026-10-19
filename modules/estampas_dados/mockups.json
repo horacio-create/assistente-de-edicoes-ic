@@ -1,0 +1,242 @@
+{
+"baby-G-costas": {
+"ppc": 12.953,
+"cx": 537.0,
+"gola": 82,
+"tronco": 472.0,
+"branco": 238.6,
+"mascara": "equipe"
+},
+"baby-G-frente": {
+"ppc": 13.359,
+"cx": 534.5,
+"gola": 168,
+"tronco": 512.0,
+"branco": 237.7,
+"mascara": "equipe"
+},
+"baby-G-lateral-direita": {
+"ppc": 12.703,
+"mx": 437.1,
+"my": 195.4,
+"branco": 239.7,
+"mascara": "equipe"
+},
+"baby-G-lateral-esquerda": {
+"ppc": 12.875,
+"mx": 619.1,
+"my": 199.5,
+"branco": 240.4,
+"mascara": "equipe"
+},
+"baby-M-costas": {
+"ppc": 14.311,
+"cx": 540.0,
+"gola": 99,
+"tronco": 464.0,
+"branco": 240.1,
+"mascara": "equipe"
+},
+"baby-M-frente": {
+"ppc": 14.443,
+"cx": 535.0,
+"gola": 183,
+"tronco": 493.0,
+"branco": 238.7,
+"mascara": "equipe"
+},
+"baby-M-lateral-direita": {
+"ppc": 14.23,
+"mx": 471.1,
+"my": 223.9,
+"branco": 239.9,
+"mascara": "equipe"
+},
+"baby-M-lateral-esquerda": {
+"ppc": 14.18,
+"mx": 602.5,
+"my": 219.7,
+"branco": 240.0,
+"mascara": "equipe"
+},
+"baby-P-costas": {
+"ppc": 14.483,
+"cx": 540.0,
+"gola": 93,
+"tronco": 439.0,
+"branco": 239.7,
+"mascara": "equipe"
+},
+"baby-P-frente": {
+"ppc": 14.948,
+"cx": 537.5,
+"gola": 166,
+"tronco": 469.0,
+"branco": 238.3,
+"mascara": "equipe"
+},
+"baby-P-lateral-direita": {
+"ppc": 14.845,
+"mx": 452.3,
+"my": 199.3,
+"branco": 239.2,
+"mascara": "equipe"
+},
+"baby-P-lateral-esquerda": {
+"ppc": 14.569,
+"mx": 625.3,
+"my": 215.3,
+"branco": 240.4,
+"mascara": "equipe"
+},
+"comum-G-costas": {
+"ppc": 12.253,
+"cx": 540.0,
+"gola": 49,
+"tronco": 488.0,
+"branco": 241.1,
+"mascara": "equipe"
+},
+"comum-G-frente": {
+"ppc": 12.467,
+"cx": 540.5,
+"gola": 110,
+"tronco": 483.0,
+"branco": 241.3,
+"mascara": "equipe"
+},
+"comum-G-lateral-direita": {
+"ppc": 12.053,
+"mx": 458.4,
+"my": 236.1,
+"branco": 241.0,
+"mascara": "equipe"
+},
+"comum-G-lateral-esquerda": {
+"ppc": 12.453,
+"mx": 610.8,
+"my": 230.7,
+"branco": 243.0,
+"mascara": "equipe"
+},
+"comum-GG-costas": {
+"ppc": 11.872,
+"cx": 542.0,
+"gola": 34,
+"tronco": 524.0,
+"branco": 240.0,
+"mascara": "equipe"
+},
+"comum-GG-frente": {
+"ppc": 12.038,
+"cx": 539.5,
+"gola": 102,
+"tronco": 531.0,
+"branco": 240.0,
+"mascara": "equipe"
+},
+"comum-GG-lateral-direita": {
+"ppc": 12.231,
+"mx": 444.6,
+"my": 235.8,
+"branco": 240.6,
+"mascara": "equipe"
+},
+"comum-GG-lateral-esquerda": {
+"ppc": 12.218,
+"mx": 603.5,
+"my": 237.1,
+"branco": 243.4,
+"mascara": "equipe"
+},
+"comum-M-costas": {
+"ppc": 12.472,
+"cx": 537.0,
+"gola": 47,
+"tronco": 450.0,
+"branco": 241.4,
+"mascara": "equipe"
+},
+"comum-M-frente": {
+"ppc": 12.611,
+"cx": 535.0,
+"gola": 111,
+"tronco": 466.0,
+"branco": 241.3,
+"mascara": "equipe"
+},
+"comum-M-lateral-direita": {
+"ppc": 12.194,
+"mx": 474.2,
+"my": 234.0,
+"branco": 242.8,
+"mascara": "equipe"
+},
+"comum-M-lateral-esquerda": {
+"ppc": 12.472,
+"mx": 589.7,
+"my": 231.4,
+"branco": 241.7,
+"mascara": "equipe"
+},
+"comum-P-costas": {
+"ppc": 12.522,
+"cx": 534.0,
+"gola": 73,
+"tronco": 420.0,
+"branco": 241.6,
+"mascara": "equipe"
+},
+"comum-P-frente": {
+"ppc": 12.493,
+"cx": 532.5,
+"gola": 149,
+"tronco": 427.0,
+"branco": 241.1,
+"mascara": "equipe"
+},
+"comum-P-lateral-direita": {
+"ppc": 12.464,
+"mx": 466.6,
+"my": 241.0,
+"branco": 244.2,
+"mascara": "equipe"
+},
+"comum-P-lateral-esquerda": {
+"ppc": 12.435,
+"mx": 580.3,
+"my": 244.9,
+"branco": 243.6,
+"mascara": "equipe"
+},
+"comum-XGG-costas": {
+"ppc": 11.457,
+"cx": 539.0,
+"gola": 30,
+"tronco": 561.0,
+"branco": 241.1,
+"mascara": "equipe"
+},
+"comum-XGG-frente": {
+"ppc": 11.556,
+"cx": 538.0,
+"gola": 95,
+"tronco": 587.0,
+"branco": 240.9,
+"mascara": "equipe"
+},
+"comum-XGG-lateral-direita": {
+"ppc": 11.679,
+"mx": 446.2,
+"my": 241.6,
+"branco": 241.9,
+"mascara": "equipe"
+},
+"comum-XGG-lateral-esquerda": {
+"ppc": 11.815,
+"mx": 635.2,
+"my": 236.4,
+"branco": 243.0,
+"mascara": "equipe"
+}
+}

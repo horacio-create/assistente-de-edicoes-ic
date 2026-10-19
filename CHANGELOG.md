@@ -1,5 +1,45 @@
 # Histórico de versões
 
+## 1.13.0 — Estampas de camisa — 19/10/2026
+
+- Nova ferramenta Estampas de camisa (permissão própria por cargo): a arte do cliente vira um PDF por
+  tamanho e local, pronto para o DTF, na medida exata da arte.
+- O cargo "Colaborador EAP" passa a usar as Estampas, junto com a Vetorização M6S e a Logo EAP (liberado
+  uma única vez na atualização; o administrador pode tirar depois sem a permissão voltar).
+- Tamanhos: comum P, M, G, GG e XGG; baby look P, M e G, todos marcados por padrão. A arte ocupa o maior
+  tamanho que cabe na área segura (longe das costuras), sem distorcer, alinhada pelo topo.
+- Áreas da frente conforme a gráfica; GG (28 × 38) e XGG (31 × 39,5) calculados pela proporção dos outros
+  tamanhos; costas iguais à frente; mangas 9 × 9 cm (comum) e 7 × 7 cm (baby look). Os calculados e os
+  padrões aparecem como "a confirmar" até a gráfica validar.
+- Locais: frente, costas e mangas. Ao importar, uma janela pergunta onde a estampa vai; dá para usar
+  artes diferentes por local (ex.: logo do cliente na frente e logo EAP nas costas).
+- Conferência: resolução em cada tamanho (abaixo de 150 dpi e de 300 dpi), fundo branco (com remoção
+  automática em PNG/JPG), traços abaixo de 0,5 mm e textos de SVG fora de curvas.
+- Folha de conferência em PDF (A3): todos os tamanhos lado a lado, em escala, com camisa, área e arte.
+- Mockups: fotos com modelo em cada tamanho (frente, costas e as duas laterais), com a camisa recolorida na cor
+  escolhida e a estampa na medida real. A arte acompanha o corpo: curva nas laterais do tronco, se deforma sobre o
+  busto e a barriga e segue as dobras do tecido. Prévia no passo 6 e exportação em JPG (4 por tamanho), nas
+  pastas "Camisa comum - mockups" e "Camisa baby look - mockups" quando houver mais de 6 tamanhos.
+- Várias estampas no mesmo lado (ex.: duas logos no peito): cada uma com o seu tamanho e posição no editor, com
+  um X para remover; nenhuma pode ficar por cima de outra, e um aviso pede para remover ou diminuir quando não
+  cabem. Na exportação, cada lado vira um PDF só, do tamanho do conjunto, com as estampas nas posições exatas.
+- Medida da estampa editável em cm (largura ou altura), com a proporção travada.
+- Mockup ampliado com setas (e ← →) para passar pelas 4 vistas.
+- Exportação com mais de 6 tamanhos (comum e baby look juntos): os PDFs saem em pastas separadas,
+  "Camisa comum - impressão" e "Camisa baby look - impressão" (as de mockups virão com eles); a folha de
+  conferência fica na raiz. Opção de compactar tudo em um único .zip.
+- Cor da camisa: as 18 cores da Algodão 30.1 Vortex (Click Camisetas), perguntada ao importar e trocável a
+  qualquer momento; a prévia e a folha de conferência mostram a camisa nessa cor, e o sistema avisa quando a
+  estampa tem pouco contraste com o tecido.
+- Tamanho e posição da estampa: arrastar na prévia, puxar o canto ou usar o controle de tamanho (20% a 100%);
+  ela nunca sai da área segura e o ajuste vale para todos os tamanhos.
+  Ao arrastar, gruda no centro horizontal da área (com guia); a altura fica livre. Alt solta o snap.
+- Desenho novo da camisa (comum e baby look, frente e costas), na proporção real: a silhueta recebe a cor da
+  camisa e as linhas mudam de cor para continuar visíveis; cada tamanho ajusta o desenho às suas medidas.
+- Prévia com a camisa do tamanho, as medidas LARGURA e ALTURA, a área tracejada e a arte.
+- Mockups com modelo: espaço reservado na tela; prompts para gerar as fotos em
+  docs/prompts-mockups-estampas.md.
+
 ## 1.12.1 — Vídeos de até 200 MB — 14/10/2026
 
 - Editor de vídeos aceita arquivos de até 200 MB (antes, 100 MB). Imagens, logos, patterns e as outras

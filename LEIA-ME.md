@@ -128,6 +128,18 @@ Ajustes: **Sensibilidade** do fundo; **Preservar áreas internas da cor do fundo
 
 Em **Exportar logos**, escolha a pasta, o nome base e as versões. Os arquivos saem como `EAP - Cliente - fundo branco.png`, `… - fundo preto.png`, `… - transparente.png` e, no modo vetor, `EAP - Cliente.svg`. Arquivos existentes nunca são substituídos.
 
+## Estampas de camisa — V1.13.0
+
+Abra **Estampas de camisa** e arraste a arte (PDF, AI, SVG ou PNG; no CorelDraw, use Arquivo › Publicar em PDF). Escolha onde ela vai: frente, costas e/ou mangas (esquerda e direita de quem veste). Para outra arte, use **Adicionar outra estampa**: num lado que já tem estampa, ela entra ao lado da atual (ex.: duas logos no peito).
+
+1. **Cliente:** nome que vai nos arquivos.
+2. **Camisa:** a cor da Algodão 30.1 Vortex (também perguntada ao importar). A prévia mostra o contraste com a estampa.
+3. **Ajuste:** clique numa estampa para selecioná-la. Arraste para mover, puxe o canto, use **Tamanho da estampa** ou digite a largura ou a altura em cm (a proporção fica travada). O **X** remove a estampa. Ela nunca sai da área segura nem fica por cima de outra; se não couber, um aviso pede para diminuir ou remover alguma.
+4. **Tamanhos:** todos vêm marcados; desmarque os que não precisa (ex.: uma camisa só).
+5. **Conferência:** avisos de resolução, fundo branco (em PNG/JPG, **Remover fundo branco**) e traços finos. Áreas "a confirmar" ainda dependem da gráfica.
+6. **Mockups:** a estampa na camisa vestida, na cor escolhida, em cada tamanho (frente, costas e laterais). Clique numa vista para ampliar e use as setas para passar pelas outras.
+7. **Exportar PDFs:** um arquivo por tamanho e lado, na medida da arte (com várias estampas, o conjunto num arquivo só), os mockups em JPG e a folha de conferência. Com mais de 6 tamanhos, os arquivos saem em pastas de camisa comum e baby look; dá para compactar tudo num .zip.
+
 ## Molduras de TV — V1.12.0
 
 Abra **Molduras de TV** na barra lateral e clique em **Nova moldura**.

@@ -1,4 +1,4 @@
-# Assistente de Edições — versão web V1.12.1
+# Assistente de Edições — versão web V1.13.0
 
 Aplicação web local de padronização de imagens e montagem de vídeos da Indoor Channel.
 
@@ -145,6 +145,28 @@ No servidor (`deploy/`), `INDOOR_AUTH=1` liga o login; no PC e no executável po
 - **Esqueceu a senha:** na tela Usuários, **Redefinir senha** gera um link (7 dias, uso único) para a pessoa definir uma senha nova; ao usar, as sessões abertas em outros aparelhos são encerradas.
 - Desativar um usuário encerra as sessões dele na hora. Cinco senhas erradas seguidas bloqueiam o e-mail por 15 minutos.
 
+## Estampas de camisa
+
+Prepara a estampa do cliente para impressão DTF: um PDF por tamanho de camisa e lado (frente, costas,
+mangas), na medida exata da arte, que ocupa o maior tamanho possível dentro da área segura. Um lado pode
+ter várias estampas (sem sobreposição); o PDF do lado tem o tamanho do conjunto. Tabela de medidas e
+geometria em `modules/estampas.py` (valores "a confirmar" sinalizados), rotas em `modules/estampas_api.py`,
+mockups em `modules/estampas_mockups.py` e tela em `static/estampas.js`. Prompts das fotos com modelo em
+`docs/prompts-mockups-estampas.md`.
+
+Mockups: fotos da camisa branca vestida (`<tipo>-<tamanho>-<vista>.png`, 1080 × 1350) com a máscara de
+cada uma (`mask-<nome>.png`: tecido pintado, resto transparente ou preto). Para trocar fotos ou máscaras,
+rode uma vez, com scipy instalado só para isso, `python modules/estampas_dados/preparar_mockups.py "<pasta>"`:
+ele grava as fotos em JPG, as máscaras e as medidas de cada foto (escala, gola, mangas) em
+`modules/estampas_dados/mockups/` e `mockups.json`. O sistema recolore a camisa, aplica a arte na medida
+real e a deforma com o corpo (curva do tronco, volume pela luz da foto e dobras).
+
+Desenho das camisas: `camisa-comum.svg` e `camisa-baby-look.svg`, em mm e na proporção real do tamanho M, com as
+vistas `frente` e `costas`; em cada uma, `contorno-<vista>` (silhueta fechada), `detalhes-<vista>` (linhas com traço),
+`largura-<vista>` (axila a axila) e `altura-<vista>` (ombro à barra). Para trocar, salve os SVGs novos numa pasta e rode
+`python modules/estampas_dados/extrair_camisas.py "<pasta>"`: ele mede o desenho e regrava
+`modules/estampas_dados/camisas.json`. O sistema ajusta cada desenho à largura do peito e à altura de cada tamanho.
+
 ## Molduras de TV
 
 Cria a moldura personalizada da TV do cliente e gera os dois arquivos de produção: folha de impressão e
@@ -212,7 +234,7 @@ node tests/test_undo.cjs
 cd ofertas/motor && npm test   # contrato de templates de Ofertas
 ```
 
-A V1.12.0 tem 211 testes Python, incluindo os do módulo Ofertas (os 20 que dependem do motor são pulados sem Node.js e o do extrator com encartes reais conferidos é pulado sem `OFERTAS_ENCARTES`), além de cinco testes JavaScript e oito testes do contrato em `ofertas/motor`. Os testes de vídeo usam
+A V1.13.0 tem 220 testes Python, incluindo os do módulo Ofertas (os 20 que dependem do motor são pulados sem Node.js e o do extrator com encartes reais conferidos é pulado sem `OFERTAS_ENCARTES`), além de cinco testes JavaScript e oito testes do contrato em `ofertas/motor`. Os testes de vídeo usam
 FFmpeg e arquivos sintéticos temporários. Node.js é necessário apenas para os testes JavaScript.
 O teste de navegador em `tests/test_composition_browser.cjs` usa Playwright, uma instância
 isolada, um vídeo sintético de cinco segundos e imagens verdes/amarelas ao lado dele.

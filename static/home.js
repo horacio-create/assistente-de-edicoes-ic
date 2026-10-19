@@ -8,11 +8,12 @@ const HOME_TOOLS = {
  offers: {name: 'Ofertas', icon: 'tag', view: 'ofertas', text: 'Gere vídeos de ofertas de supermercado a partir de templates e encartes.'},
  ms6: {name: 'Vetorização M6S', icon: 'spline', view: 'vector', text: 'Transforma a logo do cliente em contornos DXF para gravar o microfone M6S no laser.'},
  eap: {name: 'Logo EAP', icon: 'hexagon', view: 'eap', text: 'Limpa ou vetoriza a logo do cliente e entrega os PNGs em 1024 × 1024 prontos para uso.'},
- molduras: {name: 'Molduras de TV', icon: 'moldura', view: 'molduras', text: 'Cria a moldura da TV na identidade do cliente e gera a folha de impressão e a faca de corte em PDF.'}
+ molduras: {name: 'Molduras de TV', icon: 'moldura', view: 'molduras', text: 'Cria a moldura da TV na identidade do cliente e gera a folha de impressão e a faca de corte em PDF.'},
+ estampas: {name: 'Estampas de camisa', icon: 'shirt', view: 'estampas', text: 'Prepara a estampa para o DTF em cada tamanho de camisa, dentro da área segura, com folha de conferência.'}
 };
 const HOME_BRAND = {
  indoor: {eyebrow: 'Indoor Channel · Assistente de Edições', text: 'Prepare artes, vídeos, ofertas e logos para as telas da Indoor Channel, direto no navegador. Escolha uma ferramenta abaixo ou veja um tutorial antes de começar.'},
- eap: {eyebrow: 'EAP · Assistente de edições', text: 'Prepare as logos dos clientes da EAP e os arquivos de gravação a laser do microfone M6S, direto no navegador. Escolha uma ferramenta abaixo ou veja um tutorial antes de começar.'}
+ eap: {eyebrow: 'EAP · Assistente de edições', text: 'Prepare as logos dos clientes da EAP, os arquivos de gravação a laser do microfone M6S e as estampas de camisa, direto no navegador. Escolha uma ferramenta abaixo ou veja um tutorial antes de começar.'}
 };
 const HOME_PHOTO_MS = 6000, HOME_FADE_MS = 1200;  // cada foto fica 6 s no topo; a troca leva 1,2 s
 let homeTimer = null;

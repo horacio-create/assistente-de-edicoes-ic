@@ -8,6 +8,7 @@ import json
 import math
 import re
 from pathlib import Path
+import numpy
 import pymupdf
 from PIL import Image, ImageChops
 from . import molduras_geometria as geo_mod
@@ -62,9 +63,9 @@ def cor_de(valor, cores):
 def cores_da_imagem(im, peso=1.0):
     """Cores marcantes de uma imagem: ignora transparência e o branco do fundo; agrupa tons parecidos."""
     im = im.convert('RGBA'); im.thumbnail((180, 180))
-    px = [p[:3] for p in im.getdata() if p[3] > 128 and min(p[:3]) < 238]
-    if not px: return []
-    tira = Image.new('RGB', (len(px), 1)); tira.putdata(px)
+    a = numpy.asarray(im); px = a[(a[..., 3] > 128) & (a[..., :3].min(axis=2) < 238)][:, :3]
+    if not len(px): return []
+    tira = Image.fromarray(px.reshape(1, -1, 3).astype('uint8'), 'RGB')
     q = tira.quantize(colors=10, method=Image.Quantize.FASTOCTREE)
     pal = q.getpalette()
     contagem = sorted(q.getcolors(), reverse=True)
