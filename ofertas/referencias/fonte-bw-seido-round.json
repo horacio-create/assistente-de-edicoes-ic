@@ -1,0 +1,12 @@
+{
+  "familia": "Bw Seido Round",
+  "estilo": "Black",
+  "peso": 900,
+  "arquivo": "assets/fonts/bw-seido-round-black.ttf",
+  "origem": "Fonte instalada no Windows e identificada pelo usuário em 20/10/2026",
+  "sha256": "e9deb5c8504bf4b1a0b9eae61c2434b91d487b7b0af3be609b6e3cc89b4e1651",
+  "aplicacao": [
+    "Título do produto",
+    "Algarismos e vírgulas dos preços normal e de clube"
+  ]
+}

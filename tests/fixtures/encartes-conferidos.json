@@ -312,5 +312,17 @@
     "unidade": "KG"
    }
   ]
- }
+ },
+  "106cffac7786fb4de5a2c754f647a25bad1eff676882410d2e27b29faaa5b9d7": {
+    "arquivo": "SEMANAL-4-4.pdf",
+    "completo": false,
+    "ofertas": [
+      {
+        "nome": "Beef Burger Bovino Friboi 120G (Sabores)",
+        "por": "3,99",
+        "de": "4,99",
+        "unidade": "CADA"
+      }
+    ]
+  }
 }

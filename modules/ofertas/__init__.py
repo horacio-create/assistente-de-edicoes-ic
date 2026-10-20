@@ -449,7 +449,7 @@ def enfileirar(pedido):
     FILA.set()
     return ident
 
-def tamanhos_dos_videos(n, lista, cartelas=None):
+def tamanhos_dos_videos(n, lista, cartelas=None, distribuicao='equilibrar'):
     """Quantos produtos vão em cada vídeo do lote. `cartelas` = máximo de cartelas (grupos) por vídeo,
     escolhido pelo usuário (padrão: o máximo do template). Os vídeos são equilibrados (11 cartelas, até 5
     por vídeo: 4 + 4 + 3, e não 5 + 5 + 1) e nenhum fica abaixo do mínimo do template; o que faltar é
@@ -460,7 +460,45 @@ def tamanhos_dos_videos(n, lista, cartelas=None):
     if not gmin <= cartelas <= gmax: raise ValueError(f'Escolha de {gmin} a {gmax} cartelas por vídeo.')
     grupos = -(-n // passo)
     total = -(-grupos // cartelas)
+    if distribuicao not in ('equilibrar', 'sequencia'):
+        raise ValueError('Distribuição de cartelas inválida.')
+    if distribuicao == 'sequencia':
+        return [max(gmin, min(cartelas, grupos - k * cartelas)) * passo for k in range(total)]
     return [max(gmin, grupos // total + (k < grupos % total)) * passo for k in range(total)]
+
+def plano_lote(n, lista, cartelas=None, impar='repetir', distribuicao='equilibrar'):
+    """Agrupa antes de dividir os vídeos, preservando o trio final e a ordem do encarte."""
+    grupo = lista.get('grupo') or {}
+    passo = grupo.get('tamanho') or 1
+    if impar not in ('repetir', 'fora', 'sozinho', 'tres'):
+        raise ValueError('Opção inválida para produto sobrando.')
+    if impar == 'sozinho' and not grupo.get('incompleto'):
+        raise ValueError('Este template não mostra produto sozinho na cartela.')
+    if impar == 'tres' and not (passo == 2 and grupo.get('finalTres')):
+        raise ValueError('Este template não mostra três produtos na última cartela.')
+    if n < 1: raise ValueError('O encarte não tem produtos.')
+    if impar == 'fora' and n > passo: n -= n % passo
+    grupos = [passo] * (n // passo)
+    if n % passo:
+        if impar == 'tres' and n >= 3:
+            grupos[-1] = 3
+        else:
+            grupos.append(n % passo if impar in ('sozinho', 'tres') else passo)
+    # O trio ocupa um produto a mais: limita o número de pares para caber na capacidade do template.
+    limite = lista['itens'] // passo
+    if cartelas is not None and not 1 <= int(cartelas) <= limite:
+        raise ValueError(f'Escolha de 1 a {limite} cartelas por vídeo.')
+    if impar == 'tres' and n % 2 and n >= 3:
+        limite = (lista['itens'] - 1) // passo
+    escolhidas = limite if cartelas is None else min(int(cartelas), limite)
+    slots = tamanhos_dos_videos(len(grupos) * passo, lista, escolhidas, distribuicao)
+    tamanhos, inicio = [], 0
+    for tamanho in slots:
+        qtd = tamanho // passo
+        parte = grupos[inicio:inicio + qtd]
+        tamanhos.append(sum(parte) + max(0, qtd - len(parte)) * passo)
+        inicio += qtd
+    return tamanhos
 
 def gerar_todos(value):
     """Todos os produtos do encarte em vídeos (ver tamanhos_dos_videos). `impar`: com número ímpar de produtos
@@ -477,19 +515,21 @@ def gerar_todos(value):
     sem_preco = [it['nome'] or f'produto {k + 1}' for k, it in enumerate(itens) if not PRECO.fullmatch(it.get('por') or '')]
     if sem_preco: raise ValueError(f'Confira antes de gerar: {", ".join(sem_preco[:4])} sem preço em destaque.')
     impar = value.get('impar', 'repetir')
-    if impar not in ('repetir', 'fora', 'sozinho'): raise ValueError('Opção inválida para produto sobrando.')
-    if impar == 'sozinho' and not (lista.get('grupo') or {}).get('incompleto'):
-        raise ValueError('Este template não mostra produto sozinho na cartela.')
     passo = (lista.get('grupo') or {}).get('tamanho') or 1
     if impar == 'fora' and len(itens) > passo: itens = itens[:len(itens) - len(itens) % passo]
-    tamanhos = tamanhos_dos_videos(len(itens), lista, value.get('cartelas'))
-    if impar == 'sozinho' and len(itens) % passo: tamanhos[-1] -= passo - len(itens) % passo  # última cartela incompleta
+    tamanhos = plano_lote(len(itens), lista, value.get('cartelas'), impar, value.get('distribuicao', 'equilibrar'))
+    if 'animacoes' in value and not isinstance(value['animacoes'], bool):
+        raise ValueError('A opção de animações deve estar ativada ou desativada.')
+    revisar = value.get('revisar', False)
+    if not isinstance(revisar, bool): raise ValueError('A opção de revisão deve estar ativada ou desativada.')
     total = len(tamanhos)
     base = str(value.get('nome') or '').strip()[:150] or Path(row['nome']).stem  # nome escolhido no lote; " (n)" vem depois
     videos = []
     inicio = 0
     for g, n in enumerate(tamanhos):
         dados = json.loads(json.dumps(schema['padrao']))
+        if 'animacoes' in dados: dados['animacoes'] = value.get('animacoes', True)
+        if 'ultimacartela' in dados: dados['ultimacartela'] = 'tres' if impar == 'tres' else 'sozinho'
         modelo = dados[lista['id']]
         dados[lista['id']] = [json.loads(json.dumps(modelo[i % len(modelo)])) for i in range(n)]
         preencher_lista(lista, dados[lista['id']], [itens[(inicio + i) % len(itens)] for i in range(n)])
@@ -501,9 +541,9 @@ def gerar_todos(value):
             db.execute('INSERT INTO ofertas_pedidos VALUES(?,?,?,?,?,?,?,?)', (pedido['id'], pedido['template'], pedido['titulo'],
                        json.dumps(dados, ensure_ascii=False), 1, now(), now(), owner()))
         erros = preparar(schema['id'], dados)['erros']
-        videos.append({'pedido': pedido['id'], 'titulo': pedido['titulo'], 'render': None if erros else enfileirar(pedido), 'erros': erros[:3]})
-    with connect() as db: registrar(db, 'Vídeos do encarte enviados para a fila', row['nome'], videos=total)
-    return {'videos': videos, 'completados': sum(tamanhos) - len(itens)}
+        videos.append({'pedido': pedido['id'], 'titulo': pedido['titulo'], 'render': None if erros or revisar else enfileirar(pedido), 'erros': erros[:3]})
+    with connect() as db: registrar(db, 'Vídeos do encarte preparados para revisão' if revisar else 'Vídeos do encarte enviados para a fila', row['nome'], videos=total)
+    return {'videos': videos, 'completados': sum(tamanhos) - len(itens), 'revisar': revisar}
 
 def apagar_encarte(ident):
     """Apaga o encarte do card: o PDF e a lista de produtos. As imagens extraídas continuam na biblioteca."""

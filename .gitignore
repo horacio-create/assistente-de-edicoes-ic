@@ -14,5 +14,6 @@ dist/
 erro-inicializacao.txt
 node_modules/
 snapshots/
+.hyperframes/
 deploy/.env
 tools/ffmpeg/
