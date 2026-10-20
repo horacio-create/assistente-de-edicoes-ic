@@ -109,8 +109,9 @@ async function abrirPedido(pedido) {
   el('editar-cartelas').hidden = !state.esquema.editorCartelas;
   el('gerar').textContent = state.esquema.editorCartelas ? 'Conferir e gerar vídeo' : 'Gerar vídeo';
   el('titulo').value = pedido.titulo;
-  el('formato').textContent = `${state.esquema.largura} × ${state.esquema.altura} px · ${state.esquema.duracao}s`;
-  el('status-formato').textContent = `MP4 ${state.esquema.largura}×${state.esquema.altura} · ${state.esquema.duracao}s · entra na fila de geração`;
+  const saida = state.esquema.saida || state.esquema;
+  el('formato').textContent = `Saída: ${saida.largura} × ${saida.altura} px · ${state.esquema.duracao}s`;
+  el('status-formato').textContent = `MP4 ${saida.largura}×${saida.altura} · ${state.esquema.duracao}s · entra na fila de geração`;
   state.validacao = pedido.validacao || [];
   await montarFormulario();
   estadoSalvo(`Salvo · ${hora(pedido.atualizado)}`);

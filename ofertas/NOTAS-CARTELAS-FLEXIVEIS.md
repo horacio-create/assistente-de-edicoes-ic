@@ -38,3 +38,12 @@ python -m unittest tests.test_encarte_variantes tests.test_lote_local -q
 ```
 
 Não são incluídos bancos de dados, PDFs de clientes, encartes importados, vídeos exportados, caches ou configurações da instalação local. Vídeos já exportados precisam ser gerados novamente para usar o novo layout ou as novas animações.
+
+
+## Saída HD
+
+Vídeos horizontais 16:9 são entregues em 1280×720. O canvas do template e seus ajustes continuam nas coordenadas originais; a conversão é feita pelo motor depois da renderização, sem cortar ou esticar a arte. H.264, pixels yuv420p, SAR 1:1, áudio copiado e faststart são usados na conversão. Arquivos já em HD não são recodificados, e templates verticais/quadrados preservam a resolução declarada.
+
+O esquema informa a resolução de saída e a interface mostra essa medida no pedido. O kit inclui saida.mjs, necessário ao contrato e ao gerador. FFmpeg pode ser localizado em tools/ffmpeg, no PATH ou pela variável OFERTAS_FFMPEG. Não há dependências novas nem alterações no banco ou no deploy. Vídeos antigos precisam ser gerados novamente.
+
+Teste: node --test tests/saida_hd.test.mjs. O teste de integração cria um MP4 1920×1080 com áudio, exporta em HD e verifica dimensões, duração, áudio e proporção com FFprobe.
