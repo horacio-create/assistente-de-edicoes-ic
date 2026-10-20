@@ -1,5 +1,10 @@
 # Histórico de versões
 
+## 1.13.3 — Nome do DXF da M6S — 20/10/2026
+
+- O DXF da Vetorização M6S sugere o nome no padrão da equipe, com a medida do vetor:
+  "Impressão logo M6S - PAPITO (33,18mm x 12mm).dxf".
+
 ## 1.13.2 — Cores da marca Indoor Channel — 19/10/2026
 
 - A interface usa as cores da marca: textos em #2d3144, secundários em #626266, linhas em #dadae5,

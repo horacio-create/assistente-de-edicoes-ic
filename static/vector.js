@@ -153,7 +153,9 @@ async function openVectorExport(){
  if(!vecParts)return;
  const folder=vecFolder||await chooseFolder();if(!folder)return;vecFolder=folder;
  $('vector-folder').textContent=folder;$('vector-result').hidden=true;$('vector-save').disabled=false;
- $('vector-filename').value=`M6S - ${vec.name.replace(/\.[^.]+$/,'')} ${dateName()}`;
+ // padrão da equipe: Impressão logo M6S - PAPITO (33,18mm x 12mm); a medida é a do vetor que vai para o laser
+ const base=vec.name.replace(/\.[^.]+$/,'').trim().slice(0,45);
+ $('vector-filename').value=`Impressão logo M6S - ${base} (${fmtMm(vecResult.width)}mm x ${fmtMm(vecResult.height)}mm)`;
  $('vector-dialog-size').textContent=`${fmtMm(vecResult.width)} × ${fmtMm(vecResult.height)} mm · ${vecResult.contours} contornos fechados · centralizado na origem (0,0)`;
  $('vector-dialog').showModal();
 }
