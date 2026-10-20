@@ -25,10 +25,20 @@ def _dist(rect, p, numerico):
     return d * 3 if numerico and p.y < rect.y0 else d
 
 
-def _agrupar(recortes, doc):
+def _agrupar(recortes, doc, titulos=None):
     """Une recortes do mesmo produto: os que se sobrepõem de verdade (ex.: pacotes de hambúrguer empilhados)
     e cópias da mesma imagem encostadas (ex.: três peças de maminha, dois potes de creatina)."""
     mascaras = {}
+    # As linhas globais permanecem separadas: títulos de colunas vizinhas
+    # podem estar na mesma altura e não devem formar um bloco único.
+    blocos = [{'rect': r} for r, texto, _ in (titulos or []) if LETRAS.search(texto)]
+    def titulo(rec):
+        r = rec[0]
+        candidatos = [(i, b) for i, b in enumerate(blocos)
+                      if r.x0 <= (b['rect'].x0 + b['rect'].x1) / 2 <= r.x1
+                      and -8 <= r.y0 - b['rect'].y1 <= min(65, r.height * .75)]
+        return min(candidatos, key=lambda x: _dist(r, (x[1]['rect'].tl+x[1]['rect'].br)/2, False))[0] if candidatos else None
+    ancoras = {id(rec): titulo(rec) for rec in recortes}
     def opaco(rec, p):
         r, _, smask, t = rec
         if smask not in mascaras: mascaras[smask] = pymupdf.Pixmap(doc, smask)
@@ -48,6 +58,10 @@ def _agrupar(recortes, doc):
             pontos = [pymupdf.Point(inter.x0 + inter.width * (i + .5) / n, inter.y0 + inter.height * (j + .5) / n) for i in range(n) for j in range(n)]
             ambos = sum(opaco(a, p) and opaco(b, p) for p in pontos) / len(pontos)
             if ambos * inter.get_area() > 0.05 * min(ra.get_area(), rb.get_area()): return True
+            # Embalagens de sabores diferentes podem quase não se cobrir, embora
+            # suas caixas transparentes se cruzem. O mesmo título logo acima,
+            # centrado dentro das duas caixas, confirma que pertencem à oferta.
+            if ancoras[id(a)] is not None and ancoras[id(a)] == ancoras[id(b)]: return True
         perto = pymupdf.Rect(ra.x0 - ra.width * .15, ra.y0 - ra.height * .15, ra.x1 + ra.width * .15, ra.y1 + ra.height * .15)
         return a[1] == b[1] and perto.intersects(rb)
     grupo = list(range(len(recortes)))
@@ -191,9 +205,9 @@ def extrair(pdf_bytes):
                         spans.append((pymupdf.Rect(s['bbox']), t, s['size']))
         # sem transparência = fundo, logo de cartão etc. (ficam de fora em _recortes)
         recortes = [x for x in _recortes(page) if x[0].width >= 25 and x[0].height >= 25 and x[0].get_area() <= area * 0.3]
-        grupos = [{'rect': g, 'spans': [], 'precos': [], 'unidades': []} for g in _agrupar(recortes, doc)]
-        if not grupos: continue
         textos = [s for s in spans if LETRAS.search(s[1])]
+        grupos = [{'rect': g, 'spans': [], 'precos': [], 'unidades': []} for g in _agrupar(recortes, doc, textos)]
+        if not grupos: continue
         equivalencia = lambda r: any(l.y0 - r.height < r.y0 < l.y1 + r.height and -5 < r.x0 - l.x1 < 40 for l in legendas)
         precos = [p for p in _tokens_preco(spans) if not equivalencia(p[0])]
         # unidades vão mais longe (o selo pode ficar bem abaixo da foto); a escolha final é a mais
@@ -253,7 +267,7 @@ def ler_area(pdf_bytes, numero, area):
     candidatos = [x for x in _recortes(pg) if (x[0] & rect).get_area() > 0.6 * x[0].get_area() and x[0].width >= 25]
     if candidatos:
         # a área pode pegar a foto de um vizinho: vale o grupo de fotos mais perto do preço
-        grupos = _agrupar(candidatos, doc)
+        grupos = _agrupar(candidatos, doc, [s for s in spans if LETRAS.search(s[1])])
         alvo = (rect_por.tl + rect_por.br) / 2 if rect_por else None
         foto = min(grupos, key=lambda g: _dist(g, alvo, True)) if alvo else max(grupos, key=lambda g: g.get_area())
         png = _foto(doc, [c for c in candidatos if foto.contains(c[0])])

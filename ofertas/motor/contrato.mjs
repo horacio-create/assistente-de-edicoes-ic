@@ -102,6 +102,20 @@ function validarValor(campo, bruto, decl, ctx) {
     case "texto": {
       const s = String(bruto).trim();
       if (campo.max && s.length > campo.max) return { erro: `máximo de ${campo.max} caracteres (tem ${s.length}).` };
+      if (campo.formato === 'ajustesVisuais') {
+        try {
+          const obj = JSON.parse(s);
+          const ids = /^(titulo|produto|precos|selo|normal|selo-titulo|(?:de|clube)-(?:int|cent)-\d{1,2}|clube-virgula|(?:de|clube)-(?:unidade|moeda))$/;
+          if (!obj || typeof obj !== 'object' || Array.isArray(obj)) throw Error();
+          const elementos = obj.elementos ?? {};
+          if (typeof elementos !== 'object' || !elementos || Array.isArray(elementos) || Object.keys(elementos).length > 200) throw Error();
+          for (const [id, a] of Object.entries(elementos)) {
+            if (!ids.test(id) || !a || typeof a !== 'object') throw Error();
+            for (const [k,min,max] of [['x',-1920,1920],['y',-1080,1080],['escala',.2,4]])
+              if (typeof a[k] !== 'number' || !Number.isFinite(a[k]) || a[k] < min || a[k] > max) throw Error();
+          }
+        } catch { return {erro:'ajustes visuais inválidos. Restaure a cartela no editor.'}; }
+      }
       return { valor: s };
     }
     case "preco": {
@@ -246,7 +260,7 @@ export function prepararDados(template, dados, baseDir) {
 
   for (const c of meta.campos) {
     if (c.tipo !== "lista") {
-      aplicar(c.id, c, dados[c.id], c.rotulo);
+      aplicar(c.id, c, dados[c.id] === undefined && c.opcional ? decl.get(c.id)?.default : dados[c.id], c.rotulo);
       continue;
     }
     const itens = dados[c.id];
@@ -293,7 +307,10 @@ export function esquema(template) {
   const enriquecer = (c, idVar) => {
     const d = decl.get(idVar) || {};
     const out = { ...c };
-    if (c.tipo === "opcoes") out.opcoes = (d.options || []).map((o) => o.value);
+    if (c.tipo === "opcoes") {
+      out.opcoes = (d.options || []).map((o) => o.value);
+      out.rotulosOpcoes = Object.fromEntries((d.options || []).map((o) => [o.value, o.label || o.value]));
+    }
     if (c.tipo === "numero") {
       out.min ??= d.min;
       out.max ??= d.max;
@@ -307,6 +324,7 @@ export function esquema(template) {
     id: template.meta.id,
     nome: template.meta.nome,
     cliente: template.meta.cliente || "",
+    editorCartelas: Boolean(template.meta.editorCartelas),
     descricao: template.meta.descricao || "",
     largura: attr("data-width"),
     altura: attr("data-height"),
