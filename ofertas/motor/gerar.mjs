@@ -1,11 +1,12 @@
 // Uso: node gerar.mjs <pasta-do-template> [dados.json] [-o saida.mp4]
 // Sem dados.json, gera com os valores padrão do template.
-import { cpSync, mkdirSync, mkdtempSync, rmSync, writeFileSync, readFileSync, renameSync, copyFileSync } from "node:fs";
+import { cpSync, mkdirSync, mkdtempSync, rmSync, writeFileSync, readFileSync, copyFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve, dirname, basename } from "node:path";
 import { fileURLToPath } from "node:url";
-import { validarTemplate, prepararDados, dadosPadrao } from "./contrato.mjs";
+import { validarTemplate, prepararDados, dadosPadrao, esquema } from "./contrato.mjs";
 import { hyperframes } from "./hyperframes.mjs";
+import { entregarVideo } from "./saida.mjs";
 
 const args = process.argv.slice(2);
 const iSaida = args.indexOf("-o");
@@ -57,11 +58,9 @@ try {
   const r = hyperframes(["render", "--variables-file", "variaveis.json", "--strict-variables", "-o", "saida.mp4"], trabalho);
   if (!r.ok) falhar("Render falhou", ["veja o log acima"]);
   mkdirSync(dirname(saida), { recursive: true });
-  try {
-    renameSync(join(trabalho, "saida.mp4"), saida);
-  } catch {
-    copyFileSync(join(trabalho, "saida.mp4"), saida); // outro disco
-  }
+  const {largura, altura} = esquema(template);
+  const tamanho = entregarVideo(join(trabalho, "saida.mp4"), saida, largura, altura);
+  console.log(`✓ Resolução de saída: ${tamanho.largura}×${tamanho.altura}`);
   console.log(`✓ ${basename(saida)} gerado em ${dirname(saida)}`);
 } finally {
   rmSync(trabalho, { recursive: true, force: true });

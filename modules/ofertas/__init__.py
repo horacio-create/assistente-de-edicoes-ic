@@ -48,7 +48,7 @@ HF = {'runtime.js': MOTOR / 'node_modules/hyperframes/dist/hyperframe.runtime.ii
       'gsap.min.js': MOTOR / 'node_modules/gsap/dist/gsap.min.js'}
 KIT = {'SKILL.md': BASE / 'kit' / 'criar-template' / 'SKILL.md', 'CONTRATO.md': BASE / 'CONTRATO.md'}
 KIT_ZIP = 'criar-template-ofertas.zip'
-KIT_MOTOR = ('contrato.mjs', 'validar-template.mjs', 'gerar.mjs', 'hyperframes.mjs', 'package.json', 'package-lock.json')
+KIT_MOTOR = ('saida.mjs', 'contrato.mjs', 'validar-template.mjs', 'gerar.mjs', 'hyperframes.mjs', 'package.json', 'package-lock.json')
 KIT_LEIA_ME = '''Kit para o Claude criar templates de Ofertas de supermercados (Assistente de Edições).
 
 1. Descompacte esta pasta na pasta de skills do Claude Code:

@@ -1,3 +1,4 @@
+import { resolucaoSaida } from "./saida.mjs";
 // Contrato de template da Fábrica de Vídeos (versão 1) — ver CONTRATO.md.
 // Valida templates e converte os dados do formulário nas variáveis do HyperFrames.
 import { readFileSync, existsSync } from "node:fs";
@@ -328,6 +329,7 @@ export function esquema(template) {
     descricao: template.meta.descricao || "",
     largura: attr("data-width"),
     altura: attr("data-height"),
+    saida: resolucaoSaida(attr("data-width"), attr("data-height")),
     duracao: attr("data-duration"),
     capaEm: template.meta.capaEm ?? 0,
     campos: template.meta.campos.map((c) =>
