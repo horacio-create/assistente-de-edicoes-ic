@@ -7,14 +7,16 @@ const esc = (t) => String(t ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '
 const hora = (iso) => (iso ? new Date(iso).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : '');
 const STATUS = { na_fila: 'Na fila', gerando: 'Gerando', pronto: 'Pronto', falhou: 'Falhou', cancelado: 'Cancelado', interrompido: 'Interrompido' };
 const TELAS = {
-  catalogo: ['Novo vídeo', 'Escolha um template. Preencha os produtos. O vídeo sai pronto para a tela.'],
-  editor: ['', 'Preencha os campos. A prévia atualiza sozinha.'],
+  conferencia: ['Conferir ofertas', 'Etapa 1 · Importe e confira os produtos do encarte.'],
+  catalogo: ['Montar cartelas', 'Etapa 2 · Escolha o template para suas ofertas.'],
+  videos: ['Montar vídeos', 'Etapa 3 · Organize a saída e confira antes de gerar.'],
+  editor: ['', 'Etapa 2 · Confira o conteúdo e ajuste suas cartelas.'],
   pedidos: ['Pedidos recentes', 'Retome um vídeo de onde parou.'],
   fila: ['Vídeos gerados', 'Acompanhe a fila e baixe os MP4 prontos.'],
   biblioteca: ['Biblioteca de imagens', 'Recortes prontos para reaproveitar.'],
   templates: ['Templates', 'Publique layouts criados pelos designers.'],
 };
-const state = { tela: 'catalogo', pronto: null, imagens: {}, pedido: null, esquema: null, validacao: [], timer: null, salvando: null, pendente: false, alvoImagem: null, selecionada: null, encarte: [], ordem: [], vistos: {}, encartes: [], encarteSel: null, encartesVistos: {}, nomes: {} };
+const state = { tela: 'conferencia', importarNaEscolha: false, encarteInteiro: false, pronto: null, imagens: {}, pedido: null, esquema: null, validacao: [], timer: null, salvando: null, pendente: false, alvoImagem: null, selecionada: null, encarte: [], ordem: [], vistos: {}, encartes: [], encarteSel: null, encartesVistos: {}, nomes: {} };
 
 async function api(path, { body, raw } = {}) {
   const opts = { method: body || raw ? 'POST' : 'GET', headers: {} };
@@ -61,25 +63,105 @@ async function ativar() {
   if (state.pronto) mostrar(state.tela);
 }
 // o app.js troca as seções (showView); ativa quando "Ofertas" fica visível
-new MutationObserver(() => { if (!document.getElementById('ofertas').hidden) ativar(); else salvarAgora(); })
+new MutationObserver(() => { if (!document.getElementById('ofertas').hidden) ativar(); else { salvarAgora(); OfertasEdicao.recolher(); } })
   .observe(document.getElementById('ofertas'), { attributes: true, attributeFilter: ['hidden'] });
 
 async function mostrar(tela) {
+  const telaAnterior = state.tela;
   if (state.pedido && tela !== 'editor') await salvarAgora();
   state.tela = tela;
   document.querySelectorAll('#ofertas .of-tela').forEach((t) => (t.hidden = t.id !== 'of-' + tela));
-  document.querySelectorAll('#ofertas .aba').forEach((a) => a.setAttribute('aria-selected', String(a.dataset.tela === (tela === 'editor' ? 'catalogo' : tela))));
+  document.querySelectorAll('#ofertas .aba').forEach((a) => a.setAttribute('aria-selected', String(a.dataset.tela === (['conferencia', 'catalogo', 'editor', 'videos'].includes(tela) ? 'conferencia' : tela))));
   const [titulo, sub] = TELAS[tela];
   document.getElementById('page-title').textContent = tela === 'editor' ? state.esquema?.nome || '' : titulo;
   document.getElementById('page-subtitle').textContent = sub;
   if (tela === 'catalogo') carregarCatalogo();
-  if (tela === 'editor') desenharCardEncarte();
+  if (tela === 'conferencia') desenharCardEncarte();
+  if (tela === 'videos') desenharSaida();
+  if (tela === 'editor') montarEditorIntegrado();
+  else { el('player').pause?.(); OfertasEdicao.recolher(); }
+  atualizarEtapas();
   if (tela === 'pedidos') carregarPedidos();
   if (tela === 'fila') carregarFila();
   if (tela === 'biblioteca') carregarBiblioteca();
   if (tela === 'templates') carregarTemplatesAdmin();
+  if (tela !== telaAnterior) document.getElementById('page-title').scrollIntoView({block:'start'});
 }
 document.querySelectorAll('#ofertas .aba').forEach((a) => a.addEventListener('click', () => mostrar(a.dataset.tela)));
+
+// ---------- etapas do processo (somente Ofertas) ----------
+function atualizarEtapas() {
+  const etapa = state.tela === 'conferencia' ? 'conferencia' : ['catalogo','editor'].includes(state.tela) ? 'montagem' : 'videos';
+  el('etapas').hidden = !['conferencia','catalogo','editor','videos','fila'].includes(state.tela);
+  el('etapas').querySelectorAll('[data-etapa]').forEach(b => {
+    if (b.dataset.etapa === etapa) b.setAttribute('aria-current', 'step'); else b.removeAttribute('aria-current');
+    b.disabled = b.dataset.etapa === 'videos' && (!state.pedido || state.importarNaEscolha);
+  });
+  if (state.tela === 'catalogo') el('template-contexto').textContent = state.importarNaEscolha
+    ? `${state.ordem.length} produtos de ${encAtual()?.nome || 'seu encarte'} serão usados na montagem.`
+    : 'Escolha o visual. Depois preencha os produtos ou use um encarte da primeira etapa.';
+}
+function atualizarResumoConferencia() {
+  const enc = encAtual(), pronto = enc?.status === 'pronto' && enc.itens.length > 0;
+  el('continuar-encarte').disabled = !pronto;
+  const avisos = pronto ? enc.itens.filter(it => avisosDe(it).length).length : 0;
+  const conferidos = pronto ? enc.itens.filter(it => it.conferido).length : 0;
+  el('conferencia-resumo').textContent = pronto
+    ? `${enc.itens.length} produtos · ${conferidos} conferidos${avisos ? ` · ${avisos} com avisos para revisar` : ''}. Confira os dados antes de continuar.`
+    : enc?.status === 'lendo' ? 'Lendo o encarte. Aguarde os produtos aparecerem para continuar.'
+    : 'Importe um encarte para começar ou preencha os produtos manualmente.';
+}
+async function continuarEncarte(todos) {
+  const enc = encAtual();
+  if (enc?.status !== 'pronto' || !enc.itens.length) return aviso('Importe e confira um encarte antes de continuar.');
+  if (todos) state.ordem = enc.itens.map((_, k) => k);
+  if (!state.ordem.length) return;
+  state.importarNaEscolha = true;
+  await mostrar('catalogo');
+}
+function desenharSaida() {
+  if (!state.pedido) return;
+  const lista = listaPrincipal(), n = lista ? state.pedido.dados[lista.id].length : 0;
+  const saida = state.esquema.saida || state.esquema;
+  const cartelas = lista ? tamanhosCartelas(n, passoDe(lista), state.pedido.dados.ultimacartela === 'tres').length : 1;
+  el('video-nome').textContent = state.esquema.nome;
+  if (document.activeElement !== el('video-titulo')) el('video-titulo').value = el('titulo').value;
+  el('video-resumo').textContent = `${n ? `${n} ${n === 1 ? 'produto' : 'produtos'} · ${cartelas} ${cartelas === 1 ? 'cartela' : 'cartelas'} · ` : ''}${state.esquema.duracao}s · MP4 ${saida.largura} × ${saida.altura}`;
+  el('video-validacao').textContent = state.encarteInteiro
+    ? 'O encarte tem mais produtos que o limite deste vídeo. Organize o encarte completo no painel ao lado.'
+    : state.validacao.length ? `${state.validacao.length} campos precisam de atenção. Volte às cartelas para corrigir.`
+    : 'Conteúdo preenchido. Faça a conferência visual antes de gerar.';
+  el('gerar').disabled = state.validacao.length > 0 || Boolean(state.encarteInteiro);
+  const enc = encAtual(), pronto = enc?.status === 'pronto' && enc.itens.length > 0 && !!lista;
+  el('encarte-todos').hidden = !pronto;
+  el('video-encarte').textContent = pronto
+    ? `${enc.nome} · todos os ${enc.itens.length} produtos, na ordem do encarte.`
+    : 'Importe um encarte na primeira etapa para organizar todos os produtos em vídeos.';
+}
+async function irParaVideos() {
+  if (state.importarNaEscolha) { aviso('Escolha o template para os produtos selecionados.'); return mostrar('catalogo'); }
+  if (!state.pedido) { aviso('Escolha um template na etapa Montar cartelas.'); return mostrar('catalogo'); }
+  await salvarAgora();
+  if (!el('save-state').textContent.startsWith('Salvo')) return aviso('Aguarde o salvamento antes de continuar.');
+  await mostrar('videos');
+}
+el('etapas').querySelectorAll('[data-etapa]').forEach(b => b.addEventListener('click', () => {
+  if (b.dataset.etapa === 'videos') irParaVideos().catch(falha);
+  else mostrar(b.dataset.etapa === 'montagem' ? (state.pedido && !state.importarNaEscolha ? 'editor' : 'catalogo') : 'conferencia').catch(falha);
+}));
+el('continuar-encarte').addEventListener('click', () => continuarEncarte(true).catch(falha));
+el('sem-encarte').addEventListener('click', () => { state.importarNaEscolha = false; mostrar('catalogo'); });
+el('trocar-template').addEventListener('click', async () => {
+  if (!await confirmar('Escolher outro template?', 'Será criado um novo pedido. Sua montagem atual continuará em Pedidos recentes.', 'Escolher template')) return;
+  state.importarNaEscolha = false; mostrar('catalogo');
+});
+el('voltar-ofertas').addEventListener('click', () => mostrar('conferencia'));
+el('continuar-videos').addEventListener('click', () => irParaVideos().catch(falha));
+el('avancar-videos').addEventListener('click', () => irParaVideos().catch(falha));
+el('voltar-cartelas').addEventListener('click', () => mostrar('editor'));
+el('rever-cartelas').addEventListener('click', () => mostrar('editor'));
+el('ver-fila').addEventListener('click', () => mostrar('fila'));
+el('video-titulo').addEventListener('input', () => { el('titulo').value = el('video-titulo').value; agendarSalvar(); });
 
 // ---------- catálogo ----------
 // nome legível do template para Pedidos e Vídeos gerados (as listas guardam só o id)
@@ -97,17 +179,38 @@ async function carregarCatalogo() {
         <span class="usar">${t.erros.length ? 'Template com problemas — veja em Templates' : 'Usar este template '+icon('arrow-right','inline-icon')}</span></span></button>`).join('')
       : '<div class="vazio">Nenhum template publicado ainda. Publique o primeiro em Templates.</div>';
     el('lista-templates').querySelectorAll('.template-card:not([disabled])').forEach((c) => c.addEventListener('click', async () => {
-      try { abrirPedido(await api('/pedidos', { body: { template: c.dataset.id } })); } catch (e) { falha(e); }
+      try {
+        await abrirPedido(await api('/pedidos', { body: { template: c.dataset.id } }));
+        if (state.importarNaEscolha && listaPrincipal()) {
+          if (state.ordem.length <= listaPrincipal().itens) {
+            preencherEscolhidos();
+            await salvarAgora();
+          } else {
+            const escolhidos = state.ordem.slice();
+            state.ordem = escolhidos.slice(0, listaPrincipal().itens);
+            preencherEscolhidos();
+            await salvarAgora();
+            state.ordem = escolhidos;
+            state.encarteInteiro = true;
+            await mostrar('videos');
+            aviso('Este encarte excede o limite de um vídeo. Use “Organizar vídeos do encarte” para preparar todos os produtos.', 7000);
+          }
+          state.importarNaEscolha = false;
+          atualizarEtapas();
+        }
+      } catch (e) { falha(e); }
     }));
   } catch (e) { falha(e); }
 }
 
 // ---------- editor ----------
 async function abrirPedido(pedido) {
+  if (state.pedido?.id !== pedido.id) state.contextoCartela = null;
   state.esquema = await api('/esquema?template=' + encodeURIComponent(pedido.template));
   state.pedido = pedido;
-  el('editar-cartelas').hidden = !state.esquema.editorCartelas;
-  el('gerar').textContent = state.esquema.editorCartelas ? 'Conferir e gerar vídeo' : 'Gerar vídeo';
+  state.encarteInteiro = false;
+  el('editar-cartelas').hidden = true;
+  el('gerar').textContent = 'Gerar este vídeo';
   el('titulo').value = pedido.titulo;
   const saida = state.esquema.saida || state.esquema;
   el('formato').textContent = `Saída: ${saida.largura} × ${saida.altura} px · ${state.esquema.duracao}s`;
@@ -121,11 +224,13 @@ async function abrirPedido(pedido) {
 
 const valor = (caminho) => caminho.reduce((o, k) => o?.[k], state.pedido.dados);
 function definir(caminho, v) {
+  OfertasEdicao.conteudoAlterado();
   let o = state.pedido.dados;
   caminho.slice(0, -1).forEach((k) => (o = o[k]));
   o[caminho.at(-1)] = v;
   agendarSalvar();
   if (caminho[0] === 'ultimacartela') montarFormulario();
+  if (state.tela === 'videos') desenharSaida();
 }
 function urlImagem(v) {
   if (!v) return '';
@@ -190,9 +295,18 @@ async function montarFormulario() {
   if (ids.length) (await api('/imagens?ids=' + [...new Set(ids)].join(','))).forEach((i) => (state.imagens[i.id] = i));
   const form = el('formulario');
   const rolagem = form.scrollTop;
-  form.innerHTML = '<h3>Conteúdo</h3>';
+  form.innerHTML = '<h3>Conteúdo das cartelas</h3>';
+  const gerais = document.createElement('details');
+  gerais.className = 'of-dados-campanha';
+  gerais.innerHTML = '<summary>Datas e dados da campanha</summary>';
+  gerais.open = !state.esquema.editorCartelas;
+  form.append(gerais);
+  el('video-opcoes').replaceChildren();
   for (const def of [...state.esquema.campos.filter(c => c.tipo !== 'lista'), ...state.esquema.campos.filter(c => c.tipo === 'lista')]) {
-    if (def.tipo !== 'lista') { form.append(campo(def, [def.id], def.id)); continue; }
+    if (def.tipo !== 'lista') {
+      const destino = ['animacoes', 'ultimacartela'].includes(def.id) ? el('video-opcoes') : gerais;
+      destino.append(campo(def, [def.id], def.id)); continue;
+    }
     const qtd = state.pedido.dados[def.id].length;
     const tamanho = def.grupo?.tamanho || def.itens;
     const variavel = def.min < def.itens;
@@ -205,6 +319,7 @@ async function montarFormulario() {
       const noGrupo = tamanhosGrupos[g];
       const grupo = document.createElement('section');
       grupo.className = 'grupo';
+      if (def === listaPrincipal()) grupo.dataset.cartela = String(g);
       grupo.innerHTML = `<header><h4>${esc(def.grupo ? `${nomeGrupo} ${g + 1}` : def.rotulo)}</h4><small>${noGrupo} ${esc(nomeItem)}${noGrupo > 1 ? 's' : ''}${noGrupo < tamanho ? ' · centralizado' : ''}</small></header>`;
       if (variavel && qtd - noGrupo >= def.min) {
         const remover = document.createElement('button');
@@ -222,6 +337,7 @@ async function montarFormulario() {
       for (let i = inicioGrupo; i < inicioGrupo + noGrupo; i++) {
         const card = document.createElement('div');
         card.className = 'item-card';
+        if (def === listaPrincipal()) card.dataset.produto = String(i + 1);
         card.innerHTML = `<div class="item-titulo"><b>${i + 1}</b>${esc(def.rotuloItem || def.rotulo)} ${i + 1}</div>`;
         if (incompleto && qtd > def.min) {
           const tirar = document.createElement('button');
@@ -275,6 +391,7 @@ async function montarFormulario() {
     }
   }
   form.scrollTop = rolagem;
+  sincronizarPainelCartela();
   aplicarValidacao(state.validacao);
 }
 
@@ -284,6 +401,7 @@ function itensPadrao(def, de, qtd) {
   return Array.from({ length: qtd }, (_, i) => structuredClone(padrao[(de + i) % padrao.length]));
 }
 async function mudarQuantidade(def, mudar, rolarAteNovo = false) {
+  OfertasEdicao.conteudoAlterado();
   mudar(state.pedido.dados[def.id]);
   agendarSalvar();
   await montarFormulario();
@@ -313,10 +431,10 @@ function tamanhosDosVideos(n, lista, cartelas, distribuicao = 'equilibrar') {
 
 function aplicarValidacao(detalhes) {
   state.validacao = detalhes;
-  el('formulario').querySelectorAll('.com-erro').forEach((e) => e.classList.remove('com-erro'));
+  document.querySelectorAll('#of-formulario .com-erro, #of-video-opcoes .com-erro').forEach((e) => e.classList.remove('com-erro'));
   const gerais = [];
   for (const d of detalhes) {
-    const alvo = d.campo && el('formulario').querySelector(`[data-var="${d.campo}"]`);
+    const alvo = d.campo && document.querySelector(`#of-formulario [data-var="${d.campo}"], #of-video-opcoes [data-var="${d.campo}"]`);
     if (!alvo) { gerais.push(d.mensagem); continue; }
     alvo.classList.add('com-erro');
     alvo.querySelector('.erro-campo').textContent = d.mensagem;
@@ -327,6 +445,7 @@ function aplicarValidacao(detalhes) {
   s.className = detalhes.length ? 'pendente' : 'ok';
   s.textContent = detalhes.length ? `${detalhes.length} ${detalhes.length === 1 ? 'campo precisa' : 'campos precisam'} de atenção` : 'Tudo certo para gerar';
   el('gerar').disabled = detalhes.length > 0;
+  if (state.tela === 'videos') desenharSaida();
 }
 
 const PENDENTE = 'Alterações não salvas…';
@@ -359,6 +478,10 @@ async function salvarAgora() {
 el('titulo').addEventListener('input', agendarSalvar);
 
 function atualizarPreview(inicio) {
+  if (state.esquema?.editorCartelas) {
+    montarEditorIntegrado();
+    return;
+  }
   const player = el('player');
   const tempo = inicio ?? (player.currentTime || 0);
   const tocando = player.ready && !player.paused;
@@ -381,20 +504,68 @@ async function abrirEdicaoCartelas(gerarDepois = false) {
   if (!state.esquema?.editorCartelas) return;
   if (state.validacao.length) { aviso('Confira os campos marcados antes de editar as cartelas.'); return; }
   if (!el('save-state').textContent.startsWith('Salvo')) { aviso('Salve as alterações antes de abrir o editor.'); return; }
-  const pedidoId = state.pedido.id;
-  OfertasEdicao.abrir({pedido: state.pedido, gerarDepois,
-    onSalvar: async (ajustes) => {
-      if (state.pedido.id !== pedidoId) throw new Error('O pedido mudou. Reabra o editor.');
-      for (const [numero, ajuste] of Object.entries(ajustes)) {
-        const produto = state.pedido.dados.produtos[Number(numero)-1];
-        if (produto) produto.edicao = JSON.stringify(ajuste);
-      }
-      agendarSalvar(); await salvarAgora();
-      if (!el('save-state').textContent.startsWith('Salvo') || state.validacao.length) throw new Error('Não foi possível salvar os ajustes. Confira os dados e tente novamente.');
-    }, onGerar: gerarPedido});
+  await mostrar('editor');
+  if (gerarDepois) aviso('Confira as cartelas aqui e depois continue para os vídeos.');
 }
 el('editar-cartelas').addEventListener('click', () => abrirEdicaoCartelas().catch(falha));
-el('gerar').addEventListener('click', () => (state.esquema?.editorCartelas ? abrirEdicaoCartelas(true) : gerarPedido()).catch(falha));
+el('gerar').addEventListener('click', () => gerarPedido().catch(falha));
+
+function sincronizarPainelCartela(contexto = state.contextoCartela) {
+  if (!state.esquema?.editorCartelas) {
+    el('formulario').querySelectorAll('[data-cartela], [data-produto]').forEach(n => n.hidden = false);
+    return;
+  }
+  const lista = listaPrincipal(), qtd = state.pedido.dados[lista.id].length;
+  const grupos = tamanhosCartelas(qtd, passoDe(lista), state.pedido.dados.ultimacartela === 'tres');
+  const cartela = Math.min(contexto?.cartela || 0, grupos.length - 1);
+  const primeiro = grupos.slice(0, cartela).reduce((a,b) => a+b,0) + 1;
+  const produto = contexto?.produto >= primeiro && contexto.produto < primeiro + grupos[cartela] ? contexto.produto : primeiro;
+  state.contextoCartela = {...contexto, cartela, produto};
+  el('formulario').querySelector('h3').textContent = `Conteúdo · Produto ${produto}`;
+  el('formulario').querySelectorAll('[data-cartela]').forEach(n => n.hidden = Number(n.dataset.cartela) !== cartela);
+  el('formulario').querySelectorAll('[data-produto]').forEach(n => n.hidden = Number(n.dataset.produto) !== produto);
+}
+function montarEditorIntegrado() {
+  if (!state.pedido) return;
+  const integrado = Boolean(state.esquema.editorCartelas);
+  el('editor-unificado').hidden = !integrado;
+  el('editor-classico').hidden = integrado;
+  if (!integrado) { el('editor-classico').append(el('formulario')); el('editor-classico').querySelector('.player-shell').append(el('player')); return; }
+  const pedidoId = state.pedido.id;
+  const conteudo = JSON.stringify(state.pedido.dados, (k,v) => k === 'edicao' ? undefined : v);
+  const editor = OfertasEdicao.montar({
+    pedido:state.pedido,
+    conteudo,
+    urlImagem,
+    onContexto: contexto => {
+      if (state.pedido?.id !== pedidoId) return;
+      sincronizarPainelCartela(contexto);
+    },
+    onAlterar: ajustes => {
+      if (state.pedido?.id !== pedidoId) return;
+      if (conteudo !== JSON.stringify(state.pedido.dados, (k,v) => k === 'edicao' ? undefined : v)) return;
+      let mudou = false;
+      for (const [numero, ajuste] of Object.entries(ajustes)) {
+        const produto = state.pedido.dados.produtos[Number(numero)-1], texto = JSON.stringify(ajuste);
+        if (produto && produto.edicao !== texto) { produto.edicao = texto; mudou = true; }
+      }
+      if (mudou) agendarSalvar();
+    },
+    onReproduzir: async (cartela,total) => {
+      await salvarAgora();
+      if (!el('save-state').textContent.startsWith('Salvo')) throw new Error('Salve as alterações antes de reproduzir a prévia.');
+      const player = el('player');
+      player.addEventListener('ready', () => { player.seek(state.esquema.duracao/total*cartela + .1); player.play(); }, {once:true});
+      player.setAttribute('src', `/ofertas/preview/${pedidoId}/index.html?v=${state.pedido.revision}`);
+    },
+    onPararPrevia: () => el('player').pause?.(),
+    onContinuar: irParaVideos,
+    onErro: falha
+  }, el('editor-unificado'));
+  if (el('formulario').parentElement !== editor.dados) editor.dados.append(el('formulario'));
+  if (el('player').parentElement !== editor.preview) editor.preview.append(el('player'));
+  sincronizarPainelCartela();
+}
 
 
 // ---------- escolha de imagem ----------
@@ -512,7 +683,8 @@ async function carregarEncartes() {
       state.encartesVistos[e.id] = e.status;
     }
     if (!state.encarteSel && state.encartes.length) state.encarteSel = state.encartes[0].id;
-    if (!el('editor').hidden) desenharCardEncarte();
+    if (!el('conferencia').hidden) desenharCardEncarte();
+    if (!el('videos').hidden) desenharSaida();
     // o botão "Trocar pelo encarte" dos produtos depende de haver encarte pronto
     const temTroca = !!el('formulario').querySelector('.trocar-encarte');
     if (state.esquema && !el('editor').hidden && temTroca !== (encartesProntos().length > 0 && !!listaPrincipal())) montarFormulario();
@@ -552,7 +724,7 @@ function itemEncarte(it) {
 const avisosDe = (it) => it.avisos || [];
 function desenharCardEncarte() {
   const card = el('encarte-card');
-  card.hidden = !listaPrincipal();
+  card.hidden = false;
   if (card.hidden) return;
   const recentes = state.encartes.slice(0, 8);
   el('encarte-lista').innerHTML = recentes.map((e) => `<button type="button" class="chip ${e.id === state.encarteSel ? 'ativo' : ''}" data-id="${e.id}">
@@ -577,9 +749,10 @@ function desenharCardEncarte() {
   if (!pronto) el('usar-encarte').hidden = true;
   if (pronto && state.encarte !== enc.itens) { state.encarte = enc.itens; state.ordem = state.ordem.filter((k) => k < enc.itens.length); }
   if (pronto) desenharEncarte();
+  atualizarResumoConferencia();
 }
 function desenharEncarte() {
-  const max = listaPrincipal().itens;
+  const max = listaPrincipal()?.itens || 30;
   el('encarte-itens').innerHTML = state.encarte.map((it, k) => {
     const pos = state.ordem.indexOf(k), av = avisosDe(it);
     return `<button class="card ${pos >= 0 ? 'selected' : ''} ${av.length ? 'com-aviso' : ''}" data-k="${k}">${pos >= 0 ? `<span class="ordem">${pos + 1}</span>` : ''}
@@ -588,18 +761,19 @@ function desenharEncarte() {
       <img class="thumb" src="/ofertas/miniatura/${it.imagem}.png" alt="" loading="lazy">${itemEncarte(it)}</button>`;
   }).join('');
   el('encarte-itens').querySelectorAll('.card').forEach((c) => c.addEventListener('click', (e) => {
-    if (e.target.classList.contains('conferir')) return abrirConferir(Number(c.dataset.k));
+    if (e.target.closest('.conferir') || !listaPrincipal()) return abrirConferir(Number(c.dataset.k));
     const k = Number(c.dataset.k), i = state.ordem.indexOf(k);
     if (i >= 0) state.ordem.splice(i, 1); else if (state.ordem.length < max) state.ordem.push(k); else return aviso(`Este template usa ${max} produtos.`);
     desenharEncarte();
   }));
   el('usar-encarte').hidden = !state.ordem.length;
-  el('usar-encarte').textContent = `Preencher ${state.ordem.length} de ${max} produtos`;
+  el('usar-encarte').textContent = `Usar ${state.ordem.length} produtos escolhidos →`;
   const conferir = state.encarte.filter((it) => avisosDe(it).length).length;
-  el('encarte-dica').textContent = (state.ordem.length ? `${state.ordem.length}/${max} escolhidos · clique de novo para desmarcar` : `Clique em até ${max} produtos, na ordem do vídeo.`)
+  el('encarte-dica').textContent = (state.ordem.length ? `${state.ordem.length}/${max} escolhidos · clique de novo para desmarcar` : (listaPrincipal() ? `Clique em até ${max} produtos, na ordem do vídeo, ou continue com todo o encarte.` : 'Clique em um produto para conferir o recorte, o nome e os preços.'))
     + (conferir ? ` · ${conferir} ${conferir === 1 ? 'produto para conferir' : 'produtos para conferir'}` : '');
 }
-el('usar-encarte').addEventListener('click', () => {
+function preencherEscolhidos() {
+  OfertasEdicao.conteudoAlterado();
   const lista = listaPrincipal();
   if (lista.min < lista.itens) { // lista variável: a quantidade acompanha os produtos escolhidos (em grupos completos)
     const passo = lista.grupo?.incompleto ? 1 : lista.grupo?.tamanho || 1;
@@ -616,7 +790,8 @@ el('usar-encarte').addEventListener('click', () => {
   agendarSalvar();
   aviso(`${n} produtos preenchidos a partir do encarte. Confira antes de gerar.`);
   el('formulario').scrollTo({ top: 0, behavior: 'smooth' });
-});
+}
+el('usar-encarte').addEventListener('click', () => continuarEncarte(false));
 
 // produto do encarte -> item da lista do pedido (só os campos que o template tem)
 function preencherItem(lista, alvo, it) {
@@ -856,7 +1031,8 @@ el('encarte-todos').addEventListener('click', () => {
   el('lote-revisar-campo').hidden = !state.esquema.editorCartelas;
   el('lote-revisar').checked = Boolean(state.esquema.editorCartelas);
   el('lote-animacoes').checked = state.pedido.dados.animacoes !== false;
-  document.querySelector(`input[name=of-lote-impar][value=${sozinho ? 'sozinho' : 'repetir'}]`).checked = true;
+  const imparPadrao = sozinho && listaPrincipal().grupo?.finalTres && state.pedido.dados.ultimacartela === 'tres' ? 'tres' : sozinho ? 'sozinho' : 'repetir';
+  document.querySelector(`input[name=of-lote-impar][value=${imparPadrao}]`).checked = true;
   el('lote-nome').value = encAtual().nome.replace(/\.[^.]+$/, '');
   desenharLote();
   el('lote-dialog').showModal();
@@ -895,7 +1071,7 @@ async function carregarPedidos() {
     }).join('')
       : '<div class="vazio">Nenhum pedido ainda. Comece em Novo vídeo.</div>';
     el('lista-pedidos').querySelectorAll('.recent-card').forEach((c) => {
-      c.querySelector('.abrir').onclick = async () => { try { abrirPedido(await api('/pedido?id=' + c.dataset.id)); } catch (e) { falha(e); } };
+      c.querySelector('.abrir').onclick = async () => { try { state.importarNaEscolha = false; abrirPedido(await api('/pedido?id=' + c.dataset.id)); } catch (e) { falha(e); } };
       c.querySelector('.excluir').onclick = async () => {
         if (!(await confirmar('Excluir este pedido?', 'Os vídeos já gerados continuam em Vídeos gerados.', 'Excluir'))) return;
         await api('/pedido-excluir', { body: { id: c.dataset.id } }).catch(falha);
@@ -972,7 +1148,7 @@ function montarRender(card, r, media) {
       <button type="button" class="text-button abrir">Abrir pedido</button></span>
       ${r.status === 'gerando' ? `<span class="progresso"><i style="width:${Math.min(95, (segundos(r) / media) * 100)}%"></i></span>` : ''}</summary>
     <div class="corpo">${corpoRender(r, media)}</div>`;
-  card.querySelector('.abrir').onclick = async (e) => { e.preventDefault(); try { abrirPedido(await api('/pedido?id=' + r.pedido)); } catch (err) { falha(err); } };
+  card.querySelector('.abrir').onclick = async (e) => { e.preventDefault(); try { state.importarNaEscolha = false; abrirPedido(await api('/pedido?id=' + r.pedido)); } catch (err) { falha(err); } };
   const c = card.querySelector('.cancelar');
   if (c) c.onclick = async (e) => { e.preventDefault(); await api('/render-cancelar', { body: { id: r.id } }).catch(falha); carregarFila(); };
   const tocar = card.querySelector('.tocar');
