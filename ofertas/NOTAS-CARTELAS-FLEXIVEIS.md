@@ -47,3 +47,14 @@ Vídeos horizontais 16:9 são entregues em 1280×720. O canvas do template e seu
 O esquema informa a resolução de saída e a interface mostra essa medida no pedido. O kit inclui saida.mjs, necessário ao contrato e ao gerador. FFmpeg pode ser localizado em tools/ffmpeg, no PATH ou pela variável OFERTAS_FFMPEG. Não há dependências novas nem alterações no banco ou no deploy. Vídeos antigos precisam ser gerados novamente.
 
 Teste: node --test tests/saida_hd.test.mjs. O teste de integração cria um MP4 1920×1080 com áudio, exporta em HD e verifica dimensões, duração, áudio e proporção com FFprobe.
+
+
+## Hora da Feira e Momento do Bebê
+
+Os novos templates `uniforca-hora-da-feira-flexivel` e `uniforca-momento-do-bebe-flexivel` usam as mesmas rotinas de layout, edição e animação do modelo flexível de carnes. As artes e os elementos da marca foram reaproveitados dos modelos já publicados. Datas continuam editáveis; cada tema reserva sua própria área branca e posição da validade. O selo infantil mantém faixa e caixa vermelhas com valores amarelos, com contraste ajustado. Valores de um dígito usam a mesma escala tipográfica dos valores de dois dígitos para preservar a separação do título e do R$.
+
+No bebê, a imagem de presente do modelo anterior é mantida como demonstração, com título explícito orientando sua substituição; o usuário pode escolher os produtos reais da biblioteca/encarte. Não há ilustrações que simulem embalagens reais.
+
+Os três modelos anteriores saem de **Novo vídeo** quando o respectivo flexível está disponível e válido. Os arquivos antigos, pedidos e vídeos são preservados. Em **Templates**, esses modelos ficam identificados como anteriores. Se um substituto não existir ou tiver erro, o modelo anterior continua visível como alternativa. A classificação é informada pelo catálogo do servidor, sem migração ou exclusão de dados.
+
+Validação: testes de contrato exercitam 1, 2, 3, 7 e 30 produtos, slides/animações, final sozinho/trio e persistência dos ajustes. O catálogo tem teste de substituição e de fallback quando o novo modelo está inválido. Conferências visuais de ambos os temas (entradas, repouso e final de três produtos com título longo e ajustes de caracteres) passaram no renderizador, sem erros de layout, execução ou contraste. Testes novos do contrato estão no diretório do motor para serem executados pela CI existente.

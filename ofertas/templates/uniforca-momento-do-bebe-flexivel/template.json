@@ -1,0 +1,95 @@
+{
+  "contrato": 1,
+  "id": "uniforca-momento-do-bebe-flexivel",
+  "nome": "Momento do Bebê — cartelas flexíveis",
+  "cliente": "Rede Uniforça",
+  "descricao": "Vídeos HD com editor por elemento, animações opcionais e cartela final com um ou três produtos.",
+  "capaEm": 2.6,
+  "campos": [
+    {
+      "id": "validade",
+      "tipo": "texto",
+      "rotulo": "Datas da oferta",
+      "ajuda": "Aparece no cabeçalho, abaixo de \"Ofertas válidas para os dias\".",
+      "max": 40
+    },
+    {
+      "id": "produtos",
+      "tipo": "lista",
+      "rotulo": "Produtos",
+      "rotuloItem": "Produto",
+      "itens": 30,
+      "grupo": {
+        "tamanho": 2,
+        "rotulo": "Cartela",
+        "incompleto": true,
+        "finalTres": true
+      },
+      "campos": [
+        {
+          "id": "nome",
+          "tipo": "texto",
+          "rotulo": "Nome",
+          "max": 60
+        },
+        {
+          "id": "imagem",
+          "tipo": "imagem",
+          "rotulo": "Imagem",
+          "ajuda": "PNG com fundo transparente."
+        },
+        {
+          "id": "de",
+          "tipo": "preco",
+          "rotulo": "Preço normal",
+          "opcional": true,
+          "ajuda": "Vazio = mostra só o selo."
+        },
+        {
+          "id": "por",
+          "tipo": "preco",
+          "rotulo": "Preço Clube de Desconto"
+        },
+        {
+          "id": "unidade",
+          "tipo": "opcoes",
+          "rotulo": "Unidade"
+        },
+        {
+          "id": "tamanho",
+          "tipo": "numero",
+          "rotulo": "Tamanho da imagem",
+          "min": 0.3,
+          "max": 1,
+          "passo": 0.05,
+          "ajuda": "1 = carne na tábua; ~0,8 = embalagens."
+        },
+        {
+          "id": "edicao",
+          "tipo": "texto",
+          "rotulo": "Ajustes visuais",
+          "opcional": true,
+          "oculto": true,
+          "max": 20000,
+          "formato": "ajustesVisuais"
+        }
+      ],
+      "min": 1
+    },
+    {
+      "id": "animacoes",
+      "tipo": "booleano",
+      "rotulo": "Ativar animações",
+      "opcional": true,
+      "ajuda": "Desative para slides estáticos, com troca direta de cartela e sem movimentos."
+    },
+    {
+      "id": "ultimacartela",
+      "tipo": "opcoes",
+      "rotulo": "Quando sobrar um produto",
+      "opcional": true,
+      "ajuda": "Um produto fica centralizado. Três reúne os últimos três produtos na mesma cartela; com apenas um produto ele fica sozinho."
+    }
+  ],
+  "editorCartelas": true
+}

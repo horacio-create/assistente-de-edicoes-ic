@@ -89,7 +89,7 @@ const nomeTemplate = (id) => state.nomes[id] || id;
 const origem = (titulo, id) => (titulo.startsWith(nomeTemplate(id)) ? '' : esc(nomeTemplate(id)) + ' · ');
 async function carregarCatalogo() {
   try {
-    const lista = await carregarNomes();
+    const lista = (await carregarNomes()).filter(t => !t.substituidoPor);
     el('lista-templates').innerHTML = lista.length ? lista.map((t) => `
       <button class="template-card ${t.erros.length ? 'invalido' : ''}" data-id="${esc(t.id)}" ${t.erros.length ? 'disabled' : ''}>
         ${t.capa ? `<img src="/ofertas/capa/${esc(t.id)}.png" alt="">` : '<span class="sem-capa">Sem capa</span>'}
@@ -1037,7 +1037,7 @@ async function carregarTemplatesAdmin() {
     const lista = await api('/templates');
     el('lista-templates-admin').innerHTML = lista.map((t) => `<div class="template-linha">
       ${t.capa ? `<img src="/ofertas/capa/${esc(t.id)}.png?${Date.now()}" alt="">` : '<span class="sem-capa"></span>'}
-      <div><strong>${esc(t.nome)}</strong> ${t.erros.length ? '<span class="status falhou">Com problemas</span>' : '<span class="status pronto">Publicado</span>'}
+      <div><strong>${esc(t.nome)}</strong> ${t.erros.length ? '<span class="status falhou">Com problemas</span>' : t.substituidoPor ? '<span class="status">Modelo anterior · fora de Novo vídeo</span>' : '<span class="status pronto">Publicado</span>'}
       <small>${esc(t.cliente)} · <code>${esc(t.id)}</code></small>${t.erros.length ? `<ul>${t.erros.map((e) => `<li>${esc(e)}</li>`).join('')}</ul>` : ''}</div>
       <button type="button" class="text-button remover" data-id="${esc(t.id)}" data-nome="${esc(t.nome)}">Remover</button></div>`).join('')
       || '<div class="vazio">Nenhum template publicado.</div>';

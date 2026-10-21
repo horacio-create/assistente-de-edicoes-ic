@@ -169,6 +169,18 @@ def template_dir(ident):
     if not (d / 'template.json').is_file(): raise ValueError('Template não encontrado.')
     return d
 
+# Os modelos anteriores ficam disponíveis aos pedidos já salvos.
+SUBSTITUIDOS = {
+    'uniforca-hora-da-carne': 'uniforca-hora-da-carne-flexivel',
+    'uniforca-hora-da-feira': 'uniforca-hora-da-feira-flexivel',
+    'uniforca-momento-do-bebe': 'uniforca-momento-do-bebe-flexivel',
+}
+
+def catalogo():
+    lista = motor('catalogo', TEMPLATES)
+    prontos = {t['id'] for t in lista if not t.get('erros')}
+    return [{**t, **({'substituidoPor': SUBSTITUIDOS[t['id']]} if SUBSTITUIDOS.get(t['id']) in prontos else {})} for t in lista]
+
 def esquema(template):
     result = motor('esquema', template_dir(template))
     if result['erros']: raise ValueError('Template com problemas: ' + '; '.join(result['erros'][:3]))
@@ -662,7 +674,7 @@ def api(method, path, query, raw):
     if tabela:
         with connect() as db: mine(db, tabela, q('id') or str(value.get('encarte' if path == '/encarte-gerar-todos' else 'id', '')))
     if not status()['pronto'] and path not in ('/imagens',): raise ValueError(status()['motivo'])
-    if path == '/templates': return motor('catalogo', TEMPLATES)
+    if path == '/templates': return catalogo()
     if path == '/esquema': return esquema(q('template'))
     if path == '/pedidos' and method == 'GET':
         with connect() as db:
