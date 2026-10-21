@@ -1,4 +1,34 @@
 /* Ofertas de supermercados — componentes do módulo sobre o style.css (mesmos tokens). Tudo escopado em #ofertas. */
+/* Fluxo guiado: revisão, composição e saída têm espaços próprios. */
+#ofertas .of-etapas{display:flex;align-items:center;gap:12px;padding:18px;background:white;border:1px solid var(--line);border-radius:14px;margin:0 0 24px}
+#ofertas .of-etapas button{flex:1;display:flex;align-items:center;gap:11px;text-align:left;border:0;background:transparent;padding:10px;color:#656575;font-size:13px;line-height:1.4}
+#ofertas .of-etapas button small{display:block;color:#6b6b7b;font-size:11px;font-weight:450;margin-top:3px}
+#ofertas .of-numero{display:grid;place-items:center;flex-shrink:0;width:32px;height:32px;border-radius:50%;background:#f0f0f4;color:#707080;font-size:13px;font-weight:750}
+#ofertas .of-etapas button[aria-current=step]{color:#1f542e;background:#f0f9f2;border-radius:10px}
+#ofertas .of-etapas button[aria-current=step] .of-numero{background:var(--green);color:#12351c}
+#ofertas .of-etapas button:focus-visible{outline:2px solid #27824a;outline-offset:3px}
+#ofertas .of-etapa-linha{width:24px;height:1px;background:var(--line);flex-shrink:0}
+#ofertas .of-etapa-intro{display:flex;justify-content:space-between;align-items:center;gap:20px;margin:0 0 20px}
+#ofertas .of-etapa-intro h2{font-size:21px;letter-spacing:-.5px;line-height:1.3;margin:6px 0}
+#ofertas .of-etapa-intro p{margin:0;color:#626275;font-size:13px;line-height:1.6;max-width:720px}
+#ofertas .of-etapa-intro .toolbar{flex-shrink:0}
+#ofertas .of-passo-rodape{display:flex;justify-content:space-between;align-items:center;gap:20px;padding:18px 0;margin-top:18px;border-top:1px solid var(--line)}
+#ofertas .of-passo-rodape p{font-size:12px;color:#626275;line-height:1.5;margin:0;max-width:640px}
+#ofertas .of-passo-rodape>div{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+#ofertas .of-passo-rodape button{flex-shrink:0}
+#ofertas #of-conferencia .encarte-card{margin-top:0}
+#ofertas #of-conferencia #of-encarte-itens{max-height:560px;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));padding:3px}
+#ofertas #of-conferencia .encarte-vazio{padding:46px 24px;border:1.5px dashed #c9d9ce;border-radius:12px;background:#f6faf7;text-align:center;line-height:1.8}
+#ofertas .of-saida-grid{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:20px;align-items:start}
+#ofertas .of-saida-card{background:white;border:1px solid var(--line);border-radius:16px;padding:24px}
+#ofertas .of-saida-card h3{font-size:19px;line-height:1.4;margin:8px 0}
+#ofertas .of-saida-card p{font-size:13px;color:#626275;line-height:1.6;margin:0 0 20px}
+#ofertas .of-saida-card label{margin:0 0 7px}
+#ofertas #of-video-opcoes{margin:22px 0 10px}
+#ofertas #of-video-validacao{padding:12px;background:#f4f7f5;border-radius:8px;font-size:12px;margin-top:20px}
+#ofertas #of-editor .gerar-status{align-items:flex-start;text-align:left}
+@media(max-width:1050px){#ofertas .of-etapas{gap:4px;padding:10px}#ofertas .of-etapa-linha{width:10px}#ofertas .of-etapas button{padding:8px;gap:8px}#ofertas .of-etapa-intro{flex-wrap:wrap}#ofertas .of-saida-grid{grid-template-columns:1fr}}
+@media(max-width:650px){#ofertas .of-etapas{align-items:stretch;gap:3px}#ofertas .of-etapas button{flex-direction:column;align-items:flex-start;font-size:11px;gap:7px}#ofertas .of-etapas button small{display:none}#ofertas .of-etapa-linha{display:none}#ofertas .of-numero{width:25px;height:25px}#ofertas .of-passo-rodape{flex-direction:column;align-items:stretch}#ofertas .of-passo-rodape>div{justify-content:stretch}#ofertas .of-passo-rodape>div button{flex:1}#ofertas .of-saida-card{padding:18px}#ofertas .of-etapa-intro h2{font-size:19px}}
 :root{--ofertas:var(--green);--ofertas-texto:#17371b;--erro:#a62e44;--erro-fundo:#fbeaee}
 /* cor da seção: o verde padrão do sistema, como em Imagens */
 body.secao-ofertas{--section-color:var(--ofertas)}
@@ -244,6 +274,108 @@ body:not(.sidebar-collapsed) .sidebar .nav[data-view=ofertas].active,.sidebar-co
 #of-conferir-dialog .preco>span{margin-top:0;line-height:1}
 
 /* Editor de cartelas: o canvas é o template que será exportado. */
+/* A montagem reúne o canvas e os dados na própria etapa, sem janela sobreposta. */
+#ofertas #of-edicao-inline{padding:0 18px 18px;background:#f8f9fb;min-width:0}
+#ofertas #of-edicao-inline .edicao-barra{display:flex;align-items:center;flex-wrap:wrap;gap:8px;padding:14px 0;margin:0}
+#ofertas #of-edicao-inline .edicao-atalhos{font-size:11px;color:#626275;line-height:1.5;margin:0 0 12px}
+#ofertas #of-edicao-inline .edicao-barra>select{max-width:310px;flex:1;min-width:160px}
+#ofertas #of-edicao-inline .edicao-barra label{display:flex;align-items:center;gap:6px;font-size:11px;white-space:nowrap;margin:0}
+#ofertas #of-edicao-inline select{padding:8px;border:1px solid var(--line);border-radius:8px;background:white;min-width:0;font-size:12px}
+#ofertas #of-edicao-inline button{font-size:11px;padding:8px 10px;min-height:34px}
+#ofertas #of-edicao-inline .edicao-corpo{display:grid;grid-template-columns:minmax(0,1fr) 350px;align-items:start;gap:16px;min-width:0}
+#ofertas #of-edicao-inline .edicao-coluna{min-width:0;position:sticky;top:100px}
+#ofertas #of-edicao-inline .edicao-viewport{position:relative;overflow:auto;width:100%;box-sizing:border-box;aspect-ratio:16/9;height:auto;max-height:calc(100vh - 300px);min-height:240px;background:#e6e8ed;border:1px solid #d8dce3;border-radius:10px;min-width:0}
+#ofertas #of-edicao-inline .edicao-palco{position:relative;margin:0 auto;flex:none}
+#ofertas #of-edicao-inline iframe{position:absolute;left:0;top:0;width:1920px;height:1080px;transform-origin:left top;border:0;max-width:none}
+#ofertas #of-edicao-inline.atualizando iframe{pointer-events:none;opacity:.65}
+#ofertas #of-edicao-inline.atualizando .edicao-viewport::after{content:'Atualizando cartela…';position:absolute;top:12px;left:50%;transform:translateX(-50%);padding:8px 14px;background:white;border:1px solid #d8dce3;border-radius:20px;font-size:12px;box-shadow:0 3px 12px #0001;pointer-events:none}
+#ofertas #of-edicao-inline .edicao-preview{aspect-ratio:16/9;overflow:hidden;background:#141820;border-radius:10px}
+#ofertas #of-edicao-inline hyperframes-player{display:block;width:100%;height:100%;aspect-ratio:16/9}
+#ofertas #of-edicao-inline .edicao-miniaturas{display:flex;gap:8px;overflow-x:auto;padding:12px 2px 4px;scrollbar-width:thin}
+#ofertas #of-edicao-inline .edicao-miniaturas>button{flex:0 0 124px;width:124px;display:flex;flex-direction:column;align-items:stretch;gap:4px;border:1px solid var(--line);border-radius:9px;text-align:left;background:white;padding:7px}
+#ofertas #of-edicao-inline .edicao-miniaturas>button[aria-current=true]{border-color:#27824a;box-shadow:0 0 0 1px #27824a;background:#f0f9f2}
+#ofertas #of-edicao-inline .edicao-mini-imagens{display:flex;align-items:center;justify-content:center;height:50px;background:#f7f8fa;border-radius:5px;gap:3px;overflow:hidden}
+#ofertas #of-edicao-inline .edicao-mini-imagens img{width:42px;height:46px;object-fit:contain}
+#ofertas #of-edicao-inline .edicao-miniaturas small{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:10px;color:#626275}
+#ofertas #of-edicao-inline .edicao-miniaturas strong{font-size:11px}
+#ofertas #of-edicao-inline .edicao-propriedades{max-height:calc(100vh - 280px);overflow-y:auto;background:white;border:1px solid var(--line);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:12px;min-width:0}
+#ofertas #of-edicao-inline .edicao-aviso-previa{display:none;font-size:13px;line-height:1.7;color:#626275;margin:0}
+#ofertas #of-edicao-inline.em-previa .edicao-propriedades>:not(.edicao-aviso-previa){display:none}
+#ofertas #of-edicao-inline.em-previa .edicao-aviso-previa{display:block}
+#ofertas #of-edicao-inline .edicao-produtos{display:flex;flex-wrap:wrap;gap:6px}
+#ofertas #of-edicao-inline .edicao-produtos button{flex:1;min-width:100px;max-width:100%;white-space:nowrap;text-overflow:ellipsis;overflow:hidden;font-size:11px}
+#ofertas #of-edicao-inline .edicao-produtos button[aria-pressed=true]{background:#eaf7ef;color:#235d34;border-color:#82bc92}
+#ofertas #of-edicao-inline .edicao-transformacoes{background:#f8f9fb;border:1px solid #e4e7ec;border-radius:10px;padding:10px}
+#ofertas #of-edicao-inline summary{font-size:12px;font-weight:700;cursor:pointer;line-height:1.5}
+#ofertas #of-edicao-inline .edicao-transformacoes[open]>summary{margin-bottom:12px}
+#ofertas #of-edicao-inline .edicao-transformacoes h3{display:none}
+#ofertas #of-edicao-inline .edicao-transformacoes>select{width:100%;margin-bottom:8px}
+#ofertas #of-edicao-inline .edicao-transformacoes>p{font-size:11px;color:#626275;margin:4px 0 10px}
+#ofertas #of-edicao-inline .edicao-transformacoes>label{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:11px;margin:7px 0}
+#ofertas #of-edicao-inline .edicao-transformacoes input{width:96px;padding:6px 8px;border:1px solid var(--line);border-radius:7px;font-size:12px}
+#ofertas #of-edicao-inline .edicao-mover{display:flex;gap:5px;margin:7px 0}
+#ofertas #of-edicao-inline .edicao-mover button{flex:1;padding:6px}
+#ofertas #of-edicao-inline .edicao-transformacoes>button{margin:3px 3px 3px 0}
+#ofertas #of-edicao-inline .edicao-transformacoes .help{display:none}
+#ofertas #of-edicao-inline .formulario{max-height:none!important;overflow:visible;background:white;padding:0;min-width:0}
+#ofertas #of-edicao-inline .formulario>h3{font-size:14px;margin:0 0 12px}
+#ofertas #of-edicao-inline .of-dados-campanha{padding:10px 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line);margin-bottom:12px}
+#ofertas #of-edicao-inline .of-dados-campanha[open] .campo{margin-top:12px}
+#ofertas #of-edicao-inline .grupo{padding:0;border:0;margin:0;box-shadow:none}
+#ofertas #of-edicao-inline .grupo>header{margin:4px 0 10px;flex-wrap:wrap}
+#ofertas #of-edicao-inline .grupo>header h4{font-size:12px}
+#ofertas #of-edicao-inline .item-card{padding:0;border:0;background:white}
+#ofertas #of-edicao-inline .item-titulo{gap:5px;flex-wrap:wrap;margin-bottom:12px}
+#ofertas #of-edicao-inline .campo{margin-bottom:14px}
+#ofertas #of-edicao-inline .campo label{font-size:11px}
+#ofertas #of-edicao-inline .imagem-campo{grid-template-columns:80px minmax(0,1fr);gap:9px}
+#ofertas #of-edicao-inline .imagem-campo .miniatura{width:80px;height:64px}
+#ofertas #of-edicao-inline .help{font-size:10px;line-height:1.4}
+#ofertas #of-edicao-inline .grupo-rodape{margin-top:14px}
+#ofertas #of-edicao-inline .adicionar-grupo{padding:10px}
+#ofertas #of-edicao-inline :focus-visible{outline:2px solid #27824a;outline-offset:2px}
+@media(max-width:1150px){#ofertas #of-edicao-inline .edicao-corpo{grid-template-columns:minmax(0,1fr) 300px}}
+@media(max-width:900px){#ofertas #of-edicao-inline .edicao-corpo{grid-template-columns:1fr}#ofertas #of-edicao-inline .edicao-coluna{position:static}#ofertas #of-edicao-inline .edicao-propriedades{max-height:540px}#ofertas #of-edicao-inline .edicao-viewport{height:auto;aspect-ratio:16/9}#ofertas #of-edicao-inline .edicao-miniaturas>button{flex-basis:110px;width:110px}}
+
+/* Navegação compacta e faixa de prévias completas. */
+#ofertas #of-edicao-inline .edicao-ferramentas{display:flex;align-items:center;gap:4px;padding-right:10px;border-right:1px solid #e0e4ea;min-width:0}
+#ofertas #of-edicao-inline .edicao-ferramentas:last-child{border-right:0;padding-right:0}
+#ofertas #of-edicao-inline .edicao-ferramentas svg,#ofertas #of-edicao-inline .edicao-faixa>button svg{width:16px;height:16px;flex:none}
+#ofertas #of-edicao-inline button.edicao-icone{display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;min-height:32px;padding:7px;flex:none}
+#ofertas #of-edicao-inline button.edicao-acao{display:inline-flex;align-items:center;justify-content:center;gap:5px;height:32px;min-height:32px;padding:6px 9px}
+#ofertas #of-edicao-inline .edicao-modos button[aria-pressed=true]{background:#e9f6ee;color:#205c33;border-color:#83bc94}
+#ofertas #of-edicao-inline [data-ed=cartela]{width:88px;min-width:75px;font-weight:650}
+#ofertas #of-edicao-inline [data-ed=zoom]{width:78px;min-width:60px}
+#ofertas #of-edicao-inline .edicao-acoes-vista{margin-left:auto}
+#ofertas #of-edicao-inline .edicao-barra{gap:8px;padding:10px 0 8px}
+#ofertas #of-edicao-inline .edicao-atalhos{font-size:10px;margin-bottom:9px}
+#ofertas #of-edicao-inline .edicao-faixa{display:grid;grid-template-columns:26px minmax(0,1fr) 26px;align-items:center;gap:5px;padding-top:10px;min-width:0;flex-shrink:0}
+#ofertas #of-edicao-inline .edicao-faixa>button.edicao-icone{width:26px;height:70px;padding:4px}
+#ofertas #of-edicao-inline .edicao-miniaturas{position:relative;padding:3px 2px 6px;gap:7px;scrollbar-width:thin}
+#ofertas #of-edicao-inline .edicao-miniaturas>button{flex:0 0 132px;width:132px;padding:5px;gap:4px;min-width:0}
+#ofertas #of-edicao-inline .edicao-miniaturas>button[aria-current=true]{background:#eaf7ee;border-color:#258248;box-shadow:0 0 0 1px #258248}
+#ofertas #of-edicao-inline .edicao-mini-imagens{position:relative;display:block;width:100%;height:auto;aspect-ratio:16/9;overflow:hidden;background:#e9ecf1;border-radius:4px;pointer-events:none}
+#ofertas #of-edicao-inline .edicao-mini-imagens::before{content:'Carregando…';position:absolute;inset:0;display:grid;place-items:center;color:#7b8190;font-size:9px}
+#ofertas #of-edicao-inline .edicao-mini-imagens iframe{width:1920px;height:1080px;position:absolute;inset:0 auto auto 0;transform-origin:top left;pointer-events:none;opacity:0}
+#ofertas #of-edicao-inline [data-carregada=true] .edicao-mini-imagens iframe{opacity:1}
+#ofertas #of-edicao-inline [data-carregada=true] .edicao-mini-imagens::before{display:none}
+#ofertas #of-edicao-inline .edicao-miniaturas small{display:none}
+#ofertas #of-edicao-inline .edicao-miniaturas strong{display:block;text-align:center;font-size:10px;line-height:1.4}
+#ofertas #of-edicao-inline .edicao-coluna{display:flex;flex-direction:column;min-height:0}
+#ofertas #of-edicao-inline .edicao-viewport{height:clamp(240px,calc(100dvh - 350px),680px);aspect-ratio:auto;max-height:none;flex-shrink:0}
+#ofertas #of-edicao-inline [data-ed=continuar]{display:none}
+#ofertas #of-editor:has(#of-editor-unificado:not([hidden])) .editor-head{padding:12px 18px}
+#ofertas #of-editor:has(#of-editor-unificado:not([hidden])) .titulo-pedido input{font-size:14px!important}
+body.of-editor-expandido{overflow:hidden}
+body.of-editor-expandido::after{content:'';position:fixed;inset:0;background:#11182799;z-index:1100}
+#ofertas #of-edicao-inline.edicao-ampliado{position:fixed;inset:10px;z-index:1200;height:calc(100dvh - 20px);box-sizing:border-box;display:flex;flex-direction:column;padding:10px 14px 14px;border:1px solid #d8dce3;border-radius:12px;box-shadow:0 12px 80px #0004}
+#ofertas #of-edicao-inline.edicao-ampliado .edicao-corpo{flex:1;min-height:0;grid-template-rows:minmax(0,1fr)}
+#ofertas #of-edicao-inline.edicao-ampliado .edicao-coluna{height:100%;position:static;min-height:0}
+#ofertas #of-edicao-inline.edicao-ampliado .edicao-viewport{flex:1;height:auto;min-height:0;max-height:none;aspect-ratio:auto}
+#ofertas #of-edicao-inline.edicao-ampliado .edicao-preview{flex:1;min-height:0;aspect-ratio:auto}
+#ofertas #of-edicao-inline.edicao-ampliado .edicao-propriedades{height:100%;max-height:100%;box-sizing:border-box}
+#ofertas #of-edicao-inline.edicao-ampliado [data-ed=continuar]{display:block}
+@media(max-width:900px){#ofertas #of-edicao-inline .edicao-viewport{height:auto;aspect-ratio:16/9;min-height:180px}#ofertas #of-edicao-inline .edicao-ferramentas{padding-right:6px}#ofertas #of-edicao-inline .edicao-acoes-vista{margin-left:0}#ofertas #of-edicao-inline.edicao-ampliado .edicao-corpo{grid-template-rows:minmax(0,1fr) minmax(160px,32%)}#ofertas #of-edicao-inline.edicao-ampliado .edicao-miniaturas>button{flex-basis:104px;width:104px}}
 #of-edicao-dialog{width:min(1600px,96vw);max-width:96vw;max-height:96vh;padding:22px;overflow:auto;background:#f7f8fa;color:#202029;border:0;border-radius:18px}
 #of-edicao-dialog::backdrop{background:#111329aa}
 #of-edicao-dialog .edicao-cabecalho{display:flex;justify-content:space-between;gap:20px;align-items:start}
