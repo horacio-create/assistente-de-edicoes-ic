@@ -553,6 +553,7 @@ function montarEditorIntegrado() {
   const conteudo = JSON.stringify(state.pedido.dados, (k,v) => k === 'edicao' ? undefined : v);
   const editor = OfertasEdicao.montar({
     pedido:state.pedido,
+    salvo: el('save-state')?.textContent?.startsWith('Salvo') !== false,
     conteudo,
     urlImagem,
     onContexto: contexto => {

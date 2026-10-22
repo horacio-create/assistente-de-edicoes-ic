@@ -195,6 +195,9 @@ function criarEditor(inline=false,host=null) {
     else dialog.showModal();redimensionar();
   },
   atualizar(options){
+    // A URL da prévia lê a revisão salva no servidor. Não registre uma assinatura
+    // nova enquanto seus dados ainda não foram salvos: isso manteria o iframe antigo.
+    if(options.salvo===false&&op?.pedido.id===options.pedido.id){op=options;return;}
     if(!op||op.pedido.id!==options.pedido.id){apiEditor.abrir(options);return;}
     op=options;
     if(assinatura===options.conteudo&&!recarregarConteudo){if(inline&&pronto){atualizarContexto();atualizarMiniaturas();}return;}

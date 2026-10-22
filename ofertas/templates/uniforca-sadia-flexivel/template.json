@@ -1,0 +1,110 @@
+{
+  "contrato": 1,
+  "id": "uniforca-sadia-flexivel",
+  "nome": "Sadia — cartelas flexíveis",
+  "cliente": "Rede Uniforça",
+  "descricao": "Campanha Sadia com data editável, produtos do encarte, editor completo e vídeos HD com ou sem animações.",
+  "capaEm": 2.6,
+  "campos": [
+    {
+      "id": "validade",
+      "tipo": "texto",
+      "rotulo": "Datas da oferta",
+      "ajuda": "Período na faixa do cabeçalho. Ex.: 22 a 24 de setembro de 2026. A frase sobre estoques aparece automaticamente.",
+      "max": 40
+    },
+    {
+      "id": "estiloselo",
+      "tipo": "opcoes",
+      "rotulo": "Estilo dos selos do projeto",
+      "opcional": true,
+      "ajuda": "Padrão do template ou outro estilo. O vermelho usa Montserrat Black nos títulos e preços."
+    },
+    {
+      "id": "produtos",
+      "tipo": "lista",
+      "rotulo": "Produtos",
+      "rotuloItem": "Produto",
+      "itens": 30,
+      "grupo": {
+        "tamanho": 2,
+        "rotulo": "Cartela",
+        "incompleto": true,
+        "finalTres": true
+      },
+      "campos": [
+        {
+          "id": "nome",
+          "tipo": "texto",
+          "rotulo": "Nome",
+          "max": 60
+        },
+        {
+          "id": "estiloselo",
+          "tipo": "opcoes",
+          "rotulo": "Selo deste produto",
+          "opcional": true,
+          "ajuda": "Deixe no padrão do projeto para manter todos iguais."
+        },
+        {
+          "id": "imagem",
+          "tipo": "imagem",
+          "rotulo": "Imagem",
+          "ajuda": "PNG com fundo transparente."
+        },
+        {
+          "id": "de",
+          "tipo": "preco",
+          "rotulo": "Preço normal",
+          "opcional": true,
+          "ajuda": "Vazio = mostra só o selo."
+        },
+        {
+          "id": "por",
+          "tipo": "preco",
+          "rotulo": "Preço Clube de Desconto"
+        },
+        {
+          "id": "unidade",
+          "tipo": "opcoes",
+          "rotulo": "Unidade"
+        },
+        {
+          "id": "tamanho",
+          "tipo": "numero",
+          "rotulo": "Tamanho da imagem",
+          "min": 0.3,
+          "max": 1,
+          "passo": 0.05,
+          "ajuda": "Ajuste a proporção da imagem dentro da área do produto."
+        },
+        {
+          "id": "edicao",
+          "tipo": "texto",
+          "rotulo": "Ajustes visuais",
+          "opcional": true,
+          "oculto": true,
+          "max": 20000,
+          "formato": "ajustesVisuais"
+        }
+      ],
+      "min": 1
+    },
+    {
+      "id": "animacoes",
+      "tipo": "booleano",
+      "rotulo": "Ativar animações",
+      "opcional": true,
+      "ajuda": "Desative para slides estáticos, com troca direta de cartela e sem movimentos."
+    },
+    {
+      "id": "ultimacartela",
+      "tipo": "opcoes",
+      "rotulo": "Quando sobrar um produto",
+      "opcional": true,
+      "ajuda": "Um produto fica centralizado. Três reúne os últimos três produtos na mesma cartela; com apenas um produto ele fica sozinho."
+    }
+  ],
+  "editorCartelas": true,
+  "seloPadrao": "vermelho"
+}
