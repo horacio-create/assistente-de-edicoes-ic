@@ -29,7 +29,7 @@ test('um título excepcionalmente longo reduz a fonte de todos por igual e prese
       return Number(this.style.fontSize?.replace('px','') || 30) * 1.12 * (longo ? 3 : 1);
     }};
     const elementos = {'.nome':nome,'.foto-box':{style:{}},'.foto':{style:{}},
-      '.precos':{style:{}},'.selo':{style:{}},'.de':null};
+      '.precos':{style:{}},'.selo':{style:{},offsetHeight:175},'.de':null};
     return {style:{},dataset:{},parentElement:{clientWidth:613},clientWidth:613,
       clientHeight:524,querySelector:s => elementos[s]};
   }
@@ -59,21 +59,21 @@ test('distribuição lateral separa fotografia e informações em cartelas de um
 
 test('layout lateral mantém o título acima dos preços e o selo dentro de cada oferta', () => {
   const numero = s => Number.parseFloat(s);
-  function oferta(largura, caracteres, precoNormal) {
+  function oferta(largura, caracteres, precoNormal, alturaSelo=175) {
     const nome={style:{},get offsetHeight() {
       const larguraTexto=numero(/width:([\d.]+)px/.exec(this.style.cssText)[1]);
       const fonte=numero(this.style.fontSize);
       return Math.ceil(caracteres*fonte*.6/larguraTexto)*fonte*1.12;
     }};
     const elementos={'.nome':nome,'.foto-box':{style:{}},'.foto':{style:{}},
-      '.precos':{style:{}},'.selo':{style:{}},
+      '.precos':{style:{}},'.selo':{style:{},offsetHeight:alturaSelo},
       '.de':precoNormal?{style:{},offsetWidth:precoNormal,offsetHeight:90}:null,
       '.seta':{style:{},querySelector:()=>({setAttribute(){}})}};
     return {style:{},dataset:{},parentElement:{clientWidth:largura},clientWidth:largura,
       clientHeight:524,querySelector:s=>elementos[s]};
   }
   for (const animacoes of [true,false]) {
-    const ps=[oferta(920,60,260),oferta(920,20,0),oferta(613,45,400),oferta(1840,35,220)];
+    const ps=[oferta(920,60,260),oferta(920,20,0,128),oferta(613,45,400,128),oferta(1840,35,220)];
     organizar(ps,animacoes);
     assert.equal(new Set(ps.map(p=>p.querySelector('.nome').style.fontSize)).size,1);
     for (const p of ps) {

@@ -31,6 +31,7 @@ RENDERS_SIMULTANEOS = int(os.environ.get('OFERTAS_RENDERS', '1'))
 FUNDO = threading.Semaphore(int(os.environ.get('OFERTAS_FUNDO', '1')))
 RETOMADAS = 2  # vídeo interrompido por reinício volta à fila até 2 vezes; um que derruba o servidor não fica em laço
 MAX_UPLOAD = 100 * 1024 * 1024
+from modules.ofertas.pdf_preparacao import MAX_PDF, preparar_pdf
 SEM_JANELA = getattr(subprocess, 'CREATE_NO_WINDOW', 0)
 MODULO = 'Ofertas de supermercados'
 
@@ -108,6 +109,8 @@ def garantir():
             for origem in (BASE / 'templates').iterdir():
                 if origem.is_dir() and not origem.name.startswith('.') and not (TEMPLATES / origem.name).exists() and origem.name not in removidos():
                     shutil.copytree(origem, TEMPLATES / origem.name)
+        from .templates_fabrica import atualizar
+        atualizar(BASE, TEMPLATES)
         with connect() as db:
             db.executescript('''
             CREATE TABLE IF NOT EXISTS ofertas_pedidos (id TEXT PRIMARY KEY, template TEXT, titulo TEXT, dados TEXT, revision INTEGER DEFAULT 0, criado TEXT, atualizado TEXT);
@@ -115,6 +118,7 @@ def garantir():
             CREATE TABLE IF NOT EXISTS ofertas_imagens (id TEXT PRIMARY KEY, nome TEXT, origem TEXT, largura INTEGER, altura INTEGER, transparente INTEGER, criado TEXT);
             CREATE TABLE IF NOT EXISTS ofertas_encartes (id TEXT PRIMARY KEY, nome TEXT, status TEXT, criado TEXT, terminado TEXT, erro TEXT, itens TEXT DEFAULT '[]');
             ''')
+            db.execute("CREATE TABLE IF NOT EXISTS ofertas_lotes (id TEXT PRIMARY KEY, owner TEXT, nome TEXT, dados TEXT, criado TEXT)")
             # hash do arquivo enviado: o mesmo encarte importado de novo não duplica a biblioteca
             if 'hash' not in {c['name'] for c in db.execute('PRAGMA table_info(ofertas_imagens)')}:
                 db.execute('ALTER TABLE ofertas_imagens ADD COLUMN hash TEXT')
@@ -334,7 +338,22 @@ def ler_encarte(ident):
     with LEITURA:
         with connect() as db: nome, dono = db.execute('SELECT nome, owner FROM ofertas_encartes WHERE id=?', (ident,)).fetchone()
         try:
-            itens = extrair((PASTA / 'encartes' / f'{ident}.pdf').read_bytes())
+            pdf = PASTA / 'encartes' / f'{ident}.pdf'
+            informacao = pdf.with_suffix('.preparacao.json')
+            prep = json.loads(informacao.read_text('utf-8')) if informacao.is_file() else {}
+            if prep.get('estado') == 'aguardando':
+                if prep.get('fontes'):
+                    from .encartes_conjunto import montar
+                    prep = montar(PASTA / 'encartes' / f'{ident}-fontes', prep['fontes'], pdf, prep['comprimir'])
+                else:
+                    prep = preparar_pdf(pdf) | {'estado': 'concluido'}
+                temp = informacao.with_suffix('.tmp')
+                # No Windows, a leitura do acompanhamento pode bloquear a
+                # substituição do arquivo. Coordenar os acessos no módulo.
+                with LOCK:
+                    temp.write_text(json.dumps(prep, ensure_ascii=False), 'utf-8')
+                    os.replace(temp, informacao)
+            itens = extrair(pdf.read_bytes())
             result = [item | {'imagem': salvar_imagem(item.pop('png'), item['nome'], f'encarte: {nome}')['id']} for item in itens]
             with connect() as db:
                 db.execute("UPDATE ofertas_encartes SET status='pronto', terminado=?, itens=? WHERE id=?", (now(), json.dumps(result, ensure_ascii=False), ident))
@@ -532,19 +551,26 @@ def gerar_todos(value):
     tamanhos = plano_lote(len(itens), lista, value.get('cartelas'), impar, value.get('distribuicao', 'equilibrar'))
     if 'animacoes' in value and not isinstance(value['animacoes'], bool):
         raise ValueError('A opção de animações deve estar ativada ou desativada.')
+    estilo = next((c for c in schema['campos'] if c['id'] == 'estiloselo'), None)
+    if estilo and 'estiloselo' in value and value['estiloselo'] not in estilo.get('opcoes', []):
+        raise ValueError('Estilo de selo inválido para este template.')
     revisar = value.get('revisar', False)
     if not isinstance(revisar, bool): raise ValueError('A opção de revisão deve estar ativada ou desativada.')
     total = len(tamanhos)
     base = str(value.get('nome') or '').strip()[:150] or Path(row['nome']).stem  # nome escolhido no lote; " (n)" vem depois
     videos = []
     inicio = 0
+    origem_total = json.loads(row['itens'] or '[]')
+    rastreio = []
     for g, n in enumerate(tamanhos):
         dados = json.loads(json.dumps(schema['padrao']))
+        if estilo: dados['estiloselo'] = value.get('estiloselo') or dados.get('estiloselo', 'padrao')
         if 'animacoes' in dados: dados['animacoes'] = value.get('animacoes', True)
         if 'ultimacartela' in dados: dados['ultimacartela'] = 'tres' if impar == 'tres' else 'sozinho'
         modelo = dados[lista['id']]
         dados[lista['id']] = [json.loads(json.dumps(modelo[i % len(modelo)])) for i in range(n)]
         preencher_lista(lista, dados[lista['id']], [itens[(inicio + i) % len(itens)] for i in range(n)])
+        indices_origem = [(inicio + i) % len(itens) for i in range(n)]
         inicio += n
         # revision 1: não é um rascunho intocado (o "Novo vídeo" reaproveita/apaga os de revision 0)
         titulo = f'{base} ({g + 1})' if total > 1 else base
@@ -552,10 +578,15 @@ def gerar_todos(value):
         with connect() as db:
             db.execute('INSERT INTO ofertas_pedidos VALUES(?,?,?,?,?,?,?,?)', (pedido['id'], pedido['template'], pedido['titulo'],
                        json.dumps(dados, ensure_ascii=False), 1, now(), now(), owner()))
+        rastreio.append({'pedido': pedido['id'], 'indices': indices_origem})
         erros = preparar(schema['id'], dados)['erros']
         videos.append({'pedido': pedido['id'], 'titulo': pedido['titulo'], 'render': None if erros or revisar else enfileirar(pedido), 'erros': erros[:3]})
     with connect() as db: registrar(db, 'Vídeos do encarte preparados para revisão' if revisar else 'Vídeos do encarte enviados para a fila', row['nome'], videos=total)
-    return {'videos': videos, 'completados': sum(tamanhos) - len(itens), 'revisar': revisar}
+    lote_id = uid()
+    lote = {'videos': rastreio, 'origem': [{'nome': it.get('nome',''), 'imagem': it.get('imagem','')} for it in origem_total], 'impar': impar}
+    with connect() as db:
+        db.execute('INSERT INTO ofertas_lotes VALUES(?,?,?,?,?)', (lote_id, owner(), base, json.dumps(lote, ensure_ascii=False), now()))
+    return {'videos': videos, 'completados': sum(tamanhos) - len(itens), 'revisar': revisar, 'lote': lote_id}
 
 def apagar_encarte(ident):
     """Apaga o encarte do card: o PDF e a lista de produtos. As imagens extraídas continuam na biblioteca."""
@@ -566,8 +597,14 @@ def apagar_encarte(ident):
         if row['status'] == 'lendo': raise ValueError('Espere a leitura do encarte terminar para apagá-lo.')
         db.execute('DELETE FROM ofertas_encartes WHERE id=?', (ident,))
         registrar(db, 'Encarte apagado', row['nome'])
-    for f in [PASTA / 'encartes' / f'{ident}.pdf', PASTA / 'encartes' / f'{ident}.png', *(PASTA / 'encartes').glob(f'{ident}-p*.png')]:
+    for f in [PASTA / 'encartes' / f'{ident}.pdf', PASTA / 'encartes' / f'{ident}.png',
+              PASTA / 'encartes' / f'{ident}.original.pdf', PASTA / 'encartes' / f'{ident}.preparacao.json',
+              *(PASTA / 'encartes').glob(f'{ident}-p*.png')]:
         f.unlink(missing_ok=True)
+    fontes = PASTA / 'encartes' / f'{ident}-fontes'
+    if fontes.is_dir():
+        for f in fontes.iterdir(): f.unlink()
+        fontes.rmdir()
     return {'ok': True}
 
 def apagar_imagem(ident):
@@ -662,18 +699,37 @@ def publicar(raw):
 
 # ---------- API (/api/ofertas/...) ----------
 
-def api(method, path, query, raw):
-    value = json.loads(raw) if raw and path not in ('/imagem', '/encarte', '/templates-publicar') else {}
+def api(method, path, query, raw, content_type=''):
+    value = json.loads(raw) if raw and path not in ('/imagem', '/encarte', '/encartes-importar', '/templates-publicar') else {}
     q = lambda k: query.get(k, [''])[0]
     if path == '/status': return status()
     # o id de pedido, vídeo ou encarte só vale para o dono (login no servidor)
-    tabela = {'/pedido': 'ofertas_pedidos', '/pedido-salvar': 'ofertas_pedidos', '/pedido-excluir': 'ofertas_pedidos', '/gerar': 'ofertas_pedidos',
+    tabela = {'/pedido': 'ofertas_pedidos', '/cartelas-miniaturas': 'ofertas_pedidos', '/lote': 'ofertas_lotes', '/pedido-salvar': 'ofertas_pedidos', '/pedido-excluir': 'ofertas_pedidos', '/gerar': 'ofertas_pedidos',
               '/render-cancelar': 'ofertas_renders', '/encarte-paginas': 'ofertas_encartes', '/encarte-item-salvar': 'ofertas_encartes',
               '/encarte-item-excluir': 'ofertas_encartes', '/encarte-recortar': 'ofertas_encartes', '/encarte-excluir': 'ofertas_encartes',
               '/encarte-gerar-todos': 'ofertas_encartes'}.get(path)
     if tabela:
         with connect() as db: mine(db, tabela, q('id') or str(value.get('encarte' if path == '/encarte-gerar-todos' else 'id', '')))
     if not status()['pronto'] and path not in ('/imagens',): raise ValueError(status()['motivo'])
+    if path == '/cartelas-miniaturas' and method == 'GET':
+        from modules.ofertas.miniaturas_cartelas import manifestar
+        pedido = get_pedido(q('id'))
+        if not esquema(pedido['template']).get('editorCartelas'): raise ValueError('Este template não possui cartelas editáveis.')
+        return manifestar(pedido, template_dir(pedido['template']), preparar, PASTA, MOTOR, NODE, repetir=q('tentar') == '1')
+    if path == '/lotes' and method == 'GET':
+        with connect() as db:
+            return [dict(r) for r in db.execute('SELECT id,nome,criado FROM ofertas_lotes WHERE ? IS NULL OR owner=? ORDER BY criado DESC LIMIT 50', (owner(), owner()))]
+    if path == '/lote' and method == 'GET':
+        with connect() as db: row = db.execute('SELECT * FROM ofertas_lotes WHERE id=?', (q('id'),)).fetchone()
+        if not row: raise FileNotFoundError()
+        lote = json.loads(row['dados']); lote.update(id=row['id'], nome=row['nome'])
+        for video in lote['videos']:
+            try:
+                with connect() as db: mine(db, 'ofertas_pedidos', video['pedido'])
+                pedido = get_pedido(video['pedido'])
+                video.update(titulo=pedido['titulo'], produtos=pedido['dados'].get('produtos', []), ultimacartela=pedido['dados'].get('ultimacartela'), erros=preparar(pedido['template'], pedido['dados'])['erros'])
+            except (FileNotFoundError, ValueError): video.update(excluido=True, produtos=[])
+        return lote
     if path == '/templates': return catalogo()
     if path == '/esquema': return esquema(q('template'))
     if path == '/pedidos' and method == 'GET':
@@ -702,7 +758,11 @@ def api(method, path, query, raw):
     if path == '/encartes':
         with connect() as db:
             rows = [dict(r) for r in db.execute('SELECT * FROM ofertas_encartes WHERE ? IS NULL OR owner=? ORDER BY criado DESC LIMIT 50', (owner(), owner()))]
-        for r in rows: r['itens'] = json.loads(r['itens'] or '[]')
+        for r in rows:
+            r['itens'] = json.loads(r['itens'] or '[]')
+            info = PASTA / 'encartes' / f"{r['id']}.preparacao.json"
+            with LOCK:
+                if info.is_file(): r['preparacao'] = json.loads(info.read_text('utf-8'))
         return rows
     if path == '/encarte-paginas': return paginas_encarte(q('id'))
     if path == '/renders':
@@ -760,12 +820,32 @@ def api(method, path, query, raw):
             db.execute("UPDATE ofertas_renders SET status='cancelado', terminado=? WHERE id=?", (now(), value['id']))
             if value['id'] in RODANDO: RODANDO[value['id']].terminate()
         return {'ok': True}
+    if path == '/encartes-importar':
+        from .encartes_conjunto import receber
+        arquivos = receber(raw, content_type)
+        ident = uid()
+        fontes_dir = PASTA / 'encartes' / f'{ident}-fontes'
+        fontes_dir.mkdir()
+        fontes = []
+        for i, (nome, dados) in enumerate(arquivos):
+            arquivo = f'{i+1:03}{Path(nome).suffix.lower()}'
+            (fontes_dir / arquivo).write_bytes(dados)
+            fontes.append({'nome': nome, 'arquivo': arquivo})
+        nome = ' + '.join(f['nome'] for f in fontes)[:160]
+        prep = {'estado': 'aguardando', 'fontes': fontes, 'comprimir': q('comprimir') != '0',
+                'mensagem': 'Unindo os encartes e conferindo as páginas…'}
+        (PASTA / 'encartes' / f'{ident}.preparacao.json').write_text(json.dumps(prep, ensure_ascii=False), 'utf-8')
+        with connect() as db:
+            db.execute("INSERT INTO ofertas_encartes(id,nome,status,criado,owner) VALUES(?,?,'lendo',?,?)", (ident, nome, now(), owner()))
+        threading.Thread(target=ler_encarte, args=(ident,), daemon=True).start()
+        return {'id': ident, 'nome': nome, 'status': 'lendo'}
     if path == '/imagem': return salvar_imagem(raw, q('nome') or 'imagem.png', 'envio')
     if path == '/imagem-remover-fundo': return remover_fundo(value['id'])
     if path == '/encarte':
         nome = Path(q('nome') or 'encarte.pdf').name[:160]
         ident = uid()
         if not raw.startswith(b'%PDF'):
+            if len(raw) > MAX_UPLOAD: raise ValueError('Limite de 100 MB por imagem.')
             # PNG/JPG: sem camada de texto para ler; as ofertas são marcadas à mão na página
             from PIL import Image, ImageOps
             try:
@@ -779,6 +859,10 @@ def api(method, path, query, raw):
                 registrar(db, 'Encarte importado', nome, produtos=0)
             return {'id': ident, 'nome': nome, 'status': 'pronto'}
         (PASTA / 'encartes' / f'{ident}.pdf').write_bytes(raw)
+        prep = {'estado': 'aguardando' if q('comprimir') != '0' else 'desativado',
+                'original': len(raw), 'final': len(raw), 'reduzido': False,
+                'mensagem': 'Compressão desativada.' if q('comprimir') == '0' else 'Preparando e conferindo o PDF…'}
+        (PASTA / 'encartes' / f'{ident}.preparacao.json').write_text(json.dumps(prep, ensure_ascii=False), 'utf-8')
         with connect() as db: db.execute("INSERT INTO ofertas_encartes(id,nome,status,criado,owner) VALUES(?,?,'lendo',?,?)", (ident, nome, now(), owner()))
         threading.Thread(target=ler_encarte, args=(ident,), daemon=True).start()
         return {'id': ident, 'nome': nome, 'status': 'lendo'}
@@ -851,6 +935,21 @@ def video(environ, ident):
 
 def arquivo(environ, path):
     """-> (status, content_type, data, extra_headers, csp, frame)"""
+    m = re.fullmatch(r'/ofertas/encarte/([0-9a-f]{32})/compactado\.pdf', path)
+    if m:
+        with connect() as db:
+            mine(db, 'ofertas_encartes', m[1])
+            row = db.execute('SELECT nome, status FROM ofertas_encartes WHERE id=?', (m[1],)).fetchone()
+        if not row or row['status'] == 'lendo': raise FileNotFoundError()
+        info = PASTA / 'encartes' / f'{m[1]}.preparacao.json'
+        if not info.is_file() or not json.loads(info.read_text('utf-8')).get('reduzido'): raise FileNotFoundError()
+        pdf = PASTA / 'encartes' / f'{m[1]}.pdf'
+        nome = re.sub(r'[<>:"/\\|?*\x00-\x1f]', '-', Path(row['nome']).stem) + '-compactado.pdf'
+        return '200 OK', 'application/pdf', pdf.read_bytes(), [('Content-Disposition', f"attachment; filename*=UTF-8''{quote(nome)}")], CSP_APP, 'DENY'
+    m = re.fullmatch(r'/ofertas/cartela/([0-9a-f]{32})/([0-9a-f]{32})\.jpg', path)
+    if m:
+        with connect() as db: mine(db, 'ofertas_pedidos', m[1])
+        return '200 OK', 'image/jpeg', (PASTA / 'cartelas' / m[1] / f'{m[2]}.jpg').read_bytes(), [('Cache-Control', 'private, max-age=31536000, immutable')], CSP_APP, 'DENY'
     if path.startswith('/ofertas/preview/'):
         partes = path.split('/', 4)
         if len(partes) < 5: raise FileNotFoundError()
@@ -891,9 +990,10 @@ def handle(environ):
             metodo = environ['REQUEST_METHOD']
             if metodo == 'POST' and environ.get('HTTP_X_INDOOR') != '1': raise ValueError('Requisição inválida.')
             tamanho = int(environ.get('CONTENT_LENGTH') or 0)
-            if tamanho > MAX_UPLOAD: raise ValueError('Limite de 100 MB por arquivo.')
+            limite = MAX_PDF if path in ('/api/ofertas/encarte', '/api/ofertas/encartes-importar') else MAX_UPLOAD
+            if tamanho > limite: raise ValueError('Limite de 200 MB por encarte PDF.' if limite == MAX_PDF else 'Limite de 100 MB por arquivo.')
             corpo = environ['wsgi.input'].read(tamanho)
-            resultado = api(metodo, path[len('/api/ofertas'):], parse_qs(environ.get('QUERY_STRING', '')), corpo)
+            resultado = api(metodo, path[len('/api/ofertas'):], parse_qs(environ.get('QUERY_STRING', '')), corpo, environ.get('CONTENT_TYPE', ''))
             data = json.dumps(resultado, ensure_ascii=False).encode()
         else:
             status_http, tipo, data, extra, csp, frame = arquivo(environ, path)

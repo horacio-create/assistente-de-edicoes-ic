@@ -76,6 +76,7 @@
 
   function organizar(produtos, animacoes) {
     let fonte = 30;
+    const alturaSelo = Math.max(...produtos.map(p => p.querySelector(".selo").offsetHeight));
     const medidas = new Map();
     produtos.forEach(p => {
       p.style.width = p.parentElement.clientWidth + 'px';
@@ -102,11 +103,11 @@
     produtos.forEach(p => {
       // Reserva também a pequena expansão do selo nas animações.
       const margem = animacoes ? 32 : 24;
-      escalaSelo = Math.min(escalaSelo,(p.clientHeight-2*margem-tituloAltura-16-normalAltura-18)/175);
+      escalaSelo = Math.min(escalaSelo,(p.clientHeight-2*margem-tituloAltura-16-normalAltura-18)/alturaSelo);
     });
     produtos.forEach(p => {
       const m = medidas.get(p);
-      const alturaBloco = tituloAltura + 16 + normalAltura + 18 + 175*escalaSelo;
+      const alturaBloco = tituloAltura + 16 + normalAltura + 18 + alturaSelo*escalaSelo;
       const topo = (p.clientHeight-alturaBloco)/2;
       const nome = p.querySelector('.nome');
       nome.style.top = topo+tituloAltura-nome.offsetHeight+'px';
@@ -118,7 +119,7 @@
       const largura = m.textoLargura/escalaSelo;
       const topoSelo = (normalAltura+18)/escalaSelo;
       Object.assign(precos.style,{position:'absolute',left:m.textoEsquerda+'px',
-        top:topo+tituloAltura+16+'px',width:largura+'px',height:topoSelo+175+'px',
+        top:topo+tituloAltura+16+'px',width:largura+'px',height:topoSelo+alturaSelo+'px',
         transform:`scale(${escalaSelo})`,transformOrigin:'left top'});
       Object.assign(p.querySelector('.selo').style,{left:(largura-229)/2+'px',top:topoSelo+'px'});
       const de=p.querySelector('.de');

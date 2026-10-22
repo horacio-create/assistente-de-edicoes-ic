@@ -190,9 +190,18 @@ def _foto(doc, partes):
 
 def extrair(pdf_bytes):
     """-> [{'nome', 'por', 'de', 'unidade', 'avisos', 'pagina', 'area', 'png': bytes}] na ordem de leitura do encarte."""
-    doc = pymupdf.open(stream=pdf_bytes, filetype='pdf')
+    with pymupdf.open(stream=pdf_bytes, filetype='pdf') as doc:
+        return _extrair_documento(doc)
+
+
+def _extrair_documento(doc):
     itens = []
     for page in doc:
+        from .encarte_selos import extrair_pagina
+        ofertas_por_selos = extrair_pagina(page, doc)
+        if ofertas_por_selos is not None:
+            itens.extend(ofertas_por_selos)
+            continue
         area = page.rect.width * page.rect.height
         spans, unidades, legendas = [], [], []
         for b in page.get_text('dict')['blocks']:

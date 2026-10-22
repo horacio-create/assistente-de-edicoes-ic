@@ -1,0 +1,84 @@
+{
+  "uniforca-hora-da-carne-flexivel": {
+    "index.html": {
+      "antes": "3cbc768d63661f3ef222a337b815512ca190ab3f9096edbd11e9f8fbfbf72745",
+      "depois": "655ce989239fe50f669bd268253ac0ef9ad20681e485a1cae02e2b9c25d41be3"
+    },
+    "template.json": {
+      "antes": "ea7eb96014b16402ccf3c77e1856b24a16499a392e08abcfeeb455492c7d92d4",
+      "depois": "69aad1a613c12d2d47190c354633195d1abc7bc38c98c09dab29a0792f8ba19c"
+    },
+    "assets/edicao.js": {
+      "antes": "1b06788c30ca4f77bede1a142d6809d4b19aad86a463c864773d635e7e13814d",
+      "depois": "5dbd0079d40413c8250030b4b7e7dde5ea17ba3ca8f9c6dc327d3c489412aea5"
+    },
+    "assets/layout.js": {
+      "antes": "97cc9be83dedbd9a58a45946f8aa59f0b493ca2cba5679147db333717e72be19",
+      "depois": "078e7b4324dffcd7655dc1b1dfde000a4560452712000e67ca53dcd941a2b77c"
+    },
+    "assets/selos.css": {
+      "antes": null,
+      "depois": "62aebdc4f12f08a7b2e22457bb6152aa0b569fd549327052bb40e03273307753"
+    },
+    "assets/selos.js": {
+      "antes": null,
+      "depois": "8bcea23367bd67872a680dd92033c3bf27cf95bf872da07a134926ef8961bdb3"
+    }
+  },
+  "uniforca-hora-da-feira-flexivel": {
+    "index.html": {
+      "antes": "a92439302a024d6b8b0c67a21ce2a9dfabcfe3dc2341279d64090428365a9780",
+      "depois": "cc5a05ff2b38d52f86fe4db902d0b813cab60d160f5c3fbcebf1d9c86f7ae51c"
+    },
+    "template.json": {
+      "antes": "9e976eecb958dfe57c946c79dcd321e93476db1fa9b835a9d7b7f044c111d3e3",
+      "depois": "0ca78ad5d5d272f37d0c66475e0b50ca76ab0e00a0eee13341af2759d12a4bee"
+    },
+    "assets/edicao.js": {
+      "antes": "1b06788c30ca4f77bede1a142d6809d4b19aad86a463c864773d635e7e13814d",
+      "depois": "5dbd0079d40413c8250030b4b7e7dde5ea17ba3ca8f9c6dc327d3c489412aea5"
+    },
+    "assets/layout.js": {
+      "antes": "97cc9be83dedbd9a58a45946f8aa59f0b493ca2cba5679147db333717e72be19",
+      "depois": "078e7b4324dffcd7655dc1b1dfde000a4560452712000e67ca53dcd941a2b77c"
+    },
+    "assets/selos.css": {
+      "antes": null,
+      "depois": "62aebdc4f12f08a7b2e22457bb6152aa0b569fd549327052bb40e03273307753"
+    },
+    "assets/selos.js": {
+      "antes": null,
+      "depois": "8bcea23367bd67872a680dd92033c3bf27cf95bf872da07a134926ef8961bdb3"
+    }
+  },
+  "uniforca-momento-do-bebe-flexivel": {
+    "capa.png": {
+      "antes": "2846332f6427cd94de91e26d19d96a7b95b60294d6c193dbc5e7499617903145",
+      "depois": "b9734418b3f47d18c4d48fbb97dae8d4c2379efa04c4788fdfd131a323a5432b"
+    },
+    "index.html": {
+      "antes": "48baa7ee0ee9051649cf401ce8d2987a44197442233db6084825216cd717a8c6",
+      "depois": "3ce3709cbabeb0ace5a3ba7a8bb502b4840e9f4ad670d0ae5cb6035ece995e10"
+    },
+    "template.json": {
+      "antes": "e98071dd4350cd1ad5b0cd4691de27414158778483713208c3c3694cb34f92f9",
+      "depois": "d7b52f8bf2867210de0d540e7cf8991e7830902fa436f005b84bc9e5a9f97c6c"
+    },
+    "assets/edicao.js": {
+      "antes": "1b06788c30ca4f77bede1a142d6809d4b19aad86a463c864773d635e7e13814d",
+      "depois": "5dbd0079d40413c8250030b4b7e7dde5ea17ba3ca8f9c6dc327d3c489412aea5"
+    },
+    "assets/layout.js": {
+      "antes": "97cc9be83dedbd9a58a45946f8aa59f0b493ca2cba5679147db333717e72be19",
+      "depois": "078e7b4324dffcd7655dc1b1dfde000a4560452712000e67ca53dcd941a2b77c"
+    },
+    "assets/selos.css": {
+      "antes": null,
+      "depois": "62aebdc4f12f08a7b2e22457bb6152aa0b569fd549327052bb40e03273307753"
+    },
+    "assets/selos.js": {
+      "antes": null,
+      "depois": "8bcea23367bd67872a680dd92033c3bf27cf95bf872da07a134926ef8961bdb3"
+    }
+  }
+}

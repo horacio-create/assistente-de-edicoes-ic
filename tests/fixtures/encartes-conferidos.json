@@ -313,16 +313,298 @@
    }
   ]
  },
-  "106cffac7786fb4de5a2c754f647a25bad1eff676882410d2e27b29faaa5b9d7": {
-    "arquivo": "SEMANAL-4-4.pdf",
-    "completo": false,
-    "ofertas": [
-      {
-        "nome": "Beef Burger Bovino Friboi 120G (Sabores)",
-        "por": "3,99",
-        "de": "4,99",
-        "unidade": "CADA"
-      }
-    ]
-  }
+ "106cffac7786fb4de5a2c754f647a25bad1eff676882410d2e27b29faaa5b9d7": {
+  "arquivo": "SEMANAL-4-4.pdf",
+  "completo": false,
+  "ofertas": [
+   {
+    "nome": "Beef Burger Bovino Friboi 120G (Sabores)",
+    "por": "3,99",
+    "de": "4,99",
+    "unidade": "CADA"
+   }
+  ]
+ },
+ "9f7b45d9a58cc27859a0c7ced19df141324ca2b680fb80b0772f56c1c3a07836": {
+  "arquivo": "CAPA.pdf (09 a 12.10)",
+  "completo": true,
+  "ofertas": [
+   {
+    "nome": "Arroz 101 Branco Ou Parboilizado 1kg",
+    "de": "4,99",
+    "por": "4,19",
+    "unidade": "CADA"
+   },
+   {
+    "nome": "Açúcar Cristal Ecoçúcar Ou Coruripe 1kg",
+    "de": "3,89",
+    "por": "2,99",
+    "unidade": "CADA"
+   },
+   {
+    "nome": "Leite Em Pó Betania Integral Sache 750g",
+    "de": "27,99",
+    "por": "23,99",
+    "unidade": "CADA"
+   },
+   {
+    "nome": "Café Kimimo Almofada ou a Vácuo 250g",
+    "de": "13,99",
+    "por": "10,99",
+    "unidade": "CADA"
+   },
+   {
+    "nome": "Macarrão Coração Nordestino Espaguete 400g",
+    "de": "2,49",
+    "por": "1,59",
+    "unidade": "CADA"
+   },
+   {
+    "nome": "Flocão de Milho Gostosin 400g",
+    "de": "1,19",
+    "por": "1,09",
+    "unidade": "CADA"
+   },
+   {
+    "nome": "Óleo De Soja Soya Pet 900ml",
+    "de": "8,99",
+    "por": "7,99",
+    "unidade": "CADA"
+   },
+   {
+    "nome": "Maionese Hellmann's Tradicional Sachê 400g",
+    "de": "9,99",
+    "por": "6,99",
+    "unidade": "CADA"
+   },
+   {
+    "nome": "Bombom Garoto Sortido 220g",
+    "de": "14,99",
+    "por": "9,99",
+    "unidade": "CADA"
+   },
+   {
+    "nome": "Margarina Qualy Com Sal Pote 500g",
+    "de": "8,49",
+    "por": "6,99",
+    "unidade": "CADA"
+   },
+   {
+    "nome": "Carré Suíno Congelado Kg",
+    "de": "22,99",
+    "por": "13,99",
+    "unidade": "KG"
+   },
+   {
+    "nome": "Picanha Suína Friella Temperada Congelada Kg",
+    "de": "39,99",
+    "por": "26,99",
+    "unidade": "KG"
+   },
+   {
+    "nome": "Maminha Bovina Minerva Pul Nacional Congelada Kg",
+    "de": "59,99",
+    "por": "49,99",
+    "unidade": "KG"
+   },
+   {
+    "nome": "Filezinho de Frango Sassami SuperFrango Congelado Pacote 1kg",
+    "de": "18,99",
+    "por": "14,99",
+    "unidade": "CADA"
+   },
+   {
+    "nome": "Coxa de Frango Sadia Congelada Zip 1kg",
+    "de": "13,99",
+    "por": "9,99",
+    "unidade": "CADA"
+   }
+  ]
+ },
+ "8eb4db02e09cce14d4ecaeb037ba31406219faf70ca0ee097274b7326cf1bc6b": {
+  "arquivo": "VERSO.pdf (09 a 12.10)",
+  "completo": true,
+  "ofertas": [
+   {
+    "nome": "Maçã Nacional Kg",
+    "de": "9,99",
+    "por": "5,99",
+    "unidade": "KG"
+   },
+   {
+    "nome": "Uva Verde Seleta Sem Sementes 500g",
+    "de": "7,99",
+    "por": "5,99",
+    "unidade": "CADA"
+   },
+   {
+    "nome": "Goma Hidratada Sinhá Maria Pacote 1kg",
+    "de": "6,99",
+    "por": "3,99",
+    "unidade": "CADA"
+   },
+   {
+    "nome": "Ovos Brancos Grande Tijuca Ou Regina Com 20 Unidades",
+    "de": "13,99",
+    "por": "9,49",
+    "unidade": "CADA"
+   },
+   {
+    "nome": "Milho de Pipoca Tio Márcio 400g",
+    "de": "3,49",
+    "por": "2,49",
+    "unidade": "CADA"
+   },
+   {
+    "nome": "Biscoito Recheado Richester Amori 125g (Sabores)",
+    "de": "2,79",
+    "por": "2,09",
+    "unidade": "CADA"
+   },
+   {
+    "nome": "Batata Tonys 100g Sabores",
+    "de": "9,99",
+    "por": "6,99",
+    "unidade": "CADA"
+   },
+   {
+    "nome": "Mistura Condensada Mococa Tp 395g",
+    "de": "4,99",
+    "por": "3,59",
+    "unidade": "CADA"
+   },
+   {
+    "nome": "Linguiça Suína Perdigão Kg",
+    "de": "21,99",
+    "por": "15,99",
+    "unidade": "KG"
+   },
+   {
+    "nome": "Batata Pré-Frita Easychef Congelada 2kg",
+    "de": "21,99",
+    "por": "17,99",
+    "unidade": "CADA"
+   },
+   {
+    "nome": "Morango Easychef Inteiro Congelado 1,01Kg",
+    "de": "12,99",
+    "por": "9,99",
+    "unidade": "CADA"
+   },
+   {
+    "nome": "Requeijão Itambé Tradicional Copo 200g",
+    "de": "9,99",
+    "por": "6,99",
+    "unidade": "CADA"
+   },
+   {
+    "nome": "Whisky Chivas Regal 12 anos 1l",
+    "de": "149,99",
+    "por": "104,99",
+    "unidade": "CADA"
+   },
+   {
+    "nome": "Whisky Black & White 1l",
+    "de": "69,99",
+    "por": "49,99",
+    "unidade": "CADA"
+   },
+   {
+    "nome": "Bebida Alcoólica Mansão Maromba 1L (Tipos)",
+    "de": "19,99",
+    "por": "15,99",
+    "unidade": "CADA"
+   },
+   {
+    "nome": "Vodka Slova 965ml/970ml (Tipos)",
+    "de": "14,99",
+    "por": "10,49",
+    "unidade": "CADA"
+   },
+   {
+    "nome": "Aguardente Ypióca Prata 965ml",
+    "de": "14,99",
+    "por": "9,99",
+    "unidade": "CADA"
+   },
+   {
+    "nome": "Cerveja Itaipava Pilsen Lata 350ml",
+    "de": "3,59",
+    "por": "2,79",
+    "unidade": "CADA"
+   },
+   {
+    "nome": "Cerveja Lokal Pilsen Lata 350ml",
+    "de": "2,99",
+    "por": "2,39",
+    "unidade": "CADA"
+   },
+   {
+    "nome": "Suco de Uva Terra Sol Tinto Integral 1L",
+    "de": "14,99",
+    "por": "11,99",
+    "unidade": "CADA"
+   },
+   {
+    "nome": "Kit Dove Shampoo 350ml + Condicionador 150ml (Tipos)",
+    "de": "39,99",
+    "por": "26,99",
+    "unidade": "CADA"
+   },
+   {
+    "nome": "Desodorante Aerosol Monange 72h 150ml (Fragrâncias)",
+    "de": "10,99",
+    "por": "7,99",
+    "unidade": "CADA"
+   },
+   {
+    "nome": "Sabonete Líquido Limpebem 1L (Fragrâncias)",
+    "de": "10,99",
+    "por": "7,99",
+    "unidade": "CADA"
+   },
+   {
+    "nome": "Lava Roupas Em Pó Assim Triplação Bicarbonato Pacote 2,4kg",
+    "de": "21,99",
+    "por": "17,99",
+    "unidade": "CADA"
+   },
+   {
+    "nome": "Fralda Descartável Hipopó Baby Econômica (Tamanhos)",
+    "de": "34,99",
+    "por": "28,99",
+    "unidade": "CADA"
+   },
+   {
+    "nome": "Papel Higiênico Floral Folha Dupla 20 Metros C/12 Rolos",
+    "de": "14,99",
+    "por": "9,79",
+    "unidade": "CADA"
+   },
+   {
+    "nome": "Água Sanitária Dragão 5L",
+    "de": "12,99",
+    "por": "8,45",
+    "unidade": "CADA"
+   },
+   {
+    "nome": "Lava Roupas Líquido Brilhante limpeza Total 1,8L",
+    "de": "20,99",
+    "por": "14,99",
+    "unidade": "CADA"
+   },
+   {
+    "nome": "Ração Para Cães Adultos Domus 10,1kg",
+    "de": "79,99",
+    "por": "62,99",
+    "unidade": "CADA"
+   },
+   {
+    "nome": "Liquidificador Mallory Fast Mix 220w",
+    "de": "129,99",
+    "por": "96,99",
+    "unidade": "CADA"
+   }
+  ]
+ }
 }

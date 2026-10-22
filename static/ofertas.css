@@ -171,6 +171,18 @@ body:not(.sidebar-collapsed) .sidebar .nav[data-view=ofertas].active,.sidebar-co
 #ofertas .chip.ativo{background:#e3f3e2;border-color:var(--green);box-shadow:inset 0 0 0 1px var(--green);color:#234c28}
 #ofertas .encarte-card{margin-top:16px;padding:18px 20px;background:white;border:1px solid var(--line);border-radius:16px;box-shadow:0 3px 14px #1a1a3905}
 #ofertas .encarte-card .section-title{margin-bottom:12px}
+#ofertas .encarte-opcao-compressao{display:flex;align-items:center;gap:8px;font-size:13px;margin:12px 0 6px}
+#ofertas .encarte-opcao-compressao input{width:16px;height:16px;flex:none;accent-color:var(--green,#36d87a)}
+#ofertas .encarte-limites{font-size:12px;color:#626266;margin:0 0 12px;line-height:1.5}
+#ofertas .encarte-importacao{border:1px solid var(--line);background:#f6faf7;border-radius:12px;padding:16px;margin:12px 0}
+#ofertas .encarte-importacao p{font-size:12px;line-height:1.5;margin:6px 0 12px;color:#626266}
+#ofertas .encarte-importacao ol{padding:0;list-style:none;margin:0 0 12px}
+#ofertas .encarte-importacao li{display:flex;align-items:center;gap:8px;border-bottom:1px solid var(--line);padding:8px 0}
+#ofertas .encarte-importacao li span{flex:1;min-width:0;overflow-wrap:anywhere;font-size:13px}
+#ofertas .encarte-importacao li button{min-width:32px;padding:5px 8px}
+#ofertas .of-estilo-selos{padding:12px;border:1px solid var(--line);border-radius:10px;margin:12px 0;background:#f8faf9}
+#ofertas .of-estilo-selos .toolbar{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+#ofertas .of-estilo-selos button{font-size:11px;padding:7px 9px}
 #ofertas .encarte-card .encarte-chips{margin-bottom:12px}
 #ofertas .encarte-vazio{margin:0;padding:22px;border:2px dashed #dadae5;border-radius:12px;text-align:center;font-size:12px;color:var(--muted)}
 #ofertas #of-encarte-status{margin:0 0 12px}
@@ -409,3 +421,31 @@ body.of-editor-expandido::after{content:'';position:fixed;inset:0;background:#11
 #of-edicao-dialog .edicao-rodape{background:#f7f8fa;border-top:1px solid #dde0e8;padding-top:12px}
 
 @media(min-width:651px){#of-edicao-dialog .edicao-corpo{overflow:hidden;grid-template-rows:minmax(0,1fr)}#of-edicao-dialog .edicao-viewport{height:100%;max-height:none;aspect-ratio:auto;box-sizing:border-box}#of-edicao-dialog .edicao-propriedades{max-height:100%;overflow:auto;box-sizing:border-box}}
+/* Alinhamento, aplicação em conjunto e miniaturas estáticas. */
+#ofertas .edicao-alinhamento,#ofertas .edicao-padronizar{border:1px solid #e0e4eb;border-radius:10px;padding:10px;background:#f8f9fb;font-size:12px}
+#ofertas .edicao-alinhamento label,#ofertas .edicao-padronizar label{display:flex;align-items:center;gap:6px;margin:9px 0;font-size:11px}
+#ofertas .edicao-alinhamento small,#ofertas .edicao-padronizar p{font-size:11px;color:#626275;line-height:1.5}
+#ofertas .edicao-grade-acoes{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin:8px 0}
+#ofertas .edicao-grade-acoes button{font-size:18px!important;min-height:34px}
+#ofertas .edicao-lote-cartelas{display:grid;grid-template-columns:repeat(3,1fr);max-height:155px;overflow:auto;gap:4px;border-top:1px solid #e0e4eb;margin-top:8px}
+#ofertas .edicao-lote-botoes{display:flex;gap:5px;flex-wrap:wrap}
+#ofertas .previa-padronizacao .edicao-viewport{outline:2px solid #c78a16;outline-offset:2px}
+#ofertas #of-edicao-inline .edicao-mini-imagens img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;opacity:0}
+#ofertas #of-edicao-inline [data-carregada=true] .edicao-mini-imagens img{opacity:1}
+#ofertas #of-edicao-inline [data-carregada=erro] .edicao-mini-imagens::before{content:'Abra para conferir'}
+#ofertas .of-lotes{margin-bottom:22px;padding:18px;border:1px solid var(--line);border-radius:12px;background:white}
+#ofertas .of-lotes .barra-lista{display:flex;gap:12px;flex-wrap:wrap}
+#ofertas .of-lotes h3{margin:0;font-size:17px}
+#ofertas .of-lotes select{max-width:min(100%,380px);padding:8px;border-radius:8px;border:1px solid var(--line)}
+#ofertas .of-lote-resumo{padding:14px;background:#eff7f1;border:1px solid #c9e0ce;border-radius:9px;display:grid;gap:6px;font-size:13px}
+#ofertas .of-lote-resumo p{margin:0}
+#ofertas .of-lote-resumo small{color:#58665c}
+#ofertas .of-lote-video{margin-top:18px;border-top:1px solid var(--line);padding-top:14px}
+#ofertas .of-lote-video header{display:flex;gap:14px;align-items:center;justify-content:space-between;flex-wrap:wrap;font-size:12px}
+#ofertas .of-lote-video h4{margin:0 0 10px;font-size:14px}
+#ofertas .of-lote-grade{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px}
+#ofertas .of-lote-cartela{display:flex;flex-direction:column;align-items:stretch;text-align:left;gap:8px;padding:10px;background:#fafbfc;border:1px solid var(--line);border-radius:10px;line-height:1.5}
+#ofertas .of-lote-cartela img{width:100%;aspect-ratio:16/9;object-fit:contain;background:#edf0f4;font-size:11px}
+#ofertas .of-lote-cartela span{font-size:12px;color:#4e5460}
+#ofertas .of-lote-cartela small{color:#1c6537}
+#ofertas .of-lote-alerta{color:#944317;font-size:12px}

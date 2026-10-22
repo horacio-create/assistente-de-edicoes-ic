@@ -358,3 +358,20 @@ a referência só tinha 5 aprovadas).
    usuário remover o fundo na Biblioteca (teria de escolher a nova imagem no formulário).
 10. **No modo Conferir não dá para navegar entre páginas** (`pagina-nav` some quando `conf.k !== null`):
     mostra só a página de onde o item veio.
+
+
+## Perfil de selos vermelhos (revisão local, 21/10/2026)
+
+`modules/ofertas/encarte_selos.py` reconhece o selo rasterizado por proporção,
+cores e preço vetorial dentro dele. O selo é uma âncora de oferta, nunca parte
+foto. A grade é calculada por linha de selos, incluindo cards largos e preços em
+posições diferentes. Os valores são remontados por caracteres para não perder
+preços que o PDF separa em vários trechos. As fotos preservam embalagens repetidas,
+transparência e imagens opacas; pequenos logos seguem o produto que os contém.
+Textos de equivalência e tabelas não entram na descrição principal.
+
+Verificação: CAPA 09 a 12.10 = 15 ofertas; VERSO = 30. Os 90 preços foram
+comparados com a referência conferida do Encarte Studio. Todos os 45 recortes
+foram examinados, sem selos de preço. Os dois encartes anteriores do corpus
+continuam passando. O perfil só substitui o leitor anterior quando encontra
+pelo menos dois selos confirmados. Não adiciona OCR para encartes sem texto.

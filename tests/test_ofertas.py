@@ -321,6 +321,99 @@ class FluxoTests(unittest.TestCase):
         self.assertEqual(chamar('GET', f"/ofertas/miniatura/{item['imagem']}.png")[0], 200)  # a imagem fica na biblioteca
         self.assertEqual(chamar('GET', f"/ofertas/encarte/{r['id']}/1.png")[0], 404)
 
+    def test_encarte_comprime_oferece_download_e_remove_as_copias(self):
+        import pymupdf
+        with pymupdf.open(stream=self.pdf_picanha(), filetype='pdf') as doc:
+            doc.set_metadata({'subject': 'edicao privada ' * 20000})
+            original = doc.tobytes()
+        status, r = json_de('POST', '/api/ofertas/encarte?nome=compactar.pdf', raw=original)
+        self.assertEqual(status, 200, r)
+        e = self.esperar_encarte(r['id'])
+        self.assertEqual(e['status'], 'pronto', e)
+        self.assertTrue(e['preparacao']['reduzido'], e)
+        self.assertEqual(e['itens'][0]['por'], '49,90')
+        rota = f"/ofertas/encarte/{r['id']}/compactado.pdf"
+        status, pdf, headers = chamar('GET', rota)
+        self.assertEqual(status, 200)
+        self.assertLess(len(pdf), len(original))
+        self.assertEqual(headers['Content-Type'], 'application/pdf')
+        self.assertIn('attachment;', headers['Content-Disposition'])
+        guardado = ofertas.PASTA / 'encartes' / f"{r['id']}.original.pdf"
+        self.assertEqual(guardado.read_bytes(), original)
+        self.assertEqual(json_de('POST', '/api/ofertas/encarte-excluir', {'id': r['id']})[0], 200)
+        self.assertFalse(guardado.exists())
+        self.assertFalse(guardado.with_name(f"{r['id']}.preparacao.json").exists())
+        self.assertEqual(chamar('GET', rota)[0], 404)
+
+    def test_encarte_permite_desativar_compressao(self):
+        original = self.pdf_picanha()
+        _, r = json_de('POST', '/api/ofertas/encarte?nome=original.pdf&comprimir=0', raw=original)
+        e = self.esperar_encarte(r['id'])
+        self.assertEqual(e['status'], 'pronto', e)
+        self.assertEqual(e['preparacao']['estado'], 'desativado')
+        self.assertEqual((ofertas.PASTA / 'encartes' / f"{r['id']}.pdf").read_bytes(), original)
+        self.assertEqual(chamar('GET', f"/ofertas/encarte/{r['id']}/compactado.pdf")[0], 404)
+
+    def test_encartes_juntos_formam_uma_sequencia_sem_sobra_entre_fontes(self):
+        import pymupdf
+        def documento(prefixo, paginas):
+            with pymupdf.open() as doc:
+                for i in range(paginas):
+                    pg = doc.new_page(width=600, height=400)
+                    pg.insert_image(pymupdf.Rect(50, 80, 250, 220), stream=png())
+                    pg.insert_text((60, 70), f'{prefixo} Produto {i+1} Kg', fontsize=12)
+                    pg.insert_text((80, 270), '49,90', fontsize=40)
+                    pg.insert_text((175, 270), 'KG', fontsize=8)
+                    pg.insert_text((60, 300), '59,99', fontsize=16)
+                return doc.tobytes()
+        arquivos = [('CAPA.pdf', documento('Capa', 3)), ('VERSO.pdf', documento('Verso', 1))]
+        boundary = 'teste-encartes-juntos'
+        raw = b''.join((f'--{boundary}\r\nContent-Disposition: form-data; name="encartes"; filename="{nome}"\r\nContent-Type: application/pdf\r\n\r\n'.encode() + dados + b'\r\n') for nome, dados in arquivos)
+        raw += f'--{boundary}--\r\n'.encode()
+        status, dados, _ = chamar('POST', '/api/ofertas/encartes-importar', raw=raw,
+                                 headers={'CONTENT_TYPE': f'multipart/form-data; boundary={boundary}'})
+        self.assertEqual(status, 200, dados)
+        ident = json.loads(dados)['id']
+        enc = self.esperar_encarte(ident)
+        self.assertEqual(enc['status'], 'pronto', enc)
+        self.assertEqual([i['nome'] for i in enc['itens']], ['Capa Produto 1 Kg', 'Capa Produto 2 Kg', 'Capa Produto 3 Kg', 'Verso Produto 1 Kg'])
+        self.assertEqual([i['pagina'] for i in enc['itens']], [1, 2, 3, 4])
+        self.assertEqual([f['paginas'] for f in enc['preparacao']['fontes']], [[1, 2, 3], [4]])
+        self.assertEqual(chamar('GET', f'/ofertas/encarte/{ident}/4.png')[0], 200)
+        fontes = ofertas.PASTA / 'encartes' / f'{ident}-fontes'
+        self.assertEqual((fontes/'001.pdf').read_bytes(), arquivos[0][1])
+        status, lote = json_de('POST', '/api/ofertas/encarte-gerar-todos', {
+            'encarte': ident, 'template': 'uniforca-hora-da-carne-flexivel', 'cartelas': 3,
+            'impar': 'sozinho', 'distribuicao': 'sequencia', 'revisar': True, 'estiloselo': 'vermelho'})
+        self.assertEqual(status, 200, lote)
+        self.assertEqual((len(lote['videos']), lote['completados']), (1, 0))
+        _, pedido = json_de('GET', '/api/ofertas/pedido?id='+lote['videos'][0]['pedido'])
+        produtos = pedido['dados']['produtos']
+        self.assertEqual(pedido['dados']['estiloselo'], 'vermelho')
+        self.assertEqual([i['nome'] for i in produtos[2:4]], ['Capa Produto 3 Kg', 'Verso Produto 1 Kg'])
+        self.assertEqual(json_de('POST', '/api/ofertas/encarte-excluir', {'id': ident})[0], 200)
+        self.assertFalse(fontes.exists())
+
+    def test_encartes_juntos_recusam_envio_sem_arquivos(self):
+        status, dados, _ = chamar('POST', '/api/ofertas/encartes-importar', raw=b'incompleto',
+                                 headers={'CONTENT_TYPE': 'multipart/form-data; boundary=teste'})
+        self.assertEqual(status, 400)
+        self.assertIn('error', json.loads(dados))
+
+    def test_encartes_juntos_aceitam_pdf_e_imagem_sem_compressao(self):
+        arquivos = [('CAPA.pdf', self.pdf_picanha()), ('VERSO.png', png())]
+        raw = b''.join(b'--mistos\r\nContent-Disposition: form-data; name="encartes"; filename="'+nome.encode()+b'"\r\n\r\n'+dados+b'\r\n' for nome, dados in arquivos) + b'--mistos--\r\n'
+        status, dados, _ = chamar('POST', '/api/ofertas/encartes-importar?comprimir=0', raw=raw,
+                                 headers={'CONTENT_TYPE': 'multipart/form-data; boundary=mistos'})
+        self.assertEqual(status, 200, dados)
+        ident = json.loads(dados)['id']
+        enc = self.esperar_encarte(ident)
+        self.assertEqual(enc['status'], 'pronto', enc)
+        self.assertEqual(len(enc['itens']), 1)  # imagem sem camada de texto: marcação manual
+        self.assertEqual([f['paginas'] for f in enc['preparacao']['fontes']], [[1], [2]])
+        self.assertFalse(enc['preparacao']['reduzido'])
+        self.assertEqual(chamar('GET', f'/ofertas/encarte/{ident}/2.png')[0], 200)
+
     def test_conferir_e_excluir_produto_do_encarte(self):
         _, r = json_de('POST', '/api/ofertas/encarte?nome=conferir.pdf', raw=self.pdf_picanha())
         self.esperar_encarte(r['id'])
