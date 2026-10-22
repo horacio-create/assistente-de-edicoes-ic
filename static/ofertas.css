@@ -449,3 +449,9 @@ body.of-editor-expandido::after{content:'';position:fixed;inset:0;background:#11
 #ofertas .of-lote-cartela span{font-size:12px;color:#4e5460}
 #ofertas .of-lote-cartela small{color:#1c6537}
 #ofertas .of-lote-alerta{color:#944317;font-size:12px}
+
+/* Título editável: a quebra manual usa o mesmo texto enviado ao vídeo. */
+#ofertas .of-titulo-produto{display:block;width:100%;box-sizing:border-box;min-height:78px;resize:vertical;padding:10px 12px;border:1px solid var(--borda,#d8d8e5);border-radius:8px;background:var(--superficie,#fff);color:inherit;font:inherit;line-height:1.4}
+#ofertas .of-quebra-titulo{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:5px}
+#ofertas .of-quebra-titulo small{font-size:10px;color:#626266}
+#ofertas .campo.com-erro textarea{border-color:var(--erro)!important;background:var(--erro-fundo)!important}

@@ -20,7 +20,7 @@
       p.style.transform = 'none';
       const nome = p.querySelector('.nome');
       const largura = Math.min(620, p.clientWidth - 64);
-      nome.style.cssText = `left:${(p.clientWidth-largura)/2}px;width:${largura}px;right:auto;top:0;text-wrap:balance;overflow-wrap:anywhere`;
+      nome.style.cssText = `left:${(p.clientWidth-largura)/2}px;width:${largura}px;right:auto;top:0;text-wrap:balance;white-space:pre-line;overflow-wrap:anywhere`;
     });
     const cabeEmDuasLinhas = () => {
       produtos.forEach(p => { p.querySelector('.nome').style.fontSize = fonte + 'px'; });
@@ -84,7 +84,7 @@
       const m = geometriaLateral(p.clientWidth, p.clientHeight);
       medidas.set(p,m);
       const nome = p.querySelector('.nome');
-      nome.style.cssText = `left:${m.textoEsquerda}px;width:${m.textoLargura}px;right:auto;top:0;text-wrap:balance;overflow-wrap:anywhere`;
+      nome.style.cssText = `left:${m.textoEsquerda}px;width:${m.textoLargura}px;right:auto;top:0;text-wrap:balance;white-space:pre-line;overflow-wrap:anywhere`;
     });
     const cabeEmTresLinhas = () => {
       produtos.forEach(p => {p.querySelector('.nome').style.fontSize=fonte+'px';});

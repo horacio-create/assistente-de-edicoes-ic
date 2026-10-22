@@ -27,9 +27,26 @@ class FabricaTests(unittest.TestCase):
             base,dados,atual,ident=self.ambiente(Path(t));(atual/'index.html').write_text('personalizado')
             self.assertEqual(atualizar(base,dados),[(ident,'personalizado — preservado')])
             self.assertEqual((atual/'index.html').read_text(),'personalizado');self.assertFalse((atual/'assets/selo.js').exists())
+    def test_quebra_titulo_atualiza_marcas_preserva_personalizacao_e_cria_backup(self):
+        with tempfile.TemporaryDirectory() as t:
+            base,dados,atual,ident=self.ambiente(Path(t))
+            marca='uniforca-sadia-flexivel';novo=base/'templates'/marca;dest=dados/marca
+            novo.mkdir();dest.mkdir();(novo/'layout.js').write_text('novo');(dest/'layout.js').write_text('antigo')
+            manifest={marca:{'layout.js':{'antes':resumo(dest/'layout.js'),'depois':resumo(novo/'layout.js')}}}
+            (base/'atualizacoes/titulos-20261022.json').write_text(json.dumps(manifest))
+            atualizar(base,dados)
+            self.assertEqual((dest/'layout.js').read_text(),'novo')
+            self.assertEqual((dados/'.versoes'/marca/'antes-quebra-titulos-20261022/layout.js').read_text(),'antigo')
+            self.assertEqual(atualizar(base,dados),[])
+            (dest/'layout.js').write_text('personalizado');atualizar(base,dados)
+            self.assertEqual((dest/'layout.js').read_text(),'personalizado')
+
     def test_manifesto_inclui_somente_os_arquivos_publicados_conferidos(self):
         base=Path(__file__).resolve().parents[1]/'ofertas'
         manifesto=json.loads((base/'atualizacoes/templates-20261022.json').read_text())
+        manifesto.update(json.loads((base/'atualizacoes/titulos-20261022.json').read_text()))
+        for ident, arquivos in json.loads((base/'atualizacoes/selo-original-20261022.json').read_text()).items():
+            manifesto.setdefault(ident, {}).update(arquivos)
         for ident,arquivos in manifesto.items():
             for nome,info in arquivos.items():self.assertEqual(resumo(base/'templates'/ident/nome),info['depois'],nome)
 

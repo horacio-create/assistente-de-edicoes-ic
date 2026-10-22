@@ -1,0 +1,32 @@
+{
+  "uniforca-hora-da-carne-flexivel": {
+    "assets/layout.js": {
+      "antes": "078e7b4324dffcd7655dc1b1dfde000a4560452712000e67ca53dcd941a2b77c",
+      "depois": "2b05ad25b169841e8f0ecb6401dba59a8a526806bab23c66b405556b469bcb0c"
+    }
+  },
+  "uniforca-hora-da-feira-flexivel": {
+    "assets/layout.js": {
+      "antes": "078e7b4324dffcd7655dc1b1dfde000a4560452712000e67ca53dcd941a2b77c",
+      "depois": "2b05ad25b169841e8f0ecb6401dba59a8a526806bab23c66b405556b469bcb0c"
+    }
+  },
+  "uniforca-momento-do-bebe-flexivel": {
+    "assets/layout.js": {
+      "antes": "078e7b4324dffcd7655dc1b1dfde000a4560452712000e67ca53dcd941a2b77c",
+      "depois": "2b05ad25b169841e8f0ecb6401dba59a8a526806bab23c66b405556b469bcb0c"
+    }
+  },
+  "uniforca-perdigao-flexivel": {
+    "assets/layout.js": {
+      "antes": "078e7b4324dffcd7655dc1b1dfde000a4560452712000e67ca53dcd941a2b77c",
+      "depois": "2b05ad25b169841e8f0ecb6401dba59a8a526806bab23c66b405556b469bcb0c"
+    }
+  },
+  "uniforca-sadia-flexivel": {
+    "assets/layout.js": {
+      "antes": "078e7b4324dffcd7655dc1b1dfde000a4560452712000e67ca53dcd941a2b77c",
+      "depois": "2b05ad25b169841e8f0ecb6401dba59a8a526806bab23c66b405556b469bcb0c"
+    }
+  }
+}

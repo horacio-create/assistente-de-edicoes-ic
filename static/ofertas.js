@@ -266,12 +266,14 @@ function campo(def, caminho, idVar) {
     };
     return div;
   }
+  const tituloProduto = def.tipo === 'texto' && def.id === 'nome' && caminho.length > 1 && state.esquema.editorCartelas;
   let controle;
   if (def.tipo === 'opcoes') controle = `<select id="${idInput}">${def.opcoes.map((o) => `<option value="${esc(o)}" ${o === v ? 'selected' : ''}>${esc(def.rotulosOpcoes?.[o] || o)}</option>`).join('')}</select>`;
   else if (def.tipo === 'numero') controle = `<div class="value-control"><span class="range-track"><input id="${idInput}" type="range" min="${def.min ?? 0}" max="${def.max ?? 1}" step="${def.passo ?? 0.05}" value="${esc(v)}"></span><span class="number-unit"><input type="number" aria-label="${esc(def.rotulo)}" min="${Math.round((def.min ?? 0) * 100)}" max="${Math.round((def.max ?? 1) * 100)}" step="5" value="${Math.round(Number(v) * 100)}"><span>%</span></span></div>`;
   else if (def.tipo === 'cor') controle = `<input id="${idInput}" type="color" value="${esc(v)}">`;
   else if (def.tipo === 'booleano') controle = `<label class="check"><input id="${idInput}" type="checkbox" ${v ? 'checked' : ''}> ${esc(def.rotulo)}</label>`;
   else if (def.tipo === 'preco') controle = `<div class="preco"><span>R$</span><input id="${idInput}" inputmode="decimal" autocomplete="off" placeholder="0,00" value="${esc(v)}"></div>`;
+  else if (tituloProduto) controle = `<textarea id="${idInput}" class="of-titulo-produto" rows="3" autocomplete="off" ${def.max ? `maxlength="${def.max + 20}"` : ''} aria-describedby="${idInput}-dica">${esc(v ?? '')}</textarea><div class="of-quebra-titulo"><small id="${idInput}-dica">Enter define a quebra de linha do título.</small><button type="button" class="text-button quebra-automatica" title="Remove as quebras manuais e ajusta o título ao espaço">Quebra automática</button></div>`;
   else controle = `<input id="${idInput}" autocomplete="off" ${def.max ? `maxlength="${def.max + 20}"` : ''} value="${esc(v)}">`;
   div.innerHTML = (def.tipo === 'booleano' ? '' : rotulo) + controle + erro + ajuda;
   if (def.tipo === 'numero') {
@@ -279,12 +281,20 @@ function campo(def, caminho, idVar) {
     faixa.oninput = () => { numero.value = Math.round(faixa.value * 100); definir(caminho, Number(faixa.value)); };
     numero.onchange = () => { faixa.value = numero.value / 100; definir(caminho, Number(numero.value) / 100); };
   } else {
-    const input = div.querySelector('input,select');
+    const input = div.querySelector('input,select,textarea');
     input.addEventListener('input', () => {
       definir(caminho, def.tipo === 'booleano' ? input.checked : input.value);
       const contador = div.querySelector('.contador-texto');
       if (contador) contador.textContent = `${input.value.length}/${def.max}`;
     });
+  }
+  if (tituloProduto) {
+    const input = div.querySelector('textarea');
+    div.querySelector('.quebra-automatica').onclick = () => {
+      input.value = input.value.replace(/\s*\r?\n\s*/g, ' ');
+      input.dispatchEvent(new Event('input', {bubbles:true}));
+      input.focus();
+    };
   }
   if (def.id === 'estiloselo' && caminho.length === 1) {
     div.classList.add('of-estilo-selos');
