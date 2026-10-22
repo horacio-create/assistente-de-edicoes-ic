@@ -12,14 +12,14 @@ function ambiente(){
   const titulo={textContent:''},form=no();
   form.querySelector=()=>titulo;
   form.querySelectorAll=s=>s==='[data-cartela]'?grupo:s==='[data-produto]'?cards:[...grupo,...cards];
-  const els={'formulario':form,'editor-unificado':no(),'editor-classico':no(),'player':no()};
+  const els={'formulario':form,'editor-unificado':no(),'editor-classico':no(),'player':no(),'save-state':{textContent:'Salvo'}};
   const dados=no(),preview=no(),montagens=[];
   const state={pedido:{id:'teste',revision:1,dados:{produtos:Array.from({length:7},()=>({nome:'Produto',edicao:'{}'})),ultimacartela:'tres'}},esquema:{editorCartelas:true, duracao:15}};
   const lista={id:'produtos',min:1,itens:30,grupo:{tamanho:2}};
   let salvamentos=0;
   const c=vm.createContext({state,el:id=>els[id],OfertasEdicao:{montar:opts=>{montagens.push(opts);return {dados,preview};}},listaPrincipal:()=>lista,urlImagem:v=>v,agendarSalvar:()=>salvamentos++,falha:()=>{},irParaVideos:()=>{}});
   vm.runInContext(grupos+funcoes,c);
-  return {c,state,grupo,cards,titulo,montagens,salvamentos:()=>salvamentos};
+  return {c,state,grupo,cards,titulo,montagens,els,salvamentos:()=>salvamentos};
 }
 test('painel mostra o mesmo produto da cartela selecionada, incluindo o trio final',()=>{
   const a=ambiente();
@@ -53,3 +53,8 @@ test('mensagens antigas não alteram outro pedido aberto',()=>{
   anterior.onAlterar({'1':{v:1,elementos:{titulo:{x:90,y:0,escala:1}}}});
   assert.equal(a.salvamentos(),0);assert.equal(a.state.pedido.dados.produtos[0].edicao,'{}');
 });
+
+ test('a montagem identifica alterações ainda não salvas para não carregar uma revisão antiga',()=>{
+  const a=ambiente();vm.runInContext('montarEditorIntegrado()',a.c);assert.equal(a.montagens.at(-1).salvo,true);
+  a.els['save-state'].textContent='Alterações não salvas…';vm.runInContext('montarEditorIntegrado()',a.c);assert.equal(a.montagens.at(-1).salvo,false);
+ });
