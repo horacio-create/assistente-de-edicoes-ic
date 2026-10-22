@@ -10,7 +10,10 @@
     },
     "assets/edicao.js": {
       "antes": "1b06788c30ca4f77bede1a142d6809d4b19aad86a463c864773d635e7e13814d",
-      "depois": "5dbd0079d40413c8250030b4b7e7dde5ea17ba3ca8f9c6dc327d3c489412aea5"
+      "depois": "41987cce12ed8dfe5f47f57f79e0b2500e6a7863362fc5d26ed9d22bc08b14f8",
+      "intermediarios": [
+        "5dbd0079d40413c8250030b4b7e7dde5ea17ba3ca8f9c6dc327d3c489412aea5"
+      ]
     },
     "assets/layout.js": {
       "antes": "97cc9be83dedbd9a58a45946f8aa59f0b493ca2cba5679147db333717e72be19",
@@ -45,7 +48,10 @@
     },
     "assets/edicao.js": {
       "antes": "1b06788c30ca4f77bede1a142d6809d4b19aad86a463c864773d635e7e13814d",
-      "depois": "5dbd0079d40413c8250030b4b7e7dde5ea17ba3ca8f9c6dc327d3c489412aea5"
+      "depois": "41987cce12ed8dfe5f47f57f79e0b2500e6a7863362fc5d26ed9d22bc08b14f8",
+      "intermediarios": [
+        "5dbd0079d40413c8250030b4b7e7dde5ea17ba3ca8f9c6dc327d3c489412aea5"
+      ]
     },
     "assets/layout.js": {
       "antes": "97cc9be83dedbd9a58a45946f8aa59f0b493ca2cba5679147db333717e72be19",
@@ -84,7 +90,10 @@
     },
     "assets/edicao.js": {
       "antes": "1b06788c30ca4f77bede1a142d6809d4b19aad86a463c864773d635e7e13814d",
-      "depois": "5dbd0079d40413c8250030b4b7e7dde5ea17ba3ca8f9c6dc327d3c489412aea5"
+      "depois": "41987cce12ed8dfe5f47f57f79e0b2500e6a7863362fc5d26ed9d22bc08b14f8",
+      "intermediarios": [
+        "5dbd0079d40413c8250030b4b7e7dde5ea17ba3ca8f9c6dc327d3c489412aea5"
+      ]
     },
     "assets/layout.js": {
       "antes": "97cc9be83dedbd9a58a45946f8aa59f0b493ca2cba5679147db333717e72be19",

@@ -56,6 +56,14 @@
   }
   function aplicar(produtos) {produtos.forEach(p=>p.querySelectorAll('[data-editavel]').forEach(pintar));}
 
+  // A área reservada para diagramar o texto não é sua área visível.
+  function limitesVisuais(no) {
+    const caixa=no.getBoundingClientRect();
+    if(!/^(titulo|selo-titulo|(?:de|clube)-(?:unidade|moeda))$/.test(no.dataset.editavel))return caixa;
+    const range=no.ownerDocument.createRange();range.selectNodeContents(no);
+    const texto=range.getBoundingClientRect();
+    return texto.width>0&&texto.height>0?texto:caixa;
+  }
   function iniciarEditor(produtos) {
     const url=new URL(location.href);if(url.searchParams.get('editar')!=='1')return;
     const sessao=url.searchParams.get('sessao');if(!sessao||window.parent===window)return;
@@ -67,7 +75,7 @@
       #root[data-editando] .painel.cartela-editando{display:flex!important;visibility:visible!important;opacity:1!important}
       [data-editavel]{cursor:move;touch-action:none;user-select:none}
       body[data-navegando] [data-editavel]{cursor:grabbing!important}
-      .ed-selecao{outline:2px solid #6146ed;outline-offset:3px}
+      .ed-selecao{outline:none}
       #ed-caixa{position:absolute;border:2px dashed #6146ed;pointer-events:none;z-index:9999;box-sizing:border-box}
       #ed-alca{position:absolute;right:-12px;bottom:-12px;width:24px;height:24px;background:#6146ed;border:3px solid white;pointer-events:auto;cursor:nwse-resize;touch-action:none}
     `;document.head.appendChild(estilo);
@@ -80,7 +88,7 @@
     function restaurar(obj){produtos.forEach(p=>p.__ajustes=limpar(obj[p.dataset.numeroProduto]));aplicar(produtos);}
     function guardar(antes){if(JSON.stringify(antes)===JSON.stringify(estado()))return;passado.push(antes);if(passado.length>60)passado.shift();futuro=[];avisar(true);}
     function uniao(){
-      const rs=[...selecionados].map(n=>n.getBoundingClientRect());if(!rs.length)return null;
+      const rs=[...selecionados].map(n=>limitesVisuais(n));if(!rs.length)return null;
       const left=Math.min(...rs.map(r=>r.left)),top=Math.min(...rs.map(r=>r.top)),right=Math.max(...rs.map(r=>r.right)),bottom=Math.max(...rs.map(r=>r.bottom));
       return {left,top,right,bottom,width:right-left,height:bottom-top,cx:(left+right)/2,cy:(top+bottom)/2};
     }
@@ -110,7 +118,7 @@
       const r=uniao();if(!r)return;const limite=paineis[cartela].getBoundingClientRect();
       fator=Math.min(fator,(limite.width-16)/r.width,(limite.height-16)/r.height,...[...selecionados].map(n=>4/transformacao(n).escala));
       fator=Math.max(fator,...[...selecionados].map(n=>.2/transformacao(n).escala));
-      const dados=[...selecionados].map(no=>({no,a:transformacao(no),r:no.getBoundingClientRect(),s:herdada(no)}));
+      const dados=[...selecionados].map(no=>({no,a:transformacao(no),r:limitesVisuais(no),s:herdada(no)}));
       dados.forEach(({no,a,r:b,s})=>escrever(no,{x:a.x+((b.left+b.width/2-r.cx)*(fator-1))/s,y:a.y+((b.top+b.height/2-r.cy)*(fator-1))/s,escala:a.escala*fator}));mover(0,0);
     }
     // Coordenadas visuais são convertidas para a escala herdada de cada elemento.
@@ -119,7 +127,7 @@
       const grupo=uniao(),limite=paineis[cartela].getBoundingClientRect();
       const alvo=referencia==='cartela'||selecionados.size===1?limite:grupo,margem=alvo===limite?8:0;
       [...selecionados].forEach(no=>{
-        const r=no.getBoundingClientRect(),a=transformacao(no),s=herdada(no);
+        const r=limitesVisuais(no),a=transformacao(no),s=herdada(no);
         const dx=eixo==='esquerda'?alvo.left+margem-r.left:eixo==='direita'?alvo.right-margem-r.right:eixo==='centro-x'?(alvo.left+alvo.right-r.left-r.right)/2:0;
         const dy=eixo==='topo'?alvo.top+margem-r.top:eixo==='base'?alvo.bottom-margem-r.bottom:eixo==='centro-y'?(alvo.top+alvo.bottom-r.top-r.bottom)/2:0;
         escrever(no,{...a,x:a.x+dx/s,y:a.y+dy/s});
@@ -128,8 +136,8 @@
     function distribuir(eixo) {
       if(selecionados.size<3)return;
       const horizontal=eixo==='x',inicio=horizontal?'left':'top',fim=horizontal?'right':'bottom',medida=horizontal?'width':'height';
-      const nos=[...selecionados].sort((a,b)=>a.getBoundingClientRect()[inicio]-b.getBoundingClientRect()[inicio]);
-      const rects=nos.map(n=>n.getBoundingClientRect());
+      const nos=[...selecionados].sort((a,b)=>limitesVisuais(a)[inicio]-limitesVisuais(b)[inicio]);
+      const rects=nos.map(n=>limitesVisuais(n));
       const espaco=(rects.at(-1)[fim]-rects[0][inicio]-rects.reduce((s,r)=>s+r[medida],0))/(nos.length-1);
       let pos=rects[0][inicio];nos.forEach((no,i)=>{const a=transformacao(no),d=(pos-rects[i][inicio])/herdada(no);escrever(no,{...a,x:a.x+(horizontal?d:0),y:a.y+(horizontal?0:d)});pos+=rects[i][medida]+espaco;});
     }
@@ -138,7 +146,7 @@
       guia.replaceChildren();const r=uniao();if(!r)return;
       if(encaixar){
         const painel=paineis[cartela].getBoundingClientRect();
-        const refs=[painel,...todos().filter(n=>n.dataset.nivel==='grupo'&&![...selecionados].some(s=>s===n||s.contains(n)||n.contains(s))).map(n=>n.getBoundingClientRect())];
+        const refs=[painel,...todos().filter(n=>n.dataset.nivel==='grupo'&&![...selecionados].some(s=>s===n||s.contains(n)||n.contains(s))).map(n=>limitesVisuais(n))];
         for(const eixo of ['x','y']){
           const chaves=eixo==='x'?['left','right']:['top','bottom'],origem=[r[chaves[0]],(r[chaves[0]]+r[chaves[1]])/2,r[chaves[1]]];
           let melhor=null;
@@ -157,10 +165,10 @@
         // Copia a escala relativa ao desenho do template; posições só mudam por escolha explícita.
         const painel=p.closest('.painel'),anterior=painel.style.cssText;painel.style.setProperty('display','flex','important');painel.style.setProperty('visibility','hidden','important');
         escrever(no,c.posicao?{...ajuste}:{...transformacao(no),escala:ajuste.escala});
-        const r=no.getBoundingClientRect(),lim=p.closest('.painel').getBoundingClientRect(),a=transformacao(no);
+        const r=limitesVisuais(no),lim=p.closest('.painel').getBoundingClientRect(),a=transformacao(no);
         const fator=Math.min(1,(lim.width-16)/Math.max(1,r.width),(lim.height-16)/Math.max(1,r.height));
         if(fator<1)escrever(no,{...a,escala:a.escala*fator});
-        const b=no.getBoundingClientRect(),s=herdada(no),atual=transformacao(no);
+        const b=limitesVisuais(no),s=herdada(no),atual=transformacao(no);
         const dx=b.left<lim.left+8?lim.left+8-b.left:b.right>lim.right-8?lim.right-8-b.right:0;
         const dy=b.top<lim.top+8?lim.top+8-b.top:b.bottom>lim.bottom-8?lim.bottom-8-b.bottom:0;
         if(dx||dy)escrever(no,{...atual,x:atual.x+dx/s,y:atual.y+dy/s});
@@ -217,8 +225,8 @@
         // Prioriza a caixa do caractere: partes transparentes do selo e textos
         // vizinhos podem estar sobrepostos no ponto clicado.
         const caracteres=modo==='caractere'?todos().filter(n=>{
-          const r=n.getBoundingClientRect();return n.dataset.nivel==='caractere'&&e.clientX>=r.left&&e.clientX<=r.right&&e.clientY>=r.top&&e.clientY<=r.bottom;
-        }).sort((a,b)=>a.getBoundingClientRect().width*a.getBoundingClientRect().height-b.getBoundingClientRect().width*b.getBoundingClientRect().height):[];
+          const r=limitesVisuais(n);return n.dataset.nivel==='caractere'&&e.clientX>=r.left&&e.clientX<=r.right&&e.clientY>=r.top&&e.clientY<=r.bottom;
+        }).sort((a,b)=>limitesVisuais(a).width*limitesVisuais(a).height-limitesVisuais(b).width*limitesVisuais(b).height):[];
         const no=caracteres[0]||e.target.closest(`[data-editavel]${modo==='grupo'?'[data-nivel="grupo"]':''}`);
         if(!no||!paineis[cartela].contains(no)){selecionar(null,false);return;}
         if(e.shiftKey||!selecionados.has(no))selecionar(no,e.shiftKey);
@@ -246,5 +254,5 @@
     enviar('pronto',{cartelas:paineis.map((p,i)=>({numero:i,nomes:[...p.querySelectorAll('.nome')].map(n=>n.textContent)})),elementos:produtos.flatMap(p=>[...p.querySelectorAll('[data-editavel]')].map(no=>({id:id(no),produto:Number(p.dataset.numeroProduto),cartela:paineis.indexOf(p.closest('.painel')),rotulo:`Produto ${p.dataset.numeroProduto} · ${no.dataset.rotulo}`,nivel:no.dataset.nivel}))),ajustes:estado()});
   }
   global.EdicaoCartelas={limpar,preparar,aplicar,iniciarEditor};
-  if(typeof module!=='undefined')module.exports={limpar};
+  if(typeof module!=='undefined')module.exports={limpar,limitesVisuais};
 })(globalThis);
