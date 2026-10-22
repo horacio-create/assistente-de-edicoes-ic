@@ -34,7 +34,7 @@ function criarEditor(inline=false,host=null) {
       <div class="edicao-ferramentas edicao-modos" role="group" aria-label="Tipo de seleção"><select data-ed="modo" hidden><option value="grupo">Elementos</option><option value="caractere">Caracteres</option></select>${ferramenta('modo-grupo','Selecionar elementos inteiros','elementos','Elementos')}${ferramenta('modo-caractere','Selecionar caracteres dos preços','caracteres','Caracteres')}</div>
       <div class="edicao-ferramentas" aria-label="Zoom">${ferramenta('zoom-menos','Diminuir zoom','menos')}<select data-ed="zoom" aria-label="Zoom"><option value="1">Ajustar</option><option value="1.5">150%</option><option value="2">200%</option><option value="3">300%</option></select>${ferramenta('zoom-mais','Aumentar zoom','mais')}${ferramenta('zoom-ajustar','Ajustar cartela à tela','ajustar')}</div>
       <div class="edicao-ferramentas">${ferramenta('desfazer','Desfazer','desfazer')}${ferramenta('refazer','Refazer','refazer')}</div>
-      <div class="edicao-ferramentas edicao-acoes-vista">${ferramenta('reproduzir','Reproduzir prévia','play','Prévia')}${ferramenta('expandir','Expandir editor','expandir')}<button type="button" class="primary" data-ed="continuar">Vídeos →</button></div>`;
+      <div class="edicao-ferramentas edicao-acoes-vista">${ferramenta('mini-atualizar','Atualizar miniaturas','refazer')}${ferramenta('reproduzir','Reproduzir prévia','play','Prévia')}${ferramenta('expandir','Expandir editor','expandir')}<button type="button" class="primary" data-ed="continuar">Vídeos →</button></div>`;
     const atalhos=document.createElement('p');atalhos.className='edicao-atalhos';atalhos.textContent='Arraste para mover · Shift seleciona vários · Alt + rolagem dá zoom · Botão direito navega · Ctrl + Z desfaz';barra.after(atalhos);
     const aside=corpo.querySelector('aside'),conteudo=document.createElement('div');conteudo.className='edicao-conteudo';
     const produtos=document.createElement('div');produtos.className='edicao-produtos';produtos.setAttribute('aria-label','Produtos da cartela');
@@ -46,8 +46,17 @@ function criarEditor(inline=false,host=null) {
     conteudo.append(dados);aside.append(aviso,produtos,detalhes,conteudo);
     host.append(dialog);
   }else document.body.appendChild(dialog);
+  const ferramentas=document.createElement('section');ferramentas.className='edicao-alinhamento';
+  ferramentas.innerHTML=`<strong>Alinhar seleção</strong><label>Referência <select data-ed="referencia"><option value="selecao">Entre selecionados</option><option value="cartela">Área da cartela</option></select></label><div class="edicao-grade-acoes">${[['esquerda','⇤','Esquerda'],['centro-x','↔','Centralizar horizontalmente'],['direita','⇥','Direita'],['topo','↥','Topo'],['centro-y','↕','Centralizar verticalmente'],['base','↧','Base']].map(([e,i,t])=>`<button type="button" data-alinhar="${e}" title="${t}" aria-label="${t}">${i}</button>`).join('')}<button type="button" data-distribuir="x" title="Distribuir horizontalmente" aria-label="Distribuir horizontalmente">↔↔</button><button type="button" data-distribuir="y" title="Distribuir verticalmente" aria-label="Distribuir verticalmente">↕↕</button></div><label><input type="checkbox" data-ed="encaixe" checked> Guias e encaixe ao arrastar</label><small>Um elemento: alinha na cartela. Dois ou mais: alinha entre eles. Distribuição requer três.</small>`;
+  if(inline)dialog.querySelector('.edicao-conteudo').before(ferramentas);else dialog.querySelector('.edicao-propriedades').append(ferramentas);
+  if(inline){
+    const lote=document.createElement('details');lote.className='edicao-padronizar';
+    lote.innerHTML=`<summary>Padronizar várias cartelas</summary><p>Use o produto ativo como modelo. Copia a escala do elemento; textos, imagens e valores são preservados.</p><label>Elemento <select data-ed="lote-parte"><option value="produto">Imagem do produto</option><option value="titulo">Título</option><option value="normal">Preço normal</option><option value="selo">Selo completo</option><option value="precos">Conjunto de preços</option></select></label><label><input type="checkbox" data-ed="lote-posicao"> Copiar também deslocamento X e Y</label><div class="edicao-lote-cartelas" data-ed="lote-cartelas"></div><div class="edicao-lote-botoes"><button type="button" data-ed="lote-ver">Ver prévia</button><button type="button" data-ed="lote-confirmar" class="primary" disabled>Aplicar</button><button type="button" data-ed="lote-cancelar" disabled>Cancelar prévia</button></div><p role="status" data-ed="lote-status">Escolha as cartelas que receberão o ajuste.</p>`;
+    dialog.querySelector('.edicao-conteudo').before(lote);
+  }
   const el=id=>dialog.querySelector(`[data-ed="${id}"]`),iframe=dialog.querySelector('iframe'),viewport=dialog.querySelector('.edicao-viewport');
   let op=null,sessao=null,pronto=false,cartela=0,cartelas=[],elementos=[],ajustes={},selecionados=[],ocupado=false,zoom=1,pan=null,assinatura=null,retomar=null,produtoAtivo=null,emPrevia=false,recarregarConteudo=false,observadorMini=null,ampliado=false;
+  let cancelarPadronizacao=()=>{};
   function enviar(acao,extra={}){if(pronto)iframe.contentWindow.postMessage({tipo:'comando',sessao,acao,...extra},location.origin);}
   function redimensionar(){const largura=Math.min(viewport.clientWidth,viewport.clientHeight*1920/1080)*zoom;iframe.style.transform=`scale(${largura/1920})`;const palco=dialog.querySelector('.edicao-palco');palco.style.width=largura+'px';palco.style.height=largura*1080/1920+'px';}
   function definirZoom(valor,clientX,clientY){
@@ -91,15 +100,6 @@ function criarEditor(inline=false,host=null) {
     }
   }
   window.addEventListener('message',e=>{
-    if(inline&&op&&e.origin===location.origin&&e.data?.sessao){
-      const mini=[...dialog.querySelectorAll('.edicao-miniaturas iframe')].find(f=>f.contentWindow===e.source&&f.dataset.sessao===e.data.sessao);
-      if(mini){
-        const numero=Number(mini.dataset.cartela);
-        if(e.data.tipo==='pronto')mini.contentWindow.postMessage({tipo:'comando',sessao:mini.dataset.sessao,acao:'cartela',numero},location.origin);
-        if(e.data.tipo==='estado'&&e.data.cartela===numero)mini.closest('button').dataset.carregada='true';
-        return;
-      }
-    }
     if(!op||(!inline&&!dialog.open)||e.source!==iframe.contentWindow||e.origin!==location.origin||e.data?.sessao!==sessao)return;
     const d=e.data;
     if(d.tipo==='vista'){navegarVista(d);return;}
@@ -111,6 +111,7 @@ function criarEditor(inline=false,host=null) {
       el('salvar').disabled=el('gerar').disabled=false;el('selecao').textContent='Clique na imagem, no título ou no preço.';listar();
       if(inline){
         desenharMiniaturas();
+        el('lote-cartelas').replaceChildren(...cartelas.map((c,i)=>{const label=document.createElement('label'),check=document.createElement('input');check.type='checkbox';check.checked=true;check.value=String(i);label.append(check,document.createTextNode(`Cartela ${i+1}`));return label;}));
         if(retomar){enviar('cartela',{numero:Math.min(retomar.cartela,cartelas.length-1)});if(retomar.id)enviar('selecionar',{id:retomar.id});retomar=null;}
         else atualizarContexto();
         redimensionar();
@@ -131,6 +132,8 @@ function criarEditor(inline=false,host=null) {
         if(document.activeElement!==el(k))el(k).value=d.valor?Math.round((k==='escala'?d.valor[k]*100:d.valor[k])*10)/10:'';
       }
       for(const k of ['esquerda','direita','cima','baixo','menor','maior','restaurar'])el(k).disabled=!selecionados.length;
+      dialog.querySelectorAll('[data-alinhar]').forEach(b=>b.disabled=!selecionados.length);
+      dialog.querySelectorAll('[data-distribuir]').forEach(b=>b.disabled=selecionados.length<3);
     }
   });
   function fechar(){if(ocupado)return;dialog.close();iframe.removeAttribute('src');op=null;pronto=false;}
@@ -143,6 +146,32 @@ function criarEditor(inline=false,host=null) {
   el('elemento').onchange=()=>enviar('selecionar',{id:el('elemento').value});
   for(const k of ['desfazer','refazer','restaurar','restaurar-cartela'])el(k).onclick=()=>{pararPrevia();enviar(k);};
   for(const [k,x,y] of [['esquerda',-1,0],['direita',1,0],['cima',0,-1],['baixo',0,1]])el(k).onclick=e=>enviar('mover',{x:x*(e.shiftKey?10:1),y:y*(e.shiftKey?10:1)});
+  dialog.querySelectorAll('[data-alinhar]').forEach(b=>{b.disabled=true;b.onclick=()=>{pararPrevia();enviar('alinhar',{eixo:b.dataset.alinhar,referencia:el('referencia').value});};});
+  dialog.querySelectorAll('[data-distribuir]').forEach(b=>{b.disabled=true;b.onclick=()=>{pararPrevia();enviar('distribuir',{eixo:b.dataset.distribuir});};});
+  el('encaixe').onchange=()=>enviar('encaixe',{valor:el('encaixe').checked});
+  if(inline){
+    const previa=ativa=>{
+      dialog.classList.toggle('previa-padronizacao',ativa);
+      for(const seletor of ['.edicao-produtos','.edicao-transformacoes','.edicao-conteudo','.edicao-alinhamento'])dialog.querySelector(seletor).inert=ativa;
+      dialog.querySelectorAll('.edicao-barra .edicao-ferramentas:not(:first-child)').forEach(no=>no.inert=ativa);
+      el('lote-ver').disabled=ativa;
+      el('lote-confirmar').disabled=el('lote-cancelar').disabled=!ativa;
+    };
+    const cancelar=()=>{if(!dialog.classList.contains('previa-padronizacao'))return;enviar('lote-cancelar');previa(false);el('lote-status').textContent='Prévia cancelada. Os ajustes anteriores foram preservados.';};
+    cancelarPadronizacao=cancelar;
+    el('lote-ver').onclick=()=>{
+      const destinos=[...el('lote-cartelas').querySelectorAll('input:checked')].map(i=>Number(i.value));
+      if(!pronto||!destinos.length||!produtoAtivo){el('lote-status').textContent='Selecione ao menos uma cartela e um produto de origem.';return;}
+      const parte=el('lote-parte').value;
+      if(!elementos.some(e=>e.produto===produtoAtivo&&e.id.endsWith(':'+parte))){el('lote-status').textContent='O produto ativo não possui esse elemento. Escolha outro produto.';return;}
+      pararPrevia();enviar('lote-previa',{origem:produtoAtivo,parte,cartelas:destinos,posicao:el('lote-posicao').checked});previa(true);
+      el('lote-status').textContent=`Prévia em ${destinos.length} cartela(s), usando o produto ${produtoAtivo}. Clique em Aplicar para guardar. Ctrl + Z poderá desfazer a aplicação.`;
+    };
+    el('lote-confirmar').onclick=()=>{enviar('lote-aplicar');previa(false);el('lote-status').textContent='Padronização aplicada. Você pode desfazer com Ctrl + Z.';};
+    el('lote-cancelar').onclick=cancelar;
+    for(const no of [el('lote-parte'),el('lote-posicao'),el('lote-cartelas')])no.addEventListener('change',()=>{if(dialog.classList.contains('previa-padronizacao'))cancelar();});
+    dialog.querySelector('.edicao-padronizar').addEventListener('toggle',()=>{if(!dialog.querySelector('.edicao-padronizar').open&&dialog.classList.contains('previa-padronizacao'))cancelar();});
+  }
   el('menor').onclick=()=>enviar('escala',{fator:.95});el('maior').onclick=()=>enviar('escala',{fator:1.05});
   for(const k of ['x','y','escala'])el(k).onchange=()=>{const v=Number(el(k).value);if(Number.isFinite(v))enviar('valor',{campo:k,valor:k==='escala'?v/100:v});el(k).blur();};
   async function salvar(gerar){
@@ -155,7 +184,8 @@ function criarEditor(inline=false,host=null) {
   }
   el('salvar').onclick=()=>salvar(false);el('gerar').onclick=()=>salvar(true);
   const apiEditor={abrir(options){
-    assinatura=options.conteudo??null;produtoAtivo=null;emPrevia=false;recarregarConteudo=false;
+    cancelarPadronizacao();
+    assinatura=options.conteudo??null;retomar=null;produtoAtivo=null;emPrevia=false;recarregarConteudo=false;
     op=options;sessao=crypto.randomUUID();pronto=false;cartela=0;cartelas=[];elementos=[];ajustes={};selecionados=[];
     zoom=1;pan=null;el('zoom').querySelector('[data-livre]')?.remove();el('zoom').value='1';viewport.scrollLeft=viewport.scrollTop=0;el('modo').value='grupo';el('elemento').replaceChildren(new Option('Carregando…',''));el('cartela').replaceChildren(new Option('Carregando cartelas…','0'));
     el('status').textContent='Os ajustes só serão guardados ao salvar.';el('selecao').textContent='Carregando cartelas…';
@@ -168,19 +198,21 @@ function criarEditor(inline=false,host=null) {
     if(!op||op.pedido.id!==options.pedido.id){apiEditor.abrir(options);return;}
     op=options;
     if(assinatura===options.conteudo&&!recarregarConteudo){if(inline&&pronto){atualizarContexto();atualizarMiniaturas();}return;}
+    cancelarPadronizacao();
     assinatura=options.conteudo;retomar={cartela,id:selecionados[0]||''};pronto=false;recarregarConteudo=false;sessao=crypto.randomUUID();
     iframe.src=`/ofertas/preview/${encodeURIComponent(options.pedido.id)}/index.html?v=${options.pedido.revision}&editar=1&sessao=${encodeURIComponent(sessao)}`;
   },
+  irParaCartela(numero){if(pronto)enviar('cartela',{numero});else retomar={cartela:numero,id:''};},
   get dados(){return inline?el('dados'):null;},
   get preview(){return inline?dialog.querySelector('.edicao-preview'):null;},
   selecionarProduto(numero){
     produtoAtivo=numero;enviar('selecionar',{id:`${numero}:produto`});atualizarContexto();
   },
   editar(){pararPrevia();},
-  conteudoAlterado(){if(!inline)return;pararPrevia();pronto=false;recarregarConteudo=true;dialog.classList.add('atualizando');},
+  conteudoAlterado(){if(!inline)return;cancelarPadronizacao();pararPrevia();pronto=false;recarregarConteudo=true;dialog.classList.add('atualizando');},
   get pronto(){return pronto;},
   get cartela(){return cartela;}
-  ,recolher(){expandir(false);}
+  ,recolher(){cancelarPadronizacao();expandir(false);}
   };
   function numerosDaCartela(numero=cartela){return [...new Set(elementos.filter(e=>e.cartela===numero).map(e=>e.produto))];}
   function atualizarContexto(){
@@ -210,40 +242,38 @@ function criarEditor(inline=false,host=null) {
     }
     op.onContexto?.({cartela,produto:produtoAtivo,produtos,selecionados:[...selecionados]});
   }
+  let miniTimer=null,miniGeracao=0;
   function desenharMiniaturas(){
     if(!inline)return;
-    observadorMini?.disconnect();
-    const nav=dialog.querySelector('.edicao-miniaturas');nav.replaceChildren();
-    delete nav.dataset.ativa;
-    observadorMini=new IntersectionObserver(entradas=>{
-      for(const entrada of entradas){
-        const mini=entrada.target.querySelector('iframe');
-        mini.dataset.visivel=String(entrada.isIntersecting);
-        if(entrada.isIntersecting)carregarMiniatura(mini);
-        else{delete mini.dataset.sessao;mini.removeAttribute('src');entrada.target.dataset.carregada='false';}
-      }
-    },{root:nav,rootMargin:'120px',threshold:0});
+    const nav=dialog.querySelector('.edicao-miniaturas');nav.replaceChildren();delete nav.dataset.ativa;
     cartelas.forEach((c,i)=>{
-      const b=document.createElement('button');b.type='button';b.dataset.miniCartela=String(i);
+      const b=document.createElement('button');b.type='button';b.dataset.miniCartela=String(i);b.dataset.carregada='false';
       b.setAttribute('aria-label',`Ir para cartela ${i+1}: ${c.nomes.join(' / ')}`);
       const imagens=document.createElement('span');imagens.className='edicao-mini-imagens';
-      const mini=document.createElement('iframe');mini.title=`Prévia da cartela ${i+1}`;mini.tabIndex=-1;mini.setAttribute('aria-hidden','true');mini.setAttribute('sandbox','allow-scripts allow-same-origin');mini.dataset.cartela=String(i);imagens.append(mini);
+      const mini=document.createElement('img');mini.alt=`Prévia da cartela ${i+1}`;mini.loading='lazy';mini.decoding='async';mini.dataset.cartela=String(i);imagens.append(mini);
+      mini.onload=()=>{b.dataset.carregada='true';};mini.onerror=()=>{b.dataset.carregada='erro';mini.removeAttribute('src');};
       const titulo=document.createElement('strong');titulo.textContent=`Cartela ${i+1}`;
       const nomes=document.createElement('small');nomes.textContent=c.nomes.join(' / ');nomes.title=nomes.textContent;
-      b.title=c.nomes.join(' / ');b.append(imagens,titulo,nomes);b.onclick=()=>{pararPrevia();enviar('cartela',{numero:i});};nav.append(b);observadorMini.observe(b);
+      b.title=c.nomes.join(' / ');b.append(imagens,titulo,nomes);b.onclick=()=>{pararPrevia();enviar('cartela',{numero:i});};nav.append(b);
     });
-    redimensionarMiniaturas();atualizarSetasFaixa();
+    atualizarMiniaturas();atualizarSetasFaixa();
   }
   function assinaturaMiniatura(numero){return JSON.stringify({...op.pedido.dados,produtos:numerosDaCartela(numero).map(n=>op.pedido.dados.produtos[n-1])});}
-  function carregarMiniatura(mini){
-    if(mini.dataset.visivel!=='true')return;
-    const assinaturaAtual=assinaturaMiniatura(Number(mini.dataset.cartela));
-    if(mini.dataset.sessao&&mini.dataset.assinatura===assinaturaAtual)return;
-    mini.dataset.assinatura=assinaturaAtual;mini.dataset.sessao=crypto.randomUUID();mini.closest('button').dataset.carregada='false';
-    mini.src=`/ofertas/preview/${encodeURIComponent(op.pedido.id)}/index.html?v=${op.pedido.revision}&editar=1&sessao=${encodeURIComponent(mini.dataset.sessao)}`;
+  async function atualizarMiniaturas(tentar=false){
+    if(!inline||!op)return;clearTimeout(miniTimer);const geracao=++miniGeracao,id=op.pedido.id;
+    try{
+      const r=await fetch(`/api/ofertas/cartelas-miniaturas?id=${encodeURIComponent(id)}${tentar===true?'&tentar=1':''}`);if(!r.ok)throw Error('Miniaturas indisponíveis');
+      const dados=await r.json();if(geracao!==miniGeracao||op?.pedido.id!==id)return;
+      dialog.querySelectorAll('.edicao-miniaturas img').forEach(mini=>{
+        if(dados.erro)mini.closest('button').dataset.carregada='erro';
+        const item=dados.cartelas?.[Number(mini.dataset.cartela)];if(!item)return;
+        if(item.url&&mini.getAttribute('src')!==item.url){mini.closest('button').dataset.carregada='false';mini.src=item.url;}
+        if(dados.erro)mini.closest('button').dataset.carregada='erro';
+      });
+      if(dados.pendente)miniTimer=setTimeout(atualizarMiniaturas,1800);
+    }catch{if(geracao===miniGeracao)dialog.querySelectorAll('[data-mini-cartela]').forEach(b=>{b.dataset.carregada='erro';});}
   }
-  function atualizarMiniaturas(){dialog.querySelectorAll('.edicao-miniaturas iframe').forEach(carregarMiniatura);}
-  function redimensionarMiniaturas(){dialog.querySelectorAll('.edicao-miniaturas iframe').forEach(f=>f.style.transform=`scale(${f.parentElement.clientWidth/1920})`);}
+  function redimensionarMiniaturas(){}
   function atualizarSetasFaixa(){if(!inline)return;const n=dialog.querySelector('.edicao-miniaturas');el('faixa-anterior').disabled=n.scrollLeft<2;el('faixa-proxima').disabled=n.scrollLeft+n.clientWidth>=n.scrollWidth-2;}
   function rotuloPrevia(tocando){if(!inline)return;const b=el('reproduzir'),nome=tocando?'Voltar a editar':'Reproduzir prévia';b.innerHTML=svg(tocando?'editar':'play')+`<span>${tocando?'Editar':'Prévia'}</span>`;b.setAttribute('aria-label',nome);b.title=nome;b.setAttribute('aria-pressed',String(tocando));}
   function expandir(valor){
@@ -263,6 +293,7 @@ function criarEditor(inline=false,host=null) {
     new ResizeObserver(()=>{redimensionarMiniaturas();atualizarSetasFaixa();}).observe(nav);
     for(const modo of ['grupo','caractere'])el('modo-'+modo).onclick=()=>{el('modo').value=modo;el('modo').onchange();};
     el('zoom-menos').onclick=()=>{pararPrevia();definirZoom(zoom/1.2);};el('zoom-mais').onclick=()=>{pararPrevia();definirZoom(zoom*1.2);};el('zoom-ajustar').onclick=()=>{pararPrevia();definirZoom(1);viewport.scrollLeft=viewport.scrollTop=0;};
+    el('mini-atualizar').onclick=()=>atualizarMiniaturas(true);
     el('expandir').onclick=()=>expandir(!ampliado);
     el('continuar').onclick=async()=>{expandir(false);try{await op.onContinuar?.();}catch(e){op.onErro?.(e);}};
     const escapar=e=>{if(ampliado&&e.key==='Escape'){e.preventDefault();expandir(false);el('expandir').focus();}};
@@ -286,6 +317,7 @@ window.OfertasEdicao={
   abrir:modal.abrir,
   montar(options,host){if(!integrado)integrado=criarEditor(true,host);integrado.atualizar(options);return integrado;},
   atualizar(options){integrado?.atualizar(options);},
+  irParaCartela(numero){integrado?.irParaCartela(numero);},
   editar(){integrado?.editar();},
   conteudoAlterado(){integrado?.conteudoAlterado();},
   recolher(){integrado?.recolher();},

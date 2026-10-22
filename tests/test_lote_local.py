@@ -14,7 +14,7 @@ class DistribuicaoLocalTests(unittest.TestCase):
     def test_lote_grava_preferencias_e_mantem_ordem_sem_repetir(self):
         db = sqlite3.connect(':memory:')
         db.row_factory = sqlite3.Row
-        db.executescript('CREATE TABLE ofertas_encartes(id,nome,status,itens); CREATE TABLE ofertas_pedidos(id,template,titulo,dados,revision,criado,atualizado,owner);')
+        db.executescript('CREATE TABLE ofertas_lotes(id,owner,nome,dados,criado); CREATE TABLE ofertas_encartes(id,nome,status,itens); CREATE TABLE ofertas_pedidos(id,template,titulo,dados,revision,criado,atualizado,owner);')
         itens = [dict(nome=f'Produto {i}', imagem=str(i), de='5,99', por='3,99', unidade='KG') for i in range(23)]
         db.execute('INSERT INTO ofertas_encartes VALUES(?,?,?,?)', ('a'*32, 'Teste.pdf', 'pronto', json.dumps(itens)))
         lista = copy.deepcopy(LISTA) | {'id':'produtos', 'tipo':'lista', 'campos':[{'id':s} for s in ('nome','imagem','de','por','unidade')]}

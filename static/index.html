@@ -107,11 +107,15 @@
 <div id="of-conferencia" class="of-tela">
 <div class="of-etapa-intro"><div><span class="eyebrow">ETAPA 1 DE 3</span><h2>Confira as ofertas antes de montar</h2><p>Abra cada produto para conferir os dados. Depois escolha o visual das cartelas.</p></div><button id="of-sem-encarte" class="text-button" type="button">Começar sem encarte</button></div>
 <section aria-label="Importar e conferir encarte" id="of-encarte-card" class="encarte-card drop-target">
-<div class="section-title"><div><h2><span class="step-label">Seu encarte</span></h2><p>Importe um PDF, PNG ou JPG. Confira os recortes, nomes, preços e unidades antes de montar as cartelas.</p></div><div class="toolbar"><button id="of-encarte-apagar" class="text-button" hidden>Apagar encarte</button><button id="of-encarte-enviar" class="secondary">Importar encarte…</button></div></div>
+<div class="section-title"><div><h2><span class="step-label">Seu encarte</span></h2><p>Importe um ou mais PDFs, PNGs ou JPGs. Os arquivos selecionados juntos formam uma sequência única de produtos.</p></div><div class="toolbar"><button id="of-encarte-apagar" class="text-button" hidden>Apagar encarte</button><button id="of-encarte-enviar" class="secondary">Importar encartes…</button></div></div>
+<label class="encarte-opcao-compressao"><input id="of-encarte-comprimir" type="checkbox" checked> Comprimir PDF automaticamente, preservando texto e imagens</label>
+<p class="encarte-limites">PDF até 200 MB e 20 páginas por arquivo; imagens até 100 MB. A compressão ocorre após o envio, antes da leitura dos produtos.</p>
+<section id="of-importacao-conjunto" class="encarte-importacao" aria-label="Ordem dos encartes" hidden><strong>Confira a ordem dos arquivos</strong><p>As cartelas continuam de um arquivo para o próximo. Use as setas para mudar a ordem. Até 20 arquivos e 200 MB no conjunto.</p><ol id="of-importacao-lista"></ol><div class="toolbar"><button id="of-importacao-cancelar" type="button" class="text-button">Cancelar seleção</button><button id="of-importacao-enviar" type="button" class="primary">Importar juntos</button></div></section>
+<p id="of-encarte-compressao" class="notice" role="status" hidden></p>
 <div id="of-encarte-lista" class="encarte-chips"></div>
 <div id="of-encarte-acoes" class="encarte-acoes" hidden><p id="of-encarte-dica" class="help encarte-dica"></p><div class="toolbar"><button id="of-encarte-marcar" class="text-button">Marcar oferta na página</button></div></div>
 <div id="of-encarte-status" class="notice" hidden></div>
-<p id="of-encarte-vazio" class="encarte-vazio">Arraste o encarte para cá ou use “Importar encarte”. No PDF, nomes, preços, unidades e recortes são lidos do arquivo; em PNG ou JPG, você marca as ofertas na página.</p>
+<p id="of-encarte-vazio" class="encarte-vazio">Arraste um ou mais encartes para cá ou use “Importar encartes”. Os arquivos enviados juntos viram uma sequência única. No PDF, os produtos são lidos automaticamente; em PNG ou JPG, você marca as ofertas na página.</p>
 <div id="of-encarte-itens" class="image-grid escolha" hidden></div>
 </section>
 <div class="of-passo-rodape"><p id="of-conferencia-resumo" role="status">Importe um encarte para começar ou preencha os produtos manualmente.</p><div><button id="of-continuar-encarte" class="primary" type="button" disabled>Continuar com o encarte →</button><button id="of-usar-encarte" class="secondary" type="button" hidden>Usar produtos escolhidos →</button></div></div></div>
@@ -144,7 +148,7 @@
 <div class="section-title"><h2>Templates publicados</h2></div><div id="of-lista-templates-admin"></div></div>
 </div>
 
-<input id="of-arquivo-imagem" type="file" accept=".png,.jpg,.jpeg,.webp" multiple hidden><input id="of-arquivo-pdf" type="file" accept=".pdf,.png,.jpg,.jpeg" hidden><input id="of-arquivo-zip" type="file" accept=".zip" hidden>
+<input id="of-arquivo-imagem" type="file" accept=".png,.jpg,.jpeg,.webp" multiple hidden><input id="of-arquivo-pdf" type="file" accept=".pdf,.png,.jpg,.jpeg" multiple hidden><input id="of-arquivo-zip" type="file" accept=".zip" hidden>
 
 <dialog id="of-imagem-dialog"><div class="dialog-head"><div><span class="eyebrow">IMAGEM DO PRODUTO</span><h2 id="of-imagem-dialog-titulo">Escolha uma imagem.</h2><p>Da biblioteca ou do seu computador. Prefira PNG com fundo transparente.</p></div><button class="close" data-close="of-imagem-dialog" aria-label="Fechar">×</button></div>
 <div class="section-title"><div class="busca"><input id="of-busca-dialog" type="search" placeholder="Buscar por nome…" aria-label="Buscar imagens"></div><button id="of-enviar-dialog" class="secondary">Enviar do computador…</button></div>

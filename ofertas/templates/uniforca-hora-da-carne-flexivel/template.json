@@ -14,6 +14,13 @@
       "max": 40
     },
     {
+      "id": "estiloselo",
+      "tipo": "opcoes",
+      "rotulo": "Estilo dos selos do projeto",
+      "opcional": true,
+      "ajuda": "Padrão do template ou outro estilo. O vermelho usa Montserrat Black nos títulos e preços."
+    },
+    {
       "id": "produtos",
       "tipo": "lista",
       "rotulo": "Produtos",
@@ -31,6 +38,13 @@
           "tipo": "texto",
           "rotulo": "Nome",
           "max": 60
+        },
+        {
+          "id": "estiloselo",
+          "tipo": "opcoes",
+          "rotulo": "Selo deste produto",
+          "opcional": true,
+          "ajuda": "Deixe no padrão do projeto para manter todos iguais."
         },
         {
           "id": "imagem",
@@ -91,5 +105,6 @@
       "ajuda": "Um produto fica centralizado. Três reúne os últimos três produtos na mesma cartela; com apenas um produto ele fica sozinho."
     }
   ],
-  "editorCartelas": true
+  "editorCartelas": true,
+  "seloPadrao": "amarelo"
 }

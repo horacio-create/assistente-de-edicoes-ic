@@ -9,6 +9,7 @@ function ambiente(){
     addEventListener(k,f){(this.listeners[k]??=[]).push(f);}
     emitir(k,e){for(const f of this.listeners[k]||[])f(e);}
     querySelector(s){if(s==='[data-livre]')return this.options.find(o=>o.dataset.livre);return campos[s]??=new Elemento();}
+    append(){} querySelectorAll(){return [];}
     appendChild(o){this.options.push(o);o.remove=()=>this.options.splice(this.options.indexOf(o),1);}
     replaceChildren(...o){this.options=o;}
     showModal(){this.open=true;}

@@ -286,6 +286,24 @@ function campo(def, caminho, idVar) {
       if (contador) contador.textContent = `${input.value.length}/${def.max}`;
     });
   }
+  if (def.id === 'estiloselo' && caminho.length === 1) {
+    div.classList.add('of-estilo-selos');
+    const acoes = document.createElement('div'); acoes.className = 'toolbar';
+    const aplicar = document.createElement('button');
+    aplicar.type = 'button'; aplicar.className = 'secondary'; aplicar.textContent = 'Aplicar a todas as cartelas';
+    const restaurar = document.createElement('button');
+    restaurar.type = 'button'; restaurar.className = 'text-button'; restaurar.textContent = 'Restaurar padrão do template';
+    const atualizar = async (estilo) => {
+      OfertasEdicao.conteudoAlterado();
+      state.pedido.dados.estiloselo = estilo || 'padrao';
+      const lista = listaPrincipal();
+      if (lista?.campos.some(c => c.id === 'estiloselo')) state.pedido.dados[lista.id].forEach(p => { p.estiloselo = 'padrao'; });
+      agendarSalvar(); await montarFormulario();
+    };
+    aplicar.onclick = () => atualizar(state.pedido.dados.estiloselo);
+    restaurar.onclick = () => atualizar('padrao');
+    acoes.append(aplicar, restaurar); div.append(acoes);
+  }
   return div;
 }
 
@@ -304,7 +322,7 @@ async function montarFormulario() {
   el('video-opcoes').replaceChildren();
   for (const def of [...state.esquema.campos.filter(c => c.tipo !== 'lista'), ...state.esquema.campos.filter(c => c.tipo === 'lista')]) {
     if (def.tipo !== 'lista') {
-      const destino = ['animacoes', 'ultimacartela'].includes(def.id) ? el('video-opcoes') : gerais;
+      const destino = def.id === 'estiloselo' ? form : ['animacoes', 'ultimacartela'].includes(def.id) ? el('video-opcoes') : gerais;
       destino.append(campo(def, [def.id], def.id)); continue;
     }
     const qtd = state.pedido.dados[def.id].length;
@@ -693,17 +711,64 @@ async function carregarEncartes() {
 }
 async function enviarEncarte(arquivo) {
   if (!arquivo) return;
+  const pdf = /\.pdf$/i.test(arquivo.name);
+  if (arquivo.size > (pdf ? 200 : 100) * 1024 * 1024) return aviso(pdf ? 'O limite para encartes PDF é 200 MB por arquivo.' : 'O limite para imagens é 100 MB por arquivo.', 6500);
   const t = IndoorTarefas.criar(arquivo.name, 'Enviando…').progresso(0);
   try {
-    const r = await enviarArquivo('/encarte?nome=' + encodeURIComponent(arquivo.name), arquivo, t, 'Lendo encarte…');
+    const r = await enviarArquivo('/encarte?nome=' + encodeURIComponent(arquivo.name) + '&comprimir=' + (el('encarte-comprimir').checked ? '1' : '0'), arquivo, t, 'Preparando e lendo encarte…');
     tarefaEncarte[r.id] = t.detalhe('Lendo encarte…').progresso(null);
     state.encarteSel = r.id; state.ordem = [];
     await carregarEncartes();
   } catch (e) { t.falhar(e.message); }
 }
-el('arquivo-pdf').addEventListener('change', (e) => { const f = e.target.files[0]; e.target.value = ''; enviarEncarte(f); });
+let arquivosConjunto = [], enviandoConjunto = false;
+function selecionarEncartes(arquivos) {
+  if (enviandoConjunto) return aviso('Aguarde o envio dos encartes terminar.');
+  if (!arquivos.length) return;
+  if (arquivos.some((f) => !/\.(pdf|png|jpe?g)$/i.test(f.name))) return aviso('Selecione apenas encartes PDF, PNG ou JPG.');
+  if (arquivos.length > 20) return aviso('Selecione até 20 encartes por conjunto.');
+  if (arquivos.length > 1 && arquivos.reduce((n, f) => n + f.size, 0) > 200 * 1024 * 1024 - 65536) return aviso('O conjunto deve ter até 200 MB.');
+  if (arquivos.some((f) => f.size > (/\.pdf$/i.test(f.name) ? 200 : 100) * 1024 * 1024)) return aviso('Limite por arquivo: PDF 200 MB; imagens 100 MB.');
+  arquivosConjunto = [...arquivos];
+  if (arquivos.length === 1) { arquivosConjunto = []; desenharImportacao(); return enviarEncarte(arquivos[0]); }
+  desenharImportacao();
+}
+function desenharImportacao() {
+  el('importacao-conjunto').hidden = !arquivosConjunto.length;
+  el('importacao-lista').innerHTML = arquivosConjunto.map((f, i) => `<li><span>${i+1}. ${esc(f.name)} · ${(f.size/1024/1024).toLocaleString('pt-BR', {maximumFractionDigits:2})} MB</span>
+    <button type="button" class="secondary" data-mover="-1" data-arquivo="${i}" aria-label="Mover ${esc(f.name)} para cima" ${!i || enviandoConjunto ? 'disabled' : ''}>↑</button>
+    <button type="button" class="secondary" data-mover="1" data-arquivo="${i}" aria-label="Mover ${esc(f.name)} para baixo" ${i === arquivosConjunto.length-1 || enviandoConjunto ? 'disabled' : ''}>↓</button>
+    <button type="button" class="text-button" data-remover="${i}" aria-label="Remover ${esc(f.name)} da seleção" ${enviandoConjunto ? 'disabled' : ''}>×</button></li>`).join('');
+  el('importacao-lista').querySelectorAll('[data-mover]').forEach((b) => b.onclick = () => {
+    const i = Number(b.dataset.arquivo), j = i + Number(b.dataset.mover);
+    if (enviandoConjunto || j < 0 || j >= arquivosConjunto.length) return;
+    [arquivosConjunto[i], arquivosConjunto[j]] = [arquivosConjunto[j], arquivosConjunto[i]];
+    desenharImportacao();
+  });
+  el('importacao-lista').querySelectorAll('[data-remover]').forEach((b) => b.onclick = () => { if (!enviandoConjunto) { arquivosConjunto.splice(Number(b.dataset.remover), 1); desenharImportacao(); } });
+  el('importacao-enviar').textContent = enviandoConjunto ? 'Enviando…' : `Importar ${arquivosConjunto.length} encarte(s) juntos`;
+  el('importacao-enviar').disabled = enviandoConjunto || !arquivosConjunto.length;
+  el('importacao-cancelar').disabled = enviandoConjunto;
+  el('encarte-enviar').disabled = enviandoConjunto;
+}
+el('importacao-cancelar').addEventListener('click', () => { arquivosConjunto = []; desenharImportacao(); });
+el('importacao-enviar').addEventListener('click', async () => {
+  if (enviandoConjunto || !arquivosConjunto.length) return;
+  const arquivos = [...arquivosConjunto], form = new FormData();
+  arquivos.forEach((f) => form.append('encartes', f, f.name));
+  const t = IndoorTarefas.criar(`${arquivos.length} encartes juntos`, 'Enviando…').progresso(0);
+  enviandoConjunto = true; desenharImportacao();
+  try {
+    const r = await enviarArquivo('/encartes-importar?comprimir=' + (el('encarte-comprimir').checked ? '1' : '0'), form, t, 'Unindo e lendo os encartes…');
+    tarefaEncarte[r.id] = t.detalhe('Unindo e lendo os encartes…').progresso(null);
+    state.encarteSel = r.id; state.ordem = []; arquivosConjunto = [];
+    await carregarEncartes();
+  } catch (e) { t.falhar(e.message); }
+  finally { enviandoConjunto = false; desenharImportacao(); }
+});
+el('arquivo-pdf').addEventListener('change', (e) => { const fs = [...e.target.files]; e.target.value = ''; selecionarEncartes(fs); });
 el('encarte-enviar').addEventListener('click', () => el('arquivo-pdf').click());
-soltar(el('encarte-card'), (fs) => enviarEncarte(fs.find((f) => /\.(pdf|png|jpe?g)$/i.test(f.name)) || fs[0]));
+soltar(el('encarte-card'), selecionarEncartes);
 
 el('encarte-apagar').addEventListener('click', async () => {
   const enc = state.encartes.find((e) => e.id === state.encarteSel);
@@ -731,6 +796,25 @@ function desenharCardEncarte() {
     <strong>${esc(e.nome)}</strong><small>${e.status === 'pronto' ? `${e.itens.length} produtos · ${hora(e.criado)}` : ENC_STATUS[e.status]}</small></button>`).join('');
   el('encarte-lista').querySelectorAll('.chip').forEach((c) => c.addEventListener('click', () => { state.encarteSel = c.dataset.id; state.ordem = []; desenharCardEncarte(); }));
   const enc = state.encartes.find((e) => e.id === state.encarteSel);
+  const compressao = el('encarte-compressao');
+  const prep = enc?.preparacao;
+  compressao.hidden = !prep;
+  compressao.replaceChildren();
+  if (prep) {
+    const mb = (bytes) => bytes < 1024 * 1024
+      ? `${(bytes / 1024).toLocaleString('pt-BR', { maximumFractionDigits: 1 })} KB`
+      : `${(bytes / 1024 / 1024).toLocaleString('pt-BR', { maximumFractionDigits: 2 })} MB`;
+    const reducao = prep.reduzido ? ` ${mb(prep.original)} → ${mb(prep.final)} (${Math.round((1 - prep.final / prep.original) * 100)}% menor).` : '';
+    compressao.append(document.createTextNode(prep.mensagem + reducao));
+    if (prep.fontes) compressao.append(document.createTextNode(' Ordem: ' + prep.fontes.map((f, i) => `${i+1}. ${f.nome}`).join(' → ') + '.'));
+    if (prep.reduzido && enc.status !== 'lendo') {
+      const baixar = document.createElement('a');
+      baixar.href = `/ofertas/encarte/${enc.id}/compactado.pdf`;
+      baixar.textContent = ' Baixar PDF compactado';
+      baixar.setAttribute('download', '');
+      compressao.append(baixar);
+    }
+  }
   el('encarte-apagar').hidden = !enc || enc.status === 'lendo';
   el('encarte-vazio').hidden = state.encartes.length > 0;
   const st = el('encarte-status');
@@ -1041,13 +1125,12 @@ el('lote-gerar').addEventListener('click', async () => {
   const p = planoLote();
   el('lote-gerar').disabled = true;
   try {
-    const r = await api('/encarte-gerar-todos', { body: { encarte: p.enc.id, template: state.pedido.template, cartelas: p.cartelas, impar: p.impar, nome: el('lote-nome').value, distribuicao: p.distribuicao, animacoes: el('lote-animacoes').checked, revisar: el('lote-revisar').checked } });
+    const r = await api('/encarte-gerar-todos', { body: { encarte: p.enc.id, template: state.pedido.template, cartelas: p.cartelas, impar: p.impar, nome: el('lote-nome').value, distribuicao: p.distribuicao, animacoes: el('lote-animacoes').checked, revisar: el('lote-revisar').checked, ...(state.esquema.campos.some(c => c.id === 'estiloselo') ? {estiloselo: state.pedido.dados.estiloselo || 'padrao'} : {}) } });
     el('lote-dialog').close();
     if (r.revisar) {
       aviso(`${r.videos.length} pedidos preparados para revisão. Eles também estão em Pedidos recentes.`, 7000);
-      const primeiro = r.videos.find(v => !v.erros.length);
-      if (primeiro) { await abrirPedido(await api('/pedido?id=' + primeiro.pedido)); await abrirEdicaoCartelas(true); }
-      else await mostrar('pedidos');
+      await mostrar('pedidos');
+      if(r.lote)await abrirVisaoLote(r.lote);
       return;
     }
     const falhos = r.videos.filter((v) => !v.render);
@@ -1058,8 +1141,63 @@ el('lote-gerar').addEventListener('click', async () => {
   } catch (e) { falha(e); } finally { el('lote-gerar').disabled = false; }
 });
 
+// ---------- visão completa dos lotes ----------
+const areaLotes=document.createElement('section');areaLotes.className='of-lotes';
+areaLotes.innerHTML='<div class="barra-lista"><h3>Conferência dos lotes</h3><select aria-label="Lote para conferir"><option value="">Escolha um lote</option></select><button type="button" class="secondary" data-lotes-atualizar>Atualizar</button><button type="button" data-lotes-fechar hidden>Mostrar pedidos individuais</button></div><p class="help">Todos os vídeos e cartelas do encarte em uma única visão. O conteúdo exibido acompanha os pedidos salvos.</p><div data-lotes-conteudo></div>';
+el('pedidos').prepend(areaLotes);
+let loteAtual=null,loteTimer=null,loteVersao=0;
+async function carregarLotes(){
+  try{const lista=await api('/lotes'),select=areaLotes.querySelector('select'),atual=select.value;select.replaceChildren(new Option('Escolha um lote',''),...lista.map(l=>new Option(l.nome,l.id)));select.value=atual;}catch(e){falha(e);}
+}
+areaLotes.querySelector('select').onchange=e=>{if(e.target.value)abrirVisaoLote(e.target.value).catch(falha);else fecharVisaoLote();};
+areaLotes.querySelector('[data-lotes-atualizar]').onclick=()=>{carregarLotes();if(loteAtual)abrirVisaoLote(loteAtual).catch(falha);};
+areaLotes.querySelector('[data-lotes-fechar]').onclick=fecharVisaoLote;
+function fecharVisaoLote(){loteAtual=null;++loteVersao;clearTimeout(loteTimer);areaLotes.querySelector('[data-lotes-conteudo]').replaceChildren();areaLotes.querySelector('[data-lotes-fechar]').hidden=true;areaLotes.querySelector('select').value='';el('lista-pedidos').hidden=false;}
+async function abrirVisaoLote(id){
+  clearTimeout(loteTimer);const versao=++loteVersao,lote=await api('/lote?id='+encodeURIComponent(id));if(versao!==loteVersao)return;
+  loteAtual=id;areaLotes.querySelector('select').value=id;areaLotes.querySelector('[data-lotes-fechar]').hidden=false;el('lista-pedidos').hidden=true;
+  const uso=Array(lote.origem.length).fill(0);lote.videos.filter(v=>!v.excluido).forEach(v=>v.indices.forEach(i=>uso[i]++));
+  const repetidos=uso.flatMap((n,i)=>n>1?[`${lote.origem[i].nome} (${n} vezes)`]:[]),fora=uso.flatMap((n,i)=>!n?[lote.origem[i].nome]:[]);
+  const corpo=areaLotes.querySelector('[data-lotes-conteudo]');
+  corpo.innerHTML=`<div class="of-lote-resumo"><strong>${esc(lote.nome)}</strong><span>${lote.videos.length} vídeos · ${uso.filter(n=>n>0).length}/${uso.length} produtos de origem distribuídos</span><p>${repetidos.length?'Repetidos: '+esc(repetidos.join(' · ')):'Nenhum produto de origem repetido.'}</p><p>${fora.length?'Fora dos vídeos: '+esc(fora.join(' · ')):'Todos os produtos de origem estão distribuídos.'}</p><small>A distribuição se refere à montagem inicial do lote. Confira nomes e imagens atuais abaixo caso tenha trocado produtos.</small></div>`;
+  for(const [numero,v] of lote.videos.entries()){
+    const sec=document.createElement('section');sec.className='of-lote-video';sec.dataset.pedido=v.pedido;
+    sec.innerHTML=`<header><h4>${esc(v.titulo||'Vídeo '+(numero+1))}</h4><span>${v.excluido?'Pedido excluído':v.erros?.length?'Campos para corrigir':'Pronto para conferência visual'}</span></header>`;
+    if(v.excluido){corpo.append(sec);continue;}
+    if(v.erros?.length){const p=document.createElement('p');p.className='of-lote-alerta';p.textContent=v.erros.join(' · ');sec.append(p);}
+    const grade=document.createElement('div');grade.className='of-lote-grade';
+    let inicio=0;
+    for(const [k,tamanho] of tamanhosCartelas(v.produtos.length,2,v.ultimacartela==='tres').entries()){
+      const produtos=v.produtos.slice(inicio,inicio+tamanho),indices=v.indices.slice(inicio,inicio+tamanho);inicio+=tamanho;
+      const b=document.createElement('button');b.type='button';b.className='of-lote-cartela';b.dataset.cartela=String(k);
+      b.innerHTML=`<img alt="Prévia da cartela ${k+1}" loading="lazy" decoding="async"><strong>Cartela ${k+1} · ${tamanho} produto(s)</strong><span>${produtos.map((p,i)=>`${esc(p.nome)} · R$ ${esc(p.por)}${uso[indices[i]]>1?' · repetido':''}`).join('<br>')}</span><small>Abrir esta cartela para ajustar →</small>`;
+      b.onclick=async()=>{try{await abrirPedido(await api('/pedido?id='+v.pedido));OfertasEdicao.irParaCartela(k);}catch(e){falha(e);}};
+      grade.append(b);
+    }
+    sec.append(grade);corpo.append(sec);
+  }
+  atualizarPreviewsLote(id,versao);
+}
+async function atualizarPreviewsLote(id,versao){
+  if(versao!==loteVersao||loteAtual!==id||state.tela!=='pedidos')return;
+  let pendente=false;
+  // Sequencial: cada pedido usa a fila de miniaturas, sem abrir vários navegadores.
+  for(const sec of areaLotes.querySelectorAll('[data-pedido]')){
+    if(!sec.querySelector('img'))continue;
+    try{
+      const r=await api('/cartelas-miniaturas?id='+sec.dataset.pedido);if(versao!==loteVersao)return;
+      for(const [k,item] of (r.cartelas||[]).entries()){const img=sec.querySelector(`[data-cartela="${k}"] img`);if(img&&item.url&&img.getAttribute('src')!==item.url)img.src=item.url;}
+      pendente ||= r.pendente;
+      if(r.erro)sec.querySelectorAll('img:not([src])').forEach(img=>{img.alt='Prévia indisponível — clique para abrir o editor';});
+    }catch(e){sec.querySelectorAll('img:not([src])').forEach(img=>{img.alt='Abra a cartela para conferir';});}
+  }
+  if(pendente&&versao===loteVersao)loteTimer=setTimeout(()=>atualizarPreviewsLote(id,versao),2200);
+}
+
 // ---------- pedidos ----------
 async function carregarPedidos() {
+  carregarLotes();
+  if(loteAtual)abrirVisaoLote(loteAtual).catch(falha);
   try {
     const [lista] = await Promise.all([api('/pedidos'), carregarNomes()]);
     el('lista-pedidos').innerHTML = lista.length ? lista.map((p) => {
