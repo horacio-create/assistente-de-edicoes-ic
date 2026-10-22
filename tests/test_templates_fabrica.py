@@ -45,6 +45,8 @@ class FabricaTests(unittest.TestCase):
         base=Path(__file__).resolve().parents[1]/'ofertas'
         manifesto=json.loads((base/'atualizacoes/templates-20261022.json').read_text())
         manifesto.update(json.loads((base/'atualizacoes/titulos-20261022.json').read_text()))
+        for ident, arquivos in json.loads((base/'atualizacoes/selo-original-20261022.json').read_text()).items():
+            manifesto.setdefault(ident, {}).update(arquivos)
         for ident,arquivos in manifesto.items():
             for nome,info in arquivos.items():self.assertEqual(resumo(base/'templates'/ident/nome),info['depois'],nome)
 
