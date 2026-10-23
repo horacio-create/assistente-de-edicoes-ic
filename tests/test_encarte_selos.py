@@ -46,3 +46,28 @@ class SelosComoAncorasTests(unittest.TestCase):
                 pg.insert_image(pymupdf.Rect(x, 50, x+100, 108), stream=png('red', (100, 58), True))
                 pg.insert_text((x, 180), '19,99', fontsize=22)
             self.assertIsNone(extrair_pagina(pg, doc))
+
+
+class SelosComTextoVetorialTests(unittest.TestCase):
+    def test_base_sem_amarelo_com_mascote_e_mascara_repetida(self):
+        from modules.ofertas.encarte import extrair
+        with pymupdf.open() as doc:
+            pg=doc.new_page(width=600,height=600)
+            pg.insert_image(pymupdf.Rect(440,5,560,280),stream=png('blue'))
+            for x in (0,300):
+                pg.insert_text((x+40,220),'Produto Verde',fontsize=20)
+                pg.insert_text((x+40,242),'Congelado Kg',fontsize=20)
+                pg.insert_image(pymupdf.Rect(x+40,235,x+130,420),stream=png('green'))
+                pg.insert_image(pymupdf.Rect(x+140,400,x+288,486),stream=png('white',(148,86)))
+                pg.insert_image(pymupdf.Rect(x+139,400,x+287,486),stream=png('#ef302b',(148,86)))
+                pg.insert_text((x+150,414),'CLUBE DE DESCONTO',fontsize=8)
+                pg.insert_text((x+155,467),'13,99',fontsize=24)
+                pg.insert_text((x+65,470),'19,99',fontsize=17)
+                pg.insert_text((x+220,482),'KG',fontsize=7)
+            itens=extrair(doc.tobytes())
+        self.assertEqual(len(itens),2)
+        for it in itens:
+            self.assertEqual((it['nome'],it['por'],it['de']),('Produto Verde Congelado Kg','13,99','19,99'))
+            with Image.open(io.BytesIO(it['png'])) as im:
+                cores={c[:3] for c in im.convert('RGBA').get_flattened_data() if c[3]>128}
+            self.assertEqual(cores,{(0,128,0)})

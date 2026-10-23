@@ -606,5 +606,113 @@
     "unidade": "CADA"
    }
   ]
+ },
+ "1540ae7debca488fc3399350c9ecca782680e630ef6fbd9a296950b4877d499c": {
+  "arquivo": "SADIA.pdf (26 a 28.10.2026)",
+  "completo": true,
+  "ofertas": [
+   {
+    "nome": "Linguiça Suína Sadia Congelada Kg",
+    "de": "21,99",
+    "por": "16,99",
+    "unidade": "KG"
+   },
+   {
+    "nome": "Salsicha Hot Dog Sadia Congelada Kg",
+    "de": "17,99",
+    "por": "14,99",
+    "unidade": "KG"
+   },
+   {
+    "nome": "Lasanha Sadia Bolonhesa 600g",
+    "de": "19,99",
+    "por": "15,99",
+    "unidade": "CADA"
+   },
+   {
+    "nome": "Presunto Peru Sadia 100g",
+    "de": "3,79",
+    "por": "3,29",
+    "unidade": "100G"
+   },
+   {
+    "nome": "Pizza Sadia Congelada 440g/460g (Mussarela, Frango Ou Calabresa)",
+    "de": "23,99",
+    "por": "16,99",
+    "unidade": "CADA"
+   },
+   {
+    "nome": "Hot Pocket Sadia 145g Sabores",
+    "de": "8,99",
+    "por": "6,99",
+    "unidade": "CADA"
+   },
+   {
+    "nome": "Nuggets Sadia 300g Sabores",
+    "de": "11,99",
+    "por": "9,99",
+    "unidade": "CADA"
+   },
+   {
+    "nome": "Steak De Frango Sadia 100g",
+    "de": "2,19",
+    "por": "1,99",
+    "unidade": "CADA"
+   },
+   {
+    "nome": "Hambúrguer Sadia Misto 56g",
+    "de": "1,99",
+    "por": "1,49",
+    "unidade": "CADA"
+   },
+   {
+    "nome": "Linguiça Calabresa Sadia Pacote 400g",
+    "de": "14,99",
+    "por": "10,99",
+    "unidade": "CADA"
+   },
+   {
+    "nome": "Margarina Deline Com Sal Balde 3kg",
+    "de": "33,99",
+    "por": "26,99",
+    "unidade": "CADA"
+   }
+  ]
+ },
+ "db03d3ff6efcb16484d6ae699a52e2681a3c6b4487c150d4f5d0cc827ecf09bc": {
+  "arquivo": "PERDIGAO.pdf (26 a 28.10.2026)",
+  "completo": true,
+  "ofertas": [
+   {
+    "nome": "Linguiça Suína Perdigão Congelada Kg",
+    "de": "21,99",
+    "por": "16,99",
+    "unidade": "KG"
+   },
+   {
+    "nome": "Salsicha Hot Dog Perdigão Congelada Kg",
+    "de": "17,99",
+    "por": "14,99",
+    "unidade": "KG"
+   },
+   {
+    "nome": "Steak De Frango Perdigão 100g",
+    "de": "2,19",
+    "por": "1,99",
+    "unidade": "CADA"
+   },
+   {
+    "nome": "Hambúrguer Perdigão Misto 56g",
+    "de": "1,99",
+    "por": "1,49",
+    "unidade": "CADA"
+   },
+   {
+    "nome": "Margarina Claybom C/Sal Pote 1kg",
+    "de": "12,99",
+    "por": "9,98",
+    "unidade": "CADA"
+   }
+  ]
  }
 }

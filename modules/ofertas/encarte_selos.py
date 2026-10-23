@@ -48,10 +48,14 @@ def extrair_pagina(page, doc):
     precos_selo = {}
     cores = {}
     selos = []
+    ids_selos = set()
     for im in imagens:
         r, xref, mascara, _ = im
         if not 1.4 < r.width / r.height < 2.1 or r.width > page.rect.width * .3:
             continue
+        cabecalho = any(re.sub(r'\s+', ' ', t.upper()) == 'CLUBE DE DESCONTO'
+                         and r.contains(centro(caixa)) and -.05 <= (caixa.y0-r.y0)/r.height <= .30
+                         and .5 <= caixa.width/r.width <= 1.1 for caixa,t,_ in spans)
         if xref not in cores:
             with Image.open(io.BytesIO(_pixmap(doc, xref, mascara).tobytes('png'))) as original:
                 amostra = original.convert('RGBA').resize((64, 40))
@@ -61,8 +65,12 @@ def extrair_pagina(page, doc):
                 cores[xref] = vermelho > .55 and amarelo > .01
         # A embalagem de um produto pode ser vermelha/amarela: exigir preço
         # do PDF dentro do selo evita ativar o perfil só pela cor.
-        preco = numero([c for c in caracteres if r.contains(centro(c[0]))]) if cores[xref] else None
+        preco = numero([c for c in caracteres if r.contains(centro(c[0]))]) if cabecalho or cores[xref] else None
         if preco:
+            ids_selos.add(xref)
+            # Certos PDFs repetem a base como imagem e máscara, quase no mesmo lugar.
+            if any((r & outro[0]).get_area() / min(r.get_area(), outro[0].get_area()) > .9 for outro in selos):
+                continue
             selos.append(im)
             precos_selo[id(im)] = preco
     if len(selos) < 2:
@@ -77,7 +85,6 @@ def extrair_pagina(page, doc):
             linhas.append([selo])
         else:
             linha.append(selo)
-    ids_selos = {s[1] for s in selos}
     objetos = [im for im in imagens if im[1] not in ids_selos
                and im[0].x1 <= page.rect.width + 2 and im[0].width > 12 and im[0].height > 12
                and im[0].get_area() < page.rect.get_area() * .25]
@@ -91,7 +98,12 @@ def extrair_pagina(page, doc):
         centros = [centro(s[0]).x - s[0].width * .35 for s in linha]
         limites = [0] + [(a + b) / 2 for a, b in zip(centros, centros[1:])] + [page.rect.width]
         fundo = max(s[0].y1 for s in linha) + 4
-        fotos = [im for im in objetos if anterior <= im[0].y0 < max(s[0].y0 for s in linha)
+        # Na primeira linha, logotipos e mascotes do cabeçalho podem alcançar
+        # a altura das ofertas. Sua origem acima da faixa de produtos os exclui.
+        inicio_fotos = anterior
+        if not anterior and not any(cores[s[1]] for s in linha):
+            inicio_fotos = max(0, min(s[0].y0 for s in linha)-altura*3.2)
+        fotos = [im for im in objetos if inicio_fotos <= im[0].y0 < max(s[0].y0 for s in linha)
                  and im[0].y1 <= fundo + 8]
         def coluna(x):
             return next((i for i in range(len(linha)) if limites[i] <= x < limites[i+1]), len(linha)-1)
@@ -135,13 +147,15 @@ def extrair_pagina(page, doc):
                        and s[2] > altura*.08 and re.search('[A-Za-zÀ-ú]', s[1])
                        and '$' not in s[1] and s[1].upper() not in ('KG', 'CADA', 'UN')]
             partes = [im for im in fotos if donos[id(im)] == i]
-            if not titulos and partes:
+            if partes:
                 # Alguns layouts põem a descrição acima da foto, em vez de
                 # entre a foto e o selo. Buscar só a faixa imediatamente acima.
                 teto = max(anterior, min(im[0].y0 for im in partes)-altura*.8)
                 acima = pymupdf.Rect(celula.x0, teto, celula.x1, celula.y0)
-                titulos = [s for s in spans if acima.contains(centro(s[0])) and re.search('[A-Za-zÀ-ú]', s[1])
-                           and s[2] > altura*.08 and '$' not in s[1]]
+                extras = [s for s in spans if acima.contains(centro(s[0])) and re.search('[A-Za-zÀ-ú]', s[1])
+                          and s[2] > altura*.08 and '$' not in s[1]
+                          and s[1].upper() != 'CLUBE DE DESCONTO']
+                titulos.extend(s for s in extras if s not in titulos)
                 if titulos: celula.y0 = min(s[0].y0 for s in titulos)
             if titulos:
                 fontes = {}
