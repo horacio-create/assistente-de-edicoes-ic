@@ -2,10 +2,23 @@
 import re
 import copy
 import uuid
+from pathlib import PurePosixPath
 from modules import composition
 
 MAX_TIMELINES = 10
 MAX_QUEUE = 50
+
+
+def original_export_name(project, media, fallback):
+    """A single visual source keeps its filename, including after cuts or overlays."""
+    rows = {m['id']:m for m in media}
+    sources = {c['mediaId'] for c in project['clips']
+               if rows[c['mediaId']]['kind'] != 'audio' and rows[c['mediaId']].get('role') != 'logo'}
+    videos = {ident for ident in sources if rows[ident]['kind']=='video'}
+    if videos: sources = videos
+    if len(sources) == 1:
+        return PurePosixPath(rows[next(iter(sources))]['name'].replace('\\','/')).stem
+    return fallback
 
 
 def title(value):

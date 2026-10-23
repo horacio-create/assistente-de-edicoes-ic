@@ -38,12 +38,12 @@ class VideoTests(unittest.TestCase):
         result = api('/api/upload', query={'job':[job['id']], 'revision':['0'], 'name':['cliente.mp4']}, raw=self.raw)
         return result['job']
 
-    def test_import_retains_audio_and_original_and_saves_video_fields(self):
+    def test_import_starts_muted_preserves_original_and_saves_video_fields(self):
         job = self.import_sample()
         m = job['media'][0]
         self.assertEqual(m['kind'], 'video')
         self.assertTrue(m['has_audio'])
-        self.assertFalse(m['settings']['mute'])
+        self.assertTrue(m['settings']['mute'])
         self.assertAlmostEqual(m['duration'], 4, delta=.05)
         source = server.DATA / 'midias' / (m['id'] + '.source')
         self.assertEqual(hashlib.sha256(source.read_bytes()).digest(), hashlib.sha256(self.raw).digest())
@@ -68,9 +68,17 @@ class VideoTests(unittest.TestCase):
         self.assertFalse(info['hasAudio'])
         self.assertLessEqual(info['bytes'], 300000)
 
-    def test_audio_is_kept_until_user_chooses_removal_and_can_be_slowed(self):
+    def test_default_export_has_no_audio(self):
+        job=self.import_sample()
+        value=job['media'][0]['settings'] | dict(width=320,height=180,trimStart=0,trimEnd=1,targetMB=.4)
+        output=self.folder/'default-muted.mp4'
+        videos.export(self.source,output,value)
+        self.assertFalse(videos.probe(output)['hasAudio'])
+        self.assertTrue(videos.probe(self.source)['hasAudio'])
+
+    def test_audio_can_be_restored_and_slowed(self):
         output = self.folder / 'with-audio.mp4'
-        value = DEFAULT | videos.DEFAULT_VIDEO | dict(width=320,height=180,trimStart=1,trimEnd=2,speed=.25,targetMB=.4)
+        value = DEFAULT | videos.DEFAULT_VIDEO | dict(width=320,height=180,trimStart=1,trimEnd=2,speed=.25,targetMB=.4,mute=False)
         videos.export(self.source, output, value)
         info = videos.probe(output)
         self.assertTrue(info['hasAudio'])
@@ -200,5 +208,5 @@ class VideoTests(unittest.TestCase):
                 media=result['job']['media'][0]
                 self.assertEqual(media['kind'],'video')
                 self.assertTrue(media['has_audio'])
-                self.assertFalse(media['settings']['mute'])
+                self.assertTrue(media['settings']['mute'])
                 self.assertAlmostEqual(media['duration'],1,delta=.1)

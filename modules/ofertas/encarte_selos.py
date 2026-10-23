@@ -167,14 +167,47 @@ def extrair_pagina(page, doc):
             nome = ' '.join(s[1] for s in sorted(titulos, key=lambda s: (round(s[0].y0, 1), s[0].x0)))
             unidades = [s for s in spans if celula.contains(centro(s[0])) and re.fullmatch(r'KG|CADA|UN|100g', s[1], re.I)]
             unidade = _unidade(unidades, destaque[0]).upper()
+            if unidade == '100G': unidade = '100g'
             por, de = destaque[1], normal[1] if normal else ''
             # Não substituir uma foto ausente pelo selo: deixar a revisão clara.
             if not partes:
                 raise ValueError(f'Não foi possível isolar a foto de {nome or "uma oferta"}. Marque essa oferta na página.')
+            complemento = {}
+            area_complemento = None
+            # O equivalente do kg é informação adicional, nunca o preço principal.
+            # Exigir a legenda junto à borda inferior evita capturar promoções vizinhas.
+            faixa = pymupdf.Rect(r.x0, r.y1-r.height*.08, r.x1, r.y1+r.height*.65)
+            textos_extra = [sp for sp in spans if faixa.contains(centro(sp[0]))
+                            and re.search('[A-Za-zÀ-ú]', sp[1]) and '$' not in sp[1]
+                            and not re.fullmatch(r'KG|CADA|UN|100g',sp[1],re.I)]
+            legenda = ' '.join(sp[1] for sp in sorted(textos_extra,key=lambda sp:(round(sp[0].y0,1),sp[0].x0)))
+            equivalente = numero([c for c in caracteres if faixa.contains(centro(c[0]))])
+            if equivalente and re.search(r'no clube.*(?:pre[çc]o|sai por)',legenda,re.I):
+                complemento = {'equivalenciatexto':legenda,'equivalenciapreco':equivalente[1],
+                               'equivalenciaunidade':_unidade([(sp[0],sp[1],sp[2]) for sp in spans
+                                   if faixa.contains(centro(sp[0])) and re.fullmatch(r'KG|CADA|UN|100g',sp[1],re.I)],equivalente[0])}
+                area_complemento=pymupdf.Rect(equivalente[0])
+                for sp in textos_extra: area_complemento |= sp[0]
             area_oferta = pymupdf.Rect(celula)
             for im in partes: area_oferta |= im[0]
             for t in titulos: area_oferta |= t[0]
-            resultado.append({'nome': nome, 'por': por, 'de': de, 'unidade': unidade,
+            if area_complemento: area_oferta |= area_complemento
+            promocao = {}
+            # Balão independente de equivalência: não confundir com o preço do clube.
+            chamadas = [s for s in spans if celula.contains(centro(s[0]))
+                        and re.fullmatch(r'Nessa\s+Promo',s[1],re.I)]
+            if chamadas:
+                chamada = min(chamadas,key=lambda s:abs(s[0].y0-r.y0))
+                caixa = pymupdf.Rect(chamada[0].x0-altura*.25,chamada[0].y0-2,
+                                     chamada[0].x1+altura*.25,chamada[0].y1+altura*1.05)
+                valor_promo = numero([c for c in caracteres if caixa.contains(centro(c[0]))])
+                if valor_promo:
+                    legenda_promo = [s for s in spans if caixa.contains(centro(s[0]))
+                                     and s[0].y0 < valor_promo[0].y0+altura*.1
+                                     and re.search(r'[A-Za-z]',s[1]) and '$' not in s[1]]
+                    promocao = {'promopreco':valor_promo[1], 'promotexto':' '.join(s[1] for s in sorted(legenda_promo,key=lambda s:(s[0].y0,s[0].x0)))}
+                    area_oferta |= caixa
+            resultado.append({'nome': nome, 'por': por, 'de': de, 'unidade': unidade, **complemento, **promocao,
                               'avisos': avisos(nome, por, de, unidade), 'pagina': page.number+1,
                               'area': [round(v, 1) for v in area_oferta], 'png': _foto(doc, partes)})
         anterior = fundo

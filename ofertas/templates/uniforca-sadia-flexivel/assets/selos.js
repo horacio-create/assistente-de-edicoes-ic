@@ -16,5 +16,32 @@
     forma.innerHTML = estilo === 'vermelho' ? vermelho : amarelo;
     produto.querySelector('.selo-titulo').textContent = estilo === 'vermelho' ? 'CLUBE DE DESCONTO' : 'Clube de Desconto';
   }
-  window.SelosOfertas = {resolver, aplicar};
+  function complemento(produto, valor, unidade, texto) {
+    produto.querySelector('.selo-complemento')?.remove();
+    delete produto.dataset.equivalencia;
+    const m=/^(\d{1,4}),(\d{2})$/.exec(String(valor||'').trim().replace('.',','));
+    if(!m)return;
+    produto.dataset.equivalencia='1';
+    const extra=document.createElement('div');extra.className='selo-complemento';extra.style.setProperty('--equivalencia-inteiro', (m[1].length>3?26:m[1].length>2?32:40)+'px');
+    // Contorno vetorial extraído do complemento original do encarte Sadia.
+    extra.innerHTML='<svg class="selo-complemento-forma" viewBox="0 0 89.785 38.242" aria-hidden="true"><path d="M80.387 38.242H9.398C4.207 38.242 0 34.035 0 28.844V0H89.785V28.844C89.785 34.035 85.576 38.242 80.387 38.242Z"/></svg><div class="selo-complemento-conteudo"><div class="equivalencia-texto"></div><div class="equivalencia-preco"><span class="equivalencia-moeda">R$</span><span class="equivalencia-int"></span><span class="equivalencia-final"><span class="equivalencia-cent"></span><span class="equivalencia-unidade"></span></span></div></div>';
+    extra.querySelector('.equivalencia-texto').textContent=texto||'No Clube de Desconto o preço do kg sai por:';
+    extra.querySelector('.equivalencia-int').textContent=m[1];
+    extra.querySelector('.equivalencia-cent').textContent=','+m[2];
+    extra.querySelector('.equivalencia-unidade').textContent=unidade||'kg';
+    produto.querySelector('.selo').appendChild(extra);
+  }
+  function promocao(produto, valor, texto) {
+    produto.querySelector('.tag-promo')?.remove();
+    const m=/^(\d{1,4}),(\d{2})$/.exec(String(valor||'').trim().replace('.',','));
+    if(!m)return;
+    const tag=document.createElement('div');tag.className='tag-promo';
+    tag.innerHTML='<div class="tag-promo-texto"></div><div class="tag-promo-preco"><span class="tag-promo-moeda">R$</span><span class="tag-promo-int"></span><span class="tag-promo-cent"></span></div>';
+    tag.querySelector('.tag-promo-texto').textContent=texto||'Nessa Promo';
+    tag.querySelector('.tag-promo-int').textContent=m[1];
+    tag.querySelector('.tag-promo-cent').textContent=','+m[2];
+    tag.style.setProperty('--promo-inteiro',(m[1].length>2?38:m[1].length>1?52:60)+'px');
+    produto.querySelector('.foto-box').appendChild(tag);
+  }
+  window.SelosOfertas = {resolver, aplicar, complemento, promocao};
 })();

@@ -40,7 +40,7 @@ function ensureProject(){
  if(!job.meta.composition){
   const first=job.media[0],track={id:freshId(),kind:mediaTrackKind(first),locked:false,muted:false,previewVisible:first?.settings.previewVisible!==false};
   const savedOutput=first?Object.fromEntries(['width','height','screenPreset','aspectLocked','aspectRatio'].filter(key=>key in first.settings).map(key=>[key,first.settings[key]])):{};
-  job.meta.composition={version:1,settings:{...defaults,...dimensions(),...savedOutput,mute:!!first?.settings.mute,targetMB:first?.settings.targetMB??4},tracks:[track],clips:[]};
+  job.meta.composition={version:1,settings:{...defaults,...dimensions(),...savedOutput,mute:first?.settings.mute??true,targetMB:first?.settings.targetMB??4},tracks:[track],clips:[]};
   if(first){
    if(timedMedia(first)){let at=0;for(const range of (first.kind==='audio'?[{start:0,end:first.duration}]:videoSegments(first))){const c=defaultClip(first,track.id,at,{in:range.start,out:range.end});c.duration=Math.max(1/30,snapFrame((range.end-range.start)/(first.settings.speed||1)));c.locked=!!range.locked;job.meta.composition.clips.push(c);at+=c.duration;}}
    else job.meta.composition.clips.push(defaultClip(first,track.id));
@@ -403,7 +403,7 @@ async function cancelMediaImport(){
 }
 $('import-cancel').onclick=cancelMediaImport;
 upload=async function(files){
- if(!files.length||busy)return;const session=beginMediaImport();
+ if(!files.length||busy)return;const importChoice=editorKind==='video'?await chooseVideoTimelineMode(files):{mode:'library',queue:false};if(!importChoice)return;const session=beginMediaImport();
  if(editorKind!=='video'){
   const modal=$('media-import-dialog');$('import-modal-detail').textContent=files.length+' arquivo(s)';modal.showModal();try{await compositionLegacy.upload(files);}finally{modal.close();mediaImportSession=null;}return;
  }
@@ -418,10 +418,11 @@ upload=async function(files){
     const data=await fetchImportFile(f);job=data.job;if(data.cancelled)break;
     if(data.unsupported){failures.push(f.name+': formato não suportado.');continue;}
     const imported=job.media.filter(m=>!known.has(m.id));
-    for(const m of imported){if(m.kind==='audio'||(!project().clips.some(c=>projectMedia(c)?.kind!=='audio')&&!firstAdded&&m.kind!=='audio')){if(project().clips.length>=100)throw new Error('A biblioteca recebeu o arquivo; libere um trecho para colocá-lo na timeline.');const t=trackForMedia(m,null,m.kind==='audio'),c=defaultClip(m,t.id);project().clips.push(c);compositionSelected=c.id;active=m.id;selected=new Set([m.id]);if(m.kind!=='audio')firstAdded=true;}}
+    for(const m of imported){if(m.kind==='video'&&importChoice.mode!=='library'){appendImportedVideo(m,importChoice.mode);firstAdded=true;continue;}if(m.kind==='audio'||(!project().clips.some(c=>projectMedia(c)?.kind!=='audio')&&!firstAdded&&m.kind!=='audio')){if(project().clips.length>=100)throw new Error('A biblioteca recebeu o arquivo; libere um trecho para colocá-lo na timeline.');const t=trackForMedia(m,null,m.kind==='audio'),c=defaultClip(m,t.id);project().clips.push(c);compositionSelected=c.id;active=m.id;selected=new Set([m.id]);if(m.kind!=='audio')firstAdded=true;}}
     markDirty();await save();
    }catch(error){failures.push(f.name+': '+error.message);}
   }
+  if(importChoice.queue){try{await enqueueAllTimelines();}catch(error){failures.push(error.message);}}
   ensureProject();if(projectClip())activate(projectClip().mediaId);renderGrid();$('unsupported').hidden=!failures.length;$('unsupported').textContent=failures.join('\n');
   if(session.cancelled)toast('Importação cancelada. Os arquivos já adicionados foram mantidos.');else if(failures.length)toast(failures.join('\n'));else toast('Mídias adicionadas à biblioteca. Arraste para a timeline ou dê dois cliques para preparar.');
  });}finally{modal.close();mediaImportSession=null;$('files').value='';}

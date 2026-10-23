@@ -6,7 +6,7 @@ const fonte = fs.readFileSync(require('node:path').join(__dirname, '../static/of
 const funcoes = fonte.slice(fonte.indexOf('const passoDe ='), fonte.indexOf('function aplicarValidacao')) + fonte.slice(fonte.indexOf('function planoLote()'), fonte.indexOf('const plural ='));
 function plano(n, impar, distribuicao, cartelas) {
   const lista = {min:1, itens:30, grupo:{tamanho:2, incompleto:true, finalTres:true}};
-  const contexto = {encAtual:()=>({itens:Array.from({length:n},()=>({}))}), listaPrincipal:()=>lista,
+  const contexto = {fonteLote:()=>({itens:Array.from({length:n},()=>({}))}), listaPrincipal:()=>lista,
     document:{querySelector:()=>({value:impar})}, el:id=>({value:id==='lote-cartelas'?cartelas:distribuicao})};
   return vm.runInNewContext(funcoes + ';planoLote()', contexto);
 }
@@ -21,4 +21,10 @@ test('resumo da interface conta trio como uma cartela e não perde produtos', ()
     assert.equal(p.repetidos,0);
     assert.ok(p.tamanhos.every(t=>t>0 && t<=30));
   }
+});
+
+test('11 produtos, quatro cartelas por vídeo: mostra dois vídeos sem perder a sobra',()=>{
+ assert.deepEqual(Array.from(plano(11,'sozinho','sequencia',4).tamanhos),[8,3]);
+ assert.deepEqual(Array.from(plano(11,'sozinho','equilibrar',4).tamanhos),[6,5]);
+ assert.deepEqual(Array.from(plano(11,'tres','sequencia',4).tamanhos),[8,3]);
 });

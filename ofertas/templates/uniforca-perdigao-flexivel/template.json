@@ -37,7 +37,7 @@
           "id": "nome",
           "tipo": "texto",
           "rotulo": "Nome",
-          "max": 60
+          "max": 150
         },
         {
           "id": "estiloselo",
@@ -86,6 +86,44 @@
           "oculto": true,
           "max": 20000,
           "formato": "ajustesVisuais"
+        },
+        {
+          "id": "equivalenciapreco",
+          "tipo": "preco",
+          "rotulo": "Valor equivalente no complemento",
+          "opcional": true,
+          "ajuda": "Preencha somente quando a oferta tiver a extensão inferior. Vazio: sem complemento."
+        },
+        {
+          "id": "equivalenciaunidade",
+          "tipo": "texto",
+          "rotulo": "Unidade do valor equivalente",
+          "opcional": true,
+          "max": 12,
+          "ajuda": "Ex.: kg. É a unidade do valor extra, não a unidade do preço principal."
+        },
+        {
+          "id": "equivalenciatexto",
+          "tipo": "texto",
+          "rotulo": "Texto do complemento do selo",
+          "opcional": true,
+          "max": 100,
+          "ajuda": "Ex.: No Clube de Desconto o preço do kg sai por:"
+        },
+        {
+          "id": "promopreco",
+          "tipo": "preco",
+          "rotulo": "Valor da tag promocional",
+          "opcional": true,
+          "ajuda": "Vazio: sem tag circular. Valor extra, separado dos preços normal e clube."
+        },
+        {
+          "id": "promotexto",
+          "tipo": "texto",
+          "rotulo": "Texto da tag promocional",
+          "opcional": true,
+          "max": 100,
+          "ajuda": "Ex.: Nessa Promo 500g saem por:"
         }
       ],
       "min": 1

@@ -16,6 +16,37 @@ def png(cor, tamanho=(80, 100), selo=False):
 
 
 class SelosComoAncorasTests(unittest.TestCase):
+    def test_complemento_so_na_oferta_com_legenda_sem_trocar_preco_principal(self):
+        from modules.ofertas.encarte import extrair
+        with pymupdf.open() as doc:
+            pg = doc.new_page(width=600, height=360)
+            for x in (0, 300):
+                pg.insert_image(pymupdf.Rect(x+40,80,x+115,200),stream=png('green'))
+                pg.insert_image(pymupdf.Rect(x+150,210,x+250,268),stream=png('red',(100,58),True))
+                pg.insert_text((x+40,60),'Produto Verde 100g',fontsize=10)
+                pg.insert_text((x+160,253),'3,29',fontsize=24)
+                pg.insert_text((x+80,252),'3,79',fontsize=17)
+                pg.insert_text((x+215,265),'100g',fontsize=7)
+            for y,texto in [(274,'No Clube de'),(280,'Desconto o'),(286,'preco do Kg'),(292,'sai por:')]:
+                pg.insert_text((160,y),texto,fontsize=5)
+            pg.insert_text((204,294),'32,90',fontsize=14)
+            pg.insert_text((225,302),'kg',fontsize=4)
+            pg.insert_text((461,110),'Nessa Promo',fontsize=5)
+            pg.insert_text((459,117),'500g saem por:',fontsize=5)
+            pg.insert_text((465,143),'4,99',fontsize=14)
+            itens=extrair(doc.tobytes())
+        self.assertEqual(len(itens),2)
+        self.assertEqual(itens[0]['equivalenciapreco'],'32,90')
+        self.assertEqual(itens[0]['equivalenciaunidade'],'kg')
+        self.assertIn('No Clube de',itens[0]['equivalenciatexto'])
+        self.assertNotIn('equivalenciapreco',itens[1])
+        self.assertNotIn('promopreco',itens[0])
+        self.assertEqual(itens[1]['promopreco'],'4,99')
+        self.assertEqual(itens[1]['promotexto'],'Nessa Promo 500g saem por:')
+        for it in itens:
+            self.assertEqual((it['por'],it['de']),('3,29','3,79'))
+            self.assertEqual(it['unidade'],'100g')
+
     def test_duas_ofertas_com_precos_e_variantes_sem_incluir_selo(self):
         from modules.ofertas.encarte import extrair
         with pymupdf.open() as doc:

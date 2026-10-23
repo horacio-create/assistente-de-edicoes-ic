@@ -15,7 +15,7 @@ from modules.images import DEFAULT, settings as image_settings, render as render
 
 ROOT = Path(__file__).resolve().parents[1]
 SUPPORTED = {'.mp4', '.mov', '.m4v', '.mkv', '.avi', '.webm', '.wmv', '.mpeg', '.mpg'}
-DEFAULT_VIDEO = dict(trimStart=0, trimEnd=None, speed=1, mute=False, targetMB=4)
+DEFAULT_VIDEO = dict(trimStart=0, trimEnd=None, speed=1, mute=True, targetMB=4)
 
 def tool(name):
     configured = os.environ.get('INDOOR_' + name.upper())

@@ -5,6 +5,11 @@ const {limpar}=require('../ofertas/templates/uniforca-hora-da-carne-flexivel/ass
 test('ajustes antigos, vazios ou quebrados têm uma recuperação segura',()=>{
   for(const v of [null,undefined,'','{invalido','{}'])assert.deepEqual(limpar(v),{v:1,elementos:{}});
 });
+
+test('seta e tag promocional conservam posição e escala independentes do selo',()=>{
+  const ajustes={v:1,elementos:{selo:{x:0,y:0,escala:1},seta:{x:23,y:-17,escala:1.3},'tag-promo':{x:-20,y:10,escala:.8}}};
+  assert.deepEqual(limpar(JSON.stringify(ajustes)),ajustes);
+});
 test('caracteres, imagem e título mantêm ajustes independentes, inclusive após serialização',()=>{
   const a={v:1,elementos:{produto:{x:12,y:-8,escala:1.1},titulo:{x:0,y:5,escala:.9},'clube-int-0':{x:2,y:3,escala:1.05},'clube-virgula':{x:4,y:5,escala:1.05}}};
   assert.deepEqual(limpar(JSON.stringify(a)),a);

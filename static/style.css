@@ -1127,3 +1127,6 @@ main>header>div.atv-timer:not([hidden]){display:flex;flex-direction:row;align-it
 #est-size{flex:none;margin-left:auto}#est-size>*,#est-medida-campos>*{flex:none}
 #est-size input{width:60px;min-width:0;min-height:0;height:26px;margin:0;flex:none;padding:0 8px;border-radius:7px;font-size:12px;text-align:center;font-variant-numeric:tabular-nums;-moz-appearance:textfield;appearance:textfield}
 #est-size input::-webkit-outer-spin-button,#est-size input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+#video-import-choice{width:min(720px,calc(100vw - 48px))}
+#video-import-choice .check{display:flex;align-items:center;justify-content:flex-start;gap:12px;font-size:15px;line-height:1.5;padding:10px 0}
+#video-import-choice .check input{width:18px;height:18px;min-width:18px;flex:0 0 18px;margin:0;accent-color:var(--accent,#35d477)}

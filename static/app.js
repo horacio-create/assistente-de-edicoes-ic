@@ -166,7 +166,7 @@ $('confirm-export').onclick=()=>guard(async()=>{
  if(!plan)throw new Error('Aguarde a atualização dos nomes.');
  const confirmedPlan=plan, overwrite=$('overwrite').checked;
  if(plan.files.some(f=>f.existing)&&!overwrite)throw new Error('Confirme a substituição das exportações existentes ou edite o nome.');
- const value=exportValues();job.meta={...job.meta,template:value.template,folder:value.folder,format:value.format};markDirty();await save();
+ const value=exportValues();job.meta={...job.meta,template:value.template,folder:value.folder,format:value.format,originalNames:!!value.originalNames};markDirty();await save();
  const fresh=await request('/api/plan',value);plan=fresh;
  if(JSON.stringify(fresh.files.map(f=>[f.path,f.existing]))!==JSON.stringify(confirmedPlan.files.map(f=>[f.path,f.existing]))){displayPlan();$('overwrite').checked=false;throw new Error('O destino mudou. Confira os nomes atualizados antes de exportar.');}
  $('export-result').hidden=false;$('export-result').textContent='Processando e salvando os arquivos…';

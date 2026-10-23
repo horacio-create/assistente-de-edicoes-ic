@@ -106,7 +106,7 @@ function validarValor(campo, bruto, decl, ctx) {
       if (campo.formato === 'ajustesVisuais') {
         try {
           const obj = JSON.parse(s);
-          const ids = /^(titulo|produto|precos|selo|normal|selo-titulo|(?:de|clube)-(?:int|cent)-\d{1,2}|clube-virgula|(?:de|clube)-(?:unidade|moeda))$/;
+          const ids = /^(titulo|produto|precos|selo|normal|selo-titulo|(?:de|clube)-(?:int|cent)-\d{1,2}|complemento|complemento-texto|complemento-preco|complemento-unidade|seta|tag-promo|tag-promo-texto|tag-promo-preco|clube-virgula|(?:de|clube)-(?:unidade|moeda))$/;
           if (!obj || typeof obj !== 'object' || Array.isArray(obj)) throw Error();
           const elementos = obj.elementos ?? {};
           if (typeof elementos !== 'object' || !elementos || Array.isArray(elementos) || Object.keys(elementos).length > 200) throw Error();
