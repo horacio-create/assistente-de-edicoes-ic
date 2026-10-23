@@ -25,3 +25,14 @@ test('o motor entrega para a exportação os mesmos ajustes salvos no pedido',as
   assert.ok(prepararDados(template,dados,dir).erros.some(e=>e.includes('ajustes visuais inválidos')));
   delete dados.produtos[0].edicao;assert.deepEqual(prepararDados(template,dados,dir).erros,[]);
 });
+
+
+test('seleção e limites usam o texto visível, preservando blocos e textos vazios',()=>{
+  const {limitesVisuais}=require('../ofertas/templates/uniforca-hora-da-carne-flexivel/assets/edicao.js');
+  const caixa={left:0,top:10,right:600,bottom:50,width:600,height:40};
+  let texto={left:230,top:15,right:370,bottom:45,width:140,height:30};
+  const no={dataset:{editavel:'titulo'},getBoundingClientRect:()=>caixa,ownerDocument:{createRange:()=>({selectNodeContents:n=>assert.equal(n,no),getBoundingClientRect:()=>texto})}};
+  for(const id of ['titulo','selo-titulo','de-unidade','clube-moeda']){no.dataset.editavel=id;assert.equal(limitesVisuais(no),texto);}
+  for(const id of ['produto','selo','precos','clube-int-0']){no.dataset.editavel=id;assert.equal(limitesVisuais(no),caixa);}
+  no.dataset.editavel='titulo';texto={width:0,height:0};assert.equal(limitesVisuais(no),caixa);
+});

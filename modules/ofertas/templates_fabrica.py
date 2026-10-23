@@ -46,6 +46,7 @@ def atualizar(base, publicados):
     resultados = []
     for arquivo, backup in [('templates-20261022.json', 'antes-editor-lotes-20261022'),
                             ('titulos-20261022.json', 'antes-quebra-titulos-20261022'),
-                            ('selo-original-20261022.json', 'antes-selo-original-20261022')]:
+                            ('selo-original-20261022.json', 'antes-selo-original-20261022'),
+                            ('selecao-textos-20261022.json', 'antes-selecao-textos-20261022')]:
         resultados.extend(_atualizar_manifesto(base, publicados, arquivo, backup))
     return resultados

@@ -43,11 +43,8 @@ class FabricaTests(unittest.TestCase):
 
     def test_manifesto_inclui_somente_os_arquivos_publicados_conferidos(self):
         base=Path(__file__).resolve().parents[1]/'ofertas'
-        manifesto=json.loads((base/'atualizacoes/templates-20261022.json').read_text())
-        manifesto.update(json.loads((base/'atualizacoes/titulos-20261022.json').read_text()))
-        for ident, arquivos in json.loads((base/'atualizacoes/selo-original-20261022.json').read_text()).items():
-            manifesto.setdefault(ident, {}).update(arquivos)
-        for ident,arquivos in manifesto.items():
-            for nome,info in arquivos.items():self.assertEqual(resumo(base/'templates'/ident/nome),info['depois'],nome)
+        for arquivo in (base/'atualizacoes').glob('*.json'):
+            for ident,arquivos in json.loads(arquivo.read_text()).items():
+                for nome,info in arquivos.items():self.assertEqual(resumo(base/'templates'/ident/nome),info['depois'],nome)
 
 if __name__=='__main__':unittest.main()
