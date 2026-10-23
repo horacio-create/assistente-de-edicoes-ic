@@ -14,7 +14,7 @@ function timelines(){return job?.meta?.timelines||[];}
 function activeTimeline(){return timelines().find(t=>t.id===job.meta.activeTimeline);}
 function exportQueue(){return job?.meta?.exportQueue||[];}
 function nextTimelineName(){let number=timelines().length+1;while(timelines().some(t=>t.name==='Timeline '+String(number).padStart(2,'0')))number++;return 'Timeline '+String(number).padStart(2,'0');}
-function emptyComposition(){return {version:1,settings:structuredClone(project()?.settings||{...defaults,targetMB:4,mute:false}),tracks:[{id:freshId(),kind:'video',locked:false,muted:false,previewVisible:true}],clips:[]};}
+function emptyComposition(){return {version:1,settings:{...structuredClone(project()?.settings||{...defaults,targetMB:4}),mute:true},tracks:[{id:freshId(),kind:'video',locked:false,muted:false,previewVisible:true}],clips:[]};}
 function mutateEdition(mutate){undoGesture=null;editSettings(job.media,mutate);markDirty();}
 const timelineViews=new Map();let timelineScreen=null,clipClipboard=null,libraryTab='media',queueExportMode=false,timelinePanelSignature=null;
 const timelineIcon=icon('timeline');

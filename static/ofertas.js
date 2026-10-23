@@ -125,18 +125,9 @@ function desenharSaida() {
   const saida = state.esquema.saida || state.esquema;
   const cartelas = lista ? tamanhosCartelas(n, passoDe(lista), state.pedido.dados.ultimacartela === 'tres').length : 1;
   el('video-nome').textContent = state.esquema.nome;
-  if (document.activeElement !== el('video-titulo')) el('video-titulo').value = el('titulo').value;
-  el('video-resumo').textContent = `${n ? `${n} ${n === 1 ? 'produto' : 'produtos'} · ${cartelas} ${cartelas === 1 ? 'cartela' : 'cartelas'} · ` : ''}${state.esquema.duracao}s · MP4 ${saida.largura} × ${saida.altura}`;
-  el('video-validacao').textContent = state.encarteInteiro
-    ? 'O encarte tem mais produtos que o limite deste vídeo. Organize o encarte completo no painel ao lado.'
-    : state.validacao.length ? `${state.validacao.length} campos precisam de atenção. Volte às cartelas para corrigir.`
-    : 'Conteúdo preenchido. Faça a conferência visual antes de gerar.';
-  el('gerar').disabled = state.validacao.length > 0 || Boolean(state.encarteInteiro);
-  const enc = encAtual(), pronto = enc?.status === 'pronto' && enc.itens.length > 0 && !!lista;
-  el('encarte-todos').hidden = !pronto;
-  el('video-encarte').textContent = pronto
-    ? `${enc.nome} · todos os ${enc.itens.length} produtos, na ordem do encarte.`
-    : 'Importe um encarte na primeira etapa para organizar todos os produtos em vídeos.';
+  el('video-titulo').value = el('titulo').value;
+  el('video-resumo').textContent = `${n} produtos · ${cartelas} cartelas · ${state.esquema.duracao}s · MP4 ${saida.largura} × ${saida.altura}`;
+  iniciarLoteInline();
 }
 async function irParaVideos() {
   if (state.importarNaEscolha) { aviso('Escolha o template para os produtos selecionados.'); return mostrar('catalogo'); }
@@ -193,7 +184,7 @@ async function carregarCatalogo() {
             state.ordem = escolhidos;
             state.encarteInteiro = true;
             await mostrar('videos');
-            aviso('Este encarte excede o limite de um vídeo. Use “Organizar vídeos do encarte” para preparar todos os produtos.', 7000);
+            aviso('Este encarte excede o limite de um vídeo. Defina as cartelas por vídeo na terceira etapa para preparar todos os produtos.', 7000);
           }
           state.importarNaEscolha = false;
           atualizarEtapas();
@@ -273,7 +264,7 @@ function campo(def, caminho, idVar) {
   else if (def.tipo === 'cor') controle = `<input id="${idInput}" type="color" value="${esc(v)}">`;
   else if (def.tipo === 'booleano') controle = `<label class="check"><input id="${idInput}" type="checkbox" ${v ? 'checked' : ''}> ${esc(def.rotulo)}</label>`;
   else if (def.tipo === 'preco') controle = `<div class="preco"><span>R$</span><input id="${idInput}" inputmode="decimal" autocomplete="off" placeholder="0,00" value="${esc(v)}"></div>`;
-  else if (tituloProduto) controle = `<textarea id="${idInput}" class="of-titulo-produto" rows="3" autocomplete="off" ${def.max ? `maxlength="${def.max + 20}"` : ''} aria-describedby="${idInput}-dica">${esc(v ?? '')}</textarea><div class="of-quebra-titulo"><small id="${idInput}-dica">Enter define a quebra de linha do título.</small><button type="button" class="text-button quebra-automatica" title="Remove as quebras manuais e ajusta o título ao espaço">Quebra automática</button></div>`;
+  else if (tituloProduto) controle = `<textarea id="${idInput}" class="of-titulo-produto" rows="3" autocomplete="off" ${def.max ? `maxlength="${def.max}"` : ''} aria-describedby="${idInput}-dica">${esc(v ?? '')}</textarea><div class="of-quebra-titulo"><small id="${idInput}-dica">Enter define a quebra de linha do título.</small><button type="button" class="text-button quebra-automatica" title="Remove as quebras manuais e ajusta o título ao espaço">Quebra automática</button></div>`;
   else controle = `<input id="${idInput}" autocomplete="off" ${def.max ? `maxlength="${def.max + 20}"` : ''} value="${esc(v)}">`;
   div.innerHTML = (def.tipo === 'booleano' ? '' : rotulo) + controle + erro + ajuda;
   if (def.tipo === 'numero') {
@@ -332,7 +323,8 @@ async function montarFormulario() {
   el('video-opcoes').replaceChildren();
   for (const def of [...state.esquema.campos.filter(c => c.tipo !== 'lista'), ...state.esquema.campos.filter(c => c.tipo === 'lista')]) {
     if (def.tipo !== 'lista') {
-      const destino = def.id === 'estiloselo' ? form : ['animacoes', 'ultimacartela'].includes(def.id) ? el('video-opcoes') : gerais;
+      if (['animacoes', 'ultimacartela'].includes(def.id)) continue;
+      const destino = def.id === 'estiloselo' ? form : gerais;
       destino.append(campo(def, [def.id], def.id)); continue;
     }
     const qtd = state.pedido.dados[def.id].length;
@@ -517,15 +509,7 @@ function atualizarPreview(inicio) {
   player.setAttribute('src', `/ofertas/preview/${state.pedido.id}/index.html?v=${state.pedido.revision}`);
 }
 
-async function gerarPedido() {
-  await salvarAgora();
-  try {
-    const r = await api('/gerar', { body: { id: state.pedido.id, revision: state.pedido.revision } });
-    if (!r.ok) { aplicarValidacao(r.validacao); aviso('Corrija os campos marcados antes de gerar.'); return; }
-    aviso('Vídeo enviado para a fila de geração.');
-    mostrar('fila');
-  } catch (e) { falha(e); }
-}
+async function gerarPedido() { return gerarPlanoVideos(); }
 
 async function abrirEdicaoCartelas(gerarDepois = false) {
   await salvarAgora();
@@ -839,7 +823,6 @@ function desenharCardEncarte() {
       : 'Nenhum produto reconhecido automaticamente neste PDF. Use “Marcar oferta na página” para recortar as ofertas.';
   }
   el('encarte-acoes').hidden = !pronto;
-  el('encarte-todos').hidden = !pronto || !enc.itens.length;
   el('encarte-itens').hidden = !pronto || !enc.itens.length;
   if (!pronto) el('usar-encarte').hidden = true;
   if (pronto && state.encarte !== enc.itens) { state.encarte = enc.itens; state.ordem = state.ordem.filter((k) => k < enc.itens.length); }
@@ -896,6 +879,7 @@ function preencherItem(lista, alvo, it) {
   if (subs.imagem) alvo.imagem = 'biblioteca:' + it.imagem;
   if (subs.por) alvo.por = it.por;
   if (subs.de) alvo.de = it.de;
+  for(const campo of ['equivalenciatexto','equivalenciapreco','equivalenciaunidade','promopreco','promotexto'])if(subs[campo])alvo[campo]=it[campo]||'';
   if (subs.unidade && subs.unidade.opcoes?.includes(it.unidade)) alvo.unidade = it.unidade;
 }
 
@@ -1052,10 +1036,13 @@ el('conferir-excluir').addEventListener('click', async () => {
   } catch (e) { falha(e); }
 });
 
-// ---------- gerar todos os vídeos do encarte ----------
-// "Gerar todos": o usuário escolhe cartelas por vídeo (ou quantos vídeos) e o que fazer com o produto sem par
+// ---------- divisão dos vídeos, diretamente na terceira etapa ----------
+function fonteLote() {
+  if (state.encarteInteiro && encAtual()?.status === 'pronto') return encAtual();
+  return {id:null,nome:state.pedido.titulo,itens:state.pedido.dados[listaPrincipal().id]};
+}
 function planoLote() {
-  const enc = encAtual(), lista = listaPrincipal(), passo = passoDe(lista), [gmin, gmax] = limitesCartelas(lista);
+  const enc = fonteLote(), lista = listaPrincipal(), passo = passoDe(lista), [gmin, gmax] = limitesCartelas(lista);
   const impar = document.querySelector('input[name=of-lote-impar]:checked').value;
   const total = enc.itens.length, sobra = passo > 1 ? total % passo : 0;
   const n = impar === 'fora' && sobra && total > passo ? total - sobra : total;
@@ -1073,84 +1060,91 @@ function planoLote() {
   return { enc, lista, passo, gmin, gmax: limite, impar, sobra, n, cartelas, distribuicao, tamanhos, repetidos: tamanhos.reduce((a, b) => a + b, 0) - n };
 }
 const plural = (n, um, varios) => `${n} ${n === 1 ? um : varios}`;
-function desenharLote() {
-  const p = planoLote(), nomeGrupo = (p.lista.grupo?.rotulo || 'cartela').toLowerCase();
-  el('lote-cartelas').value = p.cartelas;
-  el('lote-cartelas').max = p.gmax;
-  el('lote-videos').value = p.tamanhos.length;
-  el('lote-titulo').textContent = `Gerar ${plural(p.tamanhos.length, 'vídeo', 'vídeos')} com ${plural(p.enc.itens.length, 'produto', 'produtos')}`;
-  el('lote-sub').textContent = `${p.enc.nome} · na ordem do encarte`;
-  el('lote-cartelas-ajuda').textContent = p.gmin === p.gmax ? `Fixo neste template (${p.gmax}).` : `De ${p.gmin} a ${p.gmax} por vídeo.`;
-  el('lote-videos-ajuda').textContent = p.distribuicao === 'sequencia' ? 'Preenche cada vídeo e deixa a sobra no último.' : 'Distribui as cartelas em quantidades parecidas.';
-  el('lote-impar').hidden = !p.sobra;
-  el('lote-primeiro').textContent = p.enc.itens[0]?.nome ? `(${p.enc.itens[0].nome})` : '';
-  el('lote-ultimo').textContent = el('lote-ultimo-sozinho').textContent = p.enc.itens.at(-1)?.nome ? `(${p.enc.itens.at(-1).nome})` : '';
-  // vídeos iguais em sequência viram uma linha: "Vídeos 1 a 3 · 4 cartelas (8 produtos)"
-  const linhas = [];
-  p.tamanhos.forEach((t, k) => { const ult = linhas.at(-1); if (ult?.t === t) ult.ate = k + 1; else linhas.push({ t, de: k + 1, ate: k + 1 }); });
-  el('lote-resumo').innerHTML = linhas.map((l) => `<li><b>${l.de === l.ate ? `Vídeo ${l.de}` : `Vídeos ${l.de} a ${l.ate}`}</b><span>${plural(tamanhosCartelas(l.t, p.passo, p.impar === 'tres').length, nomeGrupo, nomeGrupo + 's')} · ${plural(l.t, 'produto', 'produtos')}</span></li>`).join('');
-  const notas = [];
-  if (p.repetidos) notas.push(`${plural(p.repetidos, 'produto se repete', 'produtos se repetem')} para completar ${p.repetidos > p.sobra ? 'os vídeos' : 'a cartela'} (a partir do 1º do encarte).`);
-  if (p.impar === 'sozinho' && p.sobra) notas.push(`${p.enc.itens.at(-1).nome || 'O último produto'} aparece sozinho, centralizado, na última ${nomeGrupo}.`);
-  if (p.impar === 'tres' && p.sobra) notas.push(p.n >= 3 ? 'Os últimos três produtos ficam juntos na última cartela, sem repetir nem excluir produtos.' : 'Como há apenas um produto, ele fica sozinho e centralizado.');
-  notas.push(el('lote-animacoes').checked ? 'Com animações.' : 'Slides sem animações, com troca direta de cartela.');
-  if (p.n < p.enc.itens.length) notas.push(`${p.enc.itens.at(-1).nome || 'O último produto'} fica de fora.`);
-  el('lote-nota').textContent = notas.join(' ');
-  const pendentes = p.enc.itens.filter((it) => avisosDe(it).length).length;
-  el('lote-aviso').hidden = !pendentes;
-  el('lote-aviso').textContent = `Atenção: ${plural(pendentes, 'produto ainda tem aviso', 'produtos ainda têm avisos')} para conferir.`;
-  const base = el('lote-nome').value.trim() || p.enc.nome.replace(/\.[^.]+$/, '');
-  el('lote-nomes').textContent = p.tamanhos.length > 1 ? `Nomes: ${base} (1) … ${base} (${p.tamanhos.length})` : `Nome: ${base}`;
-  el('lote-gerar').textContent = `${el('lote-revisar').checked ? 'Preparar para revisar:' : 'Gerar'} ${plural(p.tamanhos.length, 'vídeo', 'vídeos')}`;
+function iniciarLoteInline() {
+  if (!listaPrincipal()) { el('gerar').disabled=true; return; }
+  const chave=state.pedido.id+':'+(state.encarteInteiro?encAtual()?.id:'pedido');
+  if(state.planoSaida!==chave){
+    state.planoSaida=chave;
+    const [gmin,gmax]=limitesCartelas(listaPrincipal());
+    Object.assign(el('lote-cartelas'),{min:gmin,max:gmax,value:Math.min(gmax,Math.max(gmin,4)),disabled:gmin===gmax});
+    el('lote-nome').value=el('titulo').value;
+    el('lote-distribuicao').value='sequencia';
+    el('lote-revisar').checked=false;
+  }
+  const lista=listaPrincipal(),sozinho=Boolean(lista.grupo?.incompleto);
+  el('lote-sozinho').hidden=!sozinho;el('lote-tres').hidden=!lista.grupo?.finalTres;
+  el('lote-animacoes-campo').hidden=!state.esquema.campos.some(c=>c.id==='animacoes');
+  el('lote-revisar-campo').hidden=!state.esquema.editorCartelas;
+  el('lote-animacoes').checked=state.pedido.dados.animacoes!==false;
+  if(!state.imparSaida||state.imparSaida.pedido!==state.pedido.id){
+    const modo=sozinho?(state.pedido.dados.ultimacartela==='tres'&&lista.grupo?.finalTres?'tres':'sozinho'):'repetir';
+    document.querySelector(`input[name=of-lote-impar][value=${modo}]`).checked=true;
+    state.imparSaida={pedido:state.pedido.id};
+  }
+  desenharLote();
 }
-el('lote-revisar').addEventListener('change', desenharLote);
-el('lote-cartelas').addEventListener('change', desenharLote);
-el('lote-nome').addEventListener('input', desenharLote);
-el('lote-distribuicao').addEventListener('change', desenharLote);
-el('lote-animacoes').addEventListener('change', desenharLote);
-// quantidade de vídeos -> cartelas por vídeo (o mínimo que cabe nesses vídeos); o resumo mostra o resultado real
-el('lote-videos').addEventListener('change', () => {
-  const p = planoLote(), videos = Math.max(1, Math.round(Number(el('lote-videos').value) || 1));
-  el('lote-cartelas').value = Math.ceil(tamanhosCartelas(p.n, p.passo, p.impar === 'tres').length / videos);
+function desenharLote() {
+  const p=planoLote(),saida=state.esquema.saida||state.esquema;
+  el('lote-cartelas').max=p.gmax;
+  if(document.activeElement!==el('lote-cartelas'))el('lote-cartelas').value=p.cartelas;
+  el('lote-videos').textContent=p.tamanhos.length;
+  el('lote-titulo').textContent=`${plural(p.tamanhos.length,'vídeo','vídeos')} · ${plural(p.enc.itens.length,'produto','produtos')}`;
+  el('lote-sub').textContent=`${state.esquema.nome} · MP4 ${saida.largura} × ${saida.altura} · ${state.esquema.duracao}s por vídeo`;
+  el('lote-cartelas-ajuda').textContent=p.gmin===p.gmax?`Fixo: ${p.gmax} por vídeo.`:`Até ${p.gmax} por vídeo. A divisão aparece ao lado.`;
+  el('lote-videos-ajuda').textContent=p.distribuicao==='sequencia'?'Preenche cada vídeo e deixa a sobra no último.':'Equilibra a quantidade de cartelas entre os vídeos.';
+  el('lote-impar').hidden=!p.sobra;
+  el('lote-primeiro').textContent=p.enc.itens[0]?.nome||'';
+  el('lote-ultimo').textContent=el('lote-ultimo-sozinho').textContent=p.enc.itens.at(-1)?.nome||'';
+  let inicio=0;
+  el('lote-resumo').innerHTML=p.tamanhos.map((n,i)=>{
+    const nomes=Array.from({length:n},(_,k)=>p.enc.itens[(inicio+k)%p.enc.itens.length]?.nome||'Produto');inicio+=n;
+    const qtd=tamanhosCartelas(n,p.passo,p.impar==='tres').length;
+    return `<li><b>Vídeo ${i+1}</b><span>${plural(qtd,'cartela','cartelas')} · ${plural(n,'produto','produtos')}</span><small>${nomes.map(esc).join(' · ')}</small></li>`;
+  }).join('');
+  const notas=[];
+  if(p.repetidos)notas.push(`${plural(p.repetidos,'produto repetido','produtos repetidos')} para completar as cartelas.`);
+  if(p.impar==='fora'&&p.sobra)notas.push('O último produto ficará de fora.');
+  if(p.impar==='sozinho'&&p.sobra)notas.push('O último produto fica sozinho na cartela final.');
+  if(p.impar==='tres'&&p.sobra)notas.push('Os últimos três produtos ficam juntos na cartela final.');
+  notas.push(el('lote-animacoes').checked?'Com animações.':'Slides sem animações.');
+  el('lote-nota').textContent=notas.join(' ');
+  const pendentes=p.enc.itens.filter(it=>avisosDe(it).length).length;
+  el('lote-aviso').hidden=!pendentes;el('lote-aviso').textContent=`${pendentes} produtos com avisos para conferir.`;
+  const pendencias=state.validacao.map(d=>{
+    const indice=/^produtos_(\d+)_/.exec(d.campo||'');
+    const nome=indice?state.pedido.dados[p.lista.id][Number(indice[1])-1]?.nome:'';
+    return `${nome||'Dados do vídeo'}: ${d.mensagem}`;
+  });
+  el('video-validacao').textContent=pendencias.length?`Confira antes de gerar: ${pendencias.join(' · ')}`:p.enc.id?'Encarte completo; os ajustes dos produtos já editados serão mantidos.':'As imagens, textos, preços e posições das cartelas editadas serão mantidos.';
+  const base=el('lote-nome').value.trim()||state.pedido.titulo;
+  el('lote-nomes').textContent=p.tamanhos.length>1?`${base} (1) até ${base} (${p.tamanhos.length})`:base;
+  el('gerar').textContent=`${el('lote-revisar').checked?'Preparar para revisão:':'Gerar'} ${plural(p.tamanhos.length,'vídeo','vídeos')}`;
+  el('gerar').disabled=Boolean(state.gerandoLote)||!p.enc.itens.length||(!el('lote-revisar').checked&&state.validacao.length>0);
+}
+for(const id of ['lote-cartelas','lote-nome'])el(id).addEventListener('input',()=>{
+  if(id==='lote-nome'){el('titulo').value=el(id).value;el('video-titulo').value=el(id).value;agendarSalvar();}
   desenharLote();
 });
-document.querySelectorAll('input[name=of-lote-impar]').forEach((r) => r.addEventListener('change', desenharLote));
-el('encarte-todos').addEventListener('click', () => {
-  const [gmin, gmax] = limitesCartelas(listaPrincipal());
-  Object.assign(el('lote-cartelas'), { min: gmin, max: gmax, value: gmax, disabled: gmin === gmax });
-  el('lote-videos').disabled = gmin === gmax;
-  const sozinho = Boolean(listaPrincipal().grupo?.incompleto); // template centraliza o produto sozinho: vira o padrão
-  el('lote-sozinho').hidden = !sozinho;
-  el('lote-tres').hidden = !listaPrincipal().grupo?.finalTres;
-  el('lote-animacoes-campo').hidden = !state.esquema.campos.some(c => c.id === 'animacoes');
-  el('lote-revisar-campo').hidden = !state.esquema.editorCartelas;
-  el('lote-revisar').checked = Boolean(state.esquema.editorCartelas);
-  el('lote-animacoes').checked = state.pedido.dados.animacoes !== false;
-  const imparPadrao = sozinho && listaPrincipal().grupo?.finalTres && state.pedido.dados.ultimacartela === 'tres' ? 'tres' : sozinho ? 'sozinho' : 'repetir';
-  document.querySelector(`input[name=of-lote-impar][value=${imparPadrao}]`).checked = true;
-  el('lote-nome').value = encAtual().nome.replace(/\.[^.]+$/, '');
-  desenharLote();
-  el('lote-dialog').showModal();
-});
-el('lote-gerar').addEventListener('click', async () => {
-  const p = planoLote();
-  el('lote-gerar').disabled = true;
-  try {
-    const r = await api('/encarte-gerar-todos', { body: { encarte: p.enc.id, template: state.pedido.template, cartelas: p.cartelas, impar: p.impar, nome: el('lote-nome').value, distribuicao: p.distribuicao, animacoes: el('lote-animacoes').checked, revisar: el('lote-revisar').checked, ...(state.esquema.campos.some(c => c.id === 'estiloselo') ? {estiloselo: state.pedido.dados.estiloselo || 'padrao'} : {}) } });
-    el('lote-dialog').close();
-    if (r.revisar) {
-      aviso(`${r.videos.length} pedidos preparados para revisão. Eles também estão em Pedidos recentes.`, 7000);
-      await mostrar('pedidos');
-      if(r.lote)await abrirVisaoLote(r.lote);
-      return;
-    }
-    const falhos = r.videos.filter((v) => !v.render);
-    aviso(falhos.length ? `${r.videos.length - falhos.length} na fila. ${falhos.length} não ${falhos.length === 1 ? 'pôde' : 'puderam'} ser gerado(s): abra em Pedidos recentes para corrigir.`
-      : `${r.videos.length} ${r.videos.length === 1 ? 'vídeo enviado' : 'vídeos enviados'} para a fila de geração.`, 7000);
-    carregarFila();
-    mostrar(falhos.length ? 'pedidos' : 'fila');
-  } catch (e) { falha(e); } finally { el('lote-gerar').disabled = false; }
-});
+for(const id of ['lote-cartelas','lote-distribuicao','lote-revisar'])el(id).addEventListener('change',desenharLote);
+el('lote-animacoes').addEventListener('change',()=>{if('animacoes' in state.pedido.dados)definir(['animacoes'],el('lote-animacoes').checked);desenharLote();});
+document.querySelectorAll('input[name=of-lote-impar]').forEach(r=>r.addEventListener('change',()=>{
+  if('ultimacartela' in state.pedido.dados)definir(['ultimacartela'],r.value==='tres'?'tres':'sozinho');desenharLote();
+}));
+async function gerarPlanoVideos() {
+  if(state.gerandoLote)return;
+  state.gerandoLote=true;el('gerar').disabled=true;
+  try{
+    await salvarAgora();
+    if(!el('save-state').textContent.startsWith('Salvo'))throw new Error('Aguarde o salvamento antes de gerar.');
+    const p=planoLote();
+    const r=await api('/pedido-gerar-videos',{body:{id:state.pedido.id,revision:state.pedido.revision,cartelas:p.cartelas,impar:p.impar,nome:el('lote-nome').value,distribuicao:p.distribuicao,animacoes:el('lote-animacoes').checked,revisar:el('lote-revisar').checked,...(p.enc.id?{encarte:p.enc.id,indices:state.ordem.slice(0,state.pedido.dados[p.lista.id].length)}:{})}});
+    if(r.revisar){aviso(`${r.videos.length} vídeos preparados para revisão.`,7000);await mostrar('pedidos');if(r.lote)await abrirVisaoLote(r.lote);return;}
+    const falhos=r.videos.filter(v=>!v.render);
+    aviso(falhos.length?`${r.videos.length-falhos.length} vídeos na fila; ${falhos.length} precisam de revisão.`:`${plural(r.videos.length,'vídeo enviado','vídeos enviados')} para a fila de geração.`,7000);
+    await mostrar(falhos.length?'pedidos':'fila');
+    if(falhos.length&&r.lote)await abrirVisaoLote(r.lote);
+  }catch(e){falha(e);}finally{state.gerandoLote=false;if(state.tela==='videos')desenharLote();}
+}
 
 // ---------- visão completa dos lotes ----------
 const areaLotes=document.createElement('section');areaLotes.className='of-lotes';

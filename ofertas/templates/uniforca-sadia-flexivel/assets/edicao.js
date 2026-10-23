@@ -1,6 +1,6 @@
 /* Os mesmos elementos e ajustes são usados na conferência e na exportação. */
 (function(global) {
-  const valido = /^(titulo|produto|precos|selo|normal|selo-titulo|(?:de|clube)-(?:int|cent)-\d{1,2}|clube-virgula|(?:de|clube)-(?:unidade|moeda))$/;
+  const valido = /^(titulo|produto|precos|selo|normal|selo-titulo|(?:de|clube)-(?:int|cent)-\d{1,2}|complemento|complemento-texto|complemento-preco|complemento-unidade|seta|tag-promo|tag-promo-texto|tag-promo-preco|clube-virgula|(?:de|clube)-(?:unidade|moeda))$/;
   const limitar=(v,min,max,padrao)=>typeof v==='number'&&Number.isFinite(v)?Math.max(min,Math.min(max,v)):padrao;
   function limpar(bruto) {
     try {
@@ -47,6 +47,14 @@
       marcar(preco.querySelector('.un'),prefixo+'-unidade',(prefixo==='de'?'Normal':'Clube')+' · unidade','caractere');
       marcar(preco.querySelector('.rs'),prefixo+'-moeda',(prefixo==='de'?'Normal':'Clube')+' · R$','caractere');
     }
+    marcar(p.querySelector('.selo-complemento-conteudo'),'complemento','Complemento do selo');
+    marcar(p.querySelector('.equivalencia-texto'),'complemento-texto','Complemento · texto','caractere');
+    marcar(p.querySelector('.equivalencia-preco'),'complemento-preco','Complemento · valor','caractere');
+    marcar(p.querySelector('.equivalencia-unidade'),'complemento-unidade','Complemento · unidade','caractere');
+    marcar(p.querySelector('.seta'),'seta','Seta');
+    marcar(p.querySelector('.tag-promo'),'tag-promo','Tag promocional');
+    marcar(p.querySelector('.tag-promo-texto'),'tag-promo-texto','Tag · texto','caractere');
+    marcar(p.querySelector('.tag-promo-preco'),'tag-promo-preco','Tag · preço','caractere');
     marcar(p.querySelector('.virgula'),'clube-virgula','Clube · vírgula','caractere');
     marcar(p.querySelector('.selo-titulo'),'selo-titulo','Texto do selo','caractere');
   }
@@ -59,7 +67,7 @@
   // A área reservada para diagramar o texto não é sua área visível.
   function limitesVisuais(no) {
     const caixa=no.getBoundingClientRect();
-    if(!/^(titulo|selo-titulo|(?:de|clube)-(?:unidade|moeda))$/.test(no.dataset.editavel))return caixa;
+    if(!/^(titulo|selo-titulo|tag-promo-texto|complemento-texto|complemento-unidade|(?:de|clube)-(?:unidade|moeda))$/.test(no.dataset.editavel))return caixa;
     const range=no.ownerDocument.createRange();range.selectNodeContents(no);
     const texto=range.getBoundingClientRect();
     return texto.width>0&&texto.height>0?texto:caixa;

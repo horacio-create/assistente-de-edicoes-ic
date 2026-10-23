@@ -1,5 +1,13 @@
 # Histórico de versões
 
+## 1.13.4 — Ofertas e edição de vídeos em lote — 23/10/2026
+
+- Ofertas: opções de divisão e geração na terceira etapa, com preservação dos ajustes e geração de todos os vídeos previstos; títulos com até 150 caracteres.
+- Complemento de preço equivalente e tag promocional opcionais, identificados por produto no encarte. Seta selecionável e ajustável separadamente.
+- Vídeos: escolha de uma timeline única ou uma por arquivo na importação, envio de todas à fila sem duplicar itens e opção de manter os nomes originais na exportação.
+- Novos vídeos e timelines começam sem áudio; a opção de restaurar o áudio continua disponível.
+- Templates de fábrica recebem atualização com backup, preservando personalizações.
+
 ## 1.13.3 — Nome do DXF da M6S — 20/10/2026
 
 - O DXF da Vetorização M6S sugere o nome no padrão da equipe, com a medida do vetor:

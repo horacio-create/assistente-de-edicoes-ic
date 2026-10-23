@@ -570,6 +570,7 @@ def api(method, path, query, raw, environ=None, background=False):
             if fmt != 'mp4': raise ValueError('Exporte a fila em MP4.')
             meta = projects.validate(job['meta'], job['media'], lambda s: logo_path(s, job['id']))
             media = [dict(id=item['id'], queueId=item['id'], number=item['number'], kind='composition',
+                          name=projects.original_export_name(item['composition'],job['media'],item['name']),
                           settings=item['composition'], sources=job['media']) for item in meta.get('exportQueue', [])]
             if not media: raise ValueError('Adicione ao menos uma timeline à fila.')
         elif value.get('composition'):
@@ -577,7 +578,9 @@ def api(method, path, query, raw, environ=None, background=False):
             project = composition.validate(job['meta'].get('composition'), job['media'])
             composition.check_coverage(project)
             for clip in project['clips']: logo_path(clip['settings'], job['id'])
-            media = [dict(id=job['id'], kind='composition', settings=project, sources=job['media'])]
+            timeline = next((t for t in job['meta'].get('timelines',[]) if t['id']==job['meta'].get('activeTimeline')),None)
+            media = [dict(id=job['id'], kind='composition', settings=project, sources=job['media'],
+                          name=projects.original_export_name(project,job['media'],timeline['name'] if timeline else job['title']))]
         else:
             ids = value['ids']
             media = [m for m in job['media'] if m['id'] in ids]
@@ -586,16 +589,29 @@ def api(method, path, query, raw, environ=None, background=False):
             raise ValueError('Adicione o áudio à timeline e exporte a montagem em MP4.')
         if any((m['kind'] in ('video','composition')) != (fmt == 'mp4') for m in media):
             raise ValueError('Exporte vídeos em MP4 e imagens em JPG ou PNG, em lotes separados.')
+        original_names = value.get('originalNames',False)
+        if not isinstance(original_names,bool): raise ValueError('Opção de nomes originais inválida.')
         template = value.get('template')
-        if template is not None:
+        if original_names:
+            template = None
+        elif template is not None:
             template = clean(template)
         else:
             client, campaign, date = (clean(value[k]) for k in ('client', 'campaign', 'date'))
         files = []
+        used_names = set()
         names = value.get('names', [])
         for i, m in enumerate(media):
             number = (' '+str(m['number']).zfill(2)) if value.get('queue') else (' '+str(i+1) if len(media)>1 else '')
-            if names: name = clean(names[i])
+            if original_names:
+                base = m['name'] if m['kind']=='composition' else Path(m['name'].replace('\\','/')).stem
+                base = clean(base[:90])
+                name = base
+                suffix = 2
+                while name.casefold() in used_names:
+                    ending=f' ({suffix})';name=clean(base[:90-len(ending)]+ending);suffix+=1
+                used_names.add(name.casefold())
+            elif names: name = clean(names[i])
             elif template is not None:
                 base = re.sub(r'^VT\s*\d*\s*-\s*', '', template, flags=re.IGNORECASE)
                 name = clean(f"VT{number} - {base}")
@@ -900,7 +916,7 @@ def app(environ, start_response):
             content_type = 'image/png'
         else:
             name = 'index.html' if path == '/' else path.lstrip('/')
-            if name not in ('index.html','app.js','video-controls.js','composition-controls.js','project-controls.js','editor-layout.js','audio-panels.js','transform-controls.js','clip-dialogs.js','editing-tabs.js','preview-ruler.js','icons.js', 'edition-names.js','export-progress.js','undo-history.js','vector.js','eap.js','style.css','favicon.svg','logo-indoor.png','ofertas.js','ofertas-editor.js','ofertas.css','tarefas.js','tarefas.css','login.html','login.js','admin.js','acesso.css','conta.js','home.js','eap-icon.svg','atividades.js','relatorios.js','molduras.js','zoom.js','estampas.js'): raise FileNotFoundError()
+            if name not in ('index.html','app.js','video-controls.js','composition-controls.js','project-controls.js','video-batch.js','editor-layout.js','audio-panels.js','transform-controls.js','clip-dialogs.js','editing-tabs.js','preview-ruler.js','icons.js', 'edition-names.js','export-progress.js','undo-history.js','vector.js','eap.js','style.css','favicon.svg','logo-indoor.png','ofertas.js','ofertas-editor.js','ofertas.css','tarefas.js','tarefas.css','login.html','login.js','admin.js','acesso.css','conta.js','home.js','eap-icon.svg','atividades.js','relatorios.js','molduras.js','zoom.js','estampas.js'): raise FileNotFoundError()
             data = (ROOT / 'static' / name).read_bytes()
             content_type = mimetypes.guess_type(name)[0] or 'application/octet-stream'
     except Conflict as exc:

@@ -412,7 +412,7 @@ def indice(itens, k):
 
 def conferir_item(value):
     """O usuário revisou o produto: os dados digitados valem e os avisos somem."""
-    nome = str(value.get('nome') or '').strip()[:120]
+    nome = str(value.get('nome') or '').strip()[:150]
     por, de = str(value.get('por') or '').strip(), str(value.get('de') or '').strip()
     if not nome: raise ValueError('Informe o nome do produto.')
     if not PRECO.fullmatch(por): raise ValueError('Preço em destaque no formato 14,99.')
@@ -466,6 +466,8 @@ def preencher_lista(lista, destino, itens):
         if 'imagem' in subs: alvo['imagem'] = 'biblioteca:' + it['imagem']
         if 'por' in subs: alvo['por'] = it['por']
         if 'de' in subs: alvo['de'] = it['de']
+        for campo in ('equivalenciatexto','equivalenciapreco','equivalenciaunidade','promopreco','promotexto'):
+            if campo in subs: alvo[campo] = it.get(campo,'')
         if 'unidade' in subs and it.get('unidade') in (subs['unidade'].get('opcoes') or []): alvo['unidade'] = it['unidade']
 
 def enfileirar(pedido):
@@ -536,12 +538,38 @@ def gerar_todos(value):
     a última cartela fica incompleta; "repetir" completa com o primeiro produto, "fora" deixa o último de fora e
     "sozinho" mostra o último sozinho na cartela (só templates com grupo.incompleto)."""
     ident, template = str(value.get('encarte', '')), value.get('template')
+    origem_pedido = get_pedido(str(value['pedido'])) if value.get('pedido') else None
+    if origem_pedido:
+        if value.get('revision') != origem_pedido['revision']:
+            raise ValueError('O pedido foi alterado. Atualize e salve antes de gerar.')
+        template = origem_pedido['template']
     schema = esquema(template)
     lista = next((c for c in schema['campos'] if c['tipo'] == 'lista'), None)
     if not lista: raise ValueError('Este template não tem lista de produtos.')
-    with connect() as db: row = db.execute('SELECT nome, status, itens FROM ofertas_encartes WHERE id=?', (ident,)).fetchone()
-    if not row or row['status'] != 'pronto': raise ValueError('Encarte não encontrado ou ainda em leitura.')
-    itens = json.loads(row['itens'] or '[]')
+    if ident:
+        with connect() as db:
+            if origem_pedido: mine(db, 'ofertas_encartes', ident)
+            row = db.execute('SELECT nome, status, itens FROM ofertas_encartes WHERE id=?', (ident,)).fetchone()
+        if not row or row['status'] != 'pronto': raise ValueError('Encarte não encontrado ou ainda em leitura.')
+        itens = json.loads(row['itens'] or '[]')
+        if origem_pedido:
+            # O encarte pode exceder a capacidade de um pedido. As ofertas já
+            # editadas substituem somente seus índices na sequência completa.
+            indices = value.get('indices')
+            editados = origem_pedido['dados'][lista['id']]
+            if not isinstance(indices, list) or len(indices) != len(editados) or any(type(i) is not int or i < 0 or i >= len(itens) for i in indices) or len(set(indices)) != len(indices):
+                raise ValueError('A ordem dos produtos mudou. Volte às cartelas para conferir.')
+            modelo = schema['padrao'][lista['id']]
+            completos = [json.loads(json.dumps(modelo[i % len(modelo)])) for i in range(len(itens))]
+            preencher_lista(lista, completos, itens)
+            for indice, produto in zip(indices, editados): completos[indice] = json.loads(json.dumps(produto))
+            itens = completos
+    elif origem_pedido:
+        itens = json.loads(json.dumps(origem_pedido['dados'][lista['id']]))
+        row = {'nome': origem_pedido['titulo'], 'itens': json.dumps(itens)}
+    else:
+        raise ValueError('Escolha o pedido ou o encarte para gerar.')
+    origem_total = json.loads(json.dumps(itens))
     if not itens: raise ValueError('Este encarte não tem produtos. Marque as ofertas na página.')
     sem_preco = [it['nome'] or f'produto {k + 1}' for k, it in enumerate(itens) if not PRECO.fullmatch(it.get('por') or '')]
     if sem_preco: raise ValueError(f'Confira antes de gerar: {", ".join(sem_preco[:4])} sem preço em destaque.')
@@ -560,26 +588,34 @@ def gerar_todos(value):
     base = str(value.get('nome') or '').strip()[:150] or Path(row['nome']).stem  # nome escolhido no lote; " (n)" vem depois
     videos = []
     inicio = 0
-    origem_total = json.loads(row['itens'] or '[]')
     rastreio = []
+    planejados = []
     for g, n in enumerate(tamanhos):
-        dados = json.loads(json.dumps(schema['padrao']))
+        dados = json.loads(json.dumps(origem_pedido['dados'] if origem_pedido else schema['padrao']))
         if estilo: dados['estiloselo'] = value.get('estiloselo') or dados.get('estiloselo', 'padrao')
         if 'animacoes' in dados: dados['animacoes'] = value.get('animacoes', True)
         if 'ultimacartela' in dados: dados['ultimacartela'] = 'tres' if impar == 'tres' else 'sozinho'
         modelo = dados[lista['id']]
         dados[lista['id']] = [json.loads(json.dumps(modelo[i % len(modelo)])) for i in range(n)]
-        preencher_lista(lista, dados[lista['id']], [itens[(inicio + i) % len(itens)] for i in range(n)])
+        if origem_pedido:
+            dados[lista['id']] = [json.loads(json.dumps(itens[(inicio+i) % len(itens)])) for i in range(n)]
+        else:
+            preencher_lista(lista, dados[lista['id']], [itens[(inicio + i) % len(itens)] for i in range(n)])
         indices_origem = [(inicio + i) % len(itens) for i in range(n)]
         inicio += n
         # revision 1: não é um rascunho intocado (o "Novo vídeo" reaproveita/apaga os de revision 0)
         titulo = f'{base} ({g + 1})' if total > 1 else base
         pedido = {'id': uid(), 'template': schema['id'], 'titulo': titulo, 'dados': dados, 'revision': 1}
+        erros = preparar(schema['id'], dados)['erros']
+        planejados.append((pedido, indices_origem, erros))
+    if origem_pedido and not revisar:
+        falhas = [f'Vídeo {i+1}: {"; ".join(erros[:3])}' for i, (_, _, erros) in enumerate(planejados) if erros]
+        if falhas: raise ValueError('Confira antes de gerar. ' + ' · '.join(falhas))
+    for pedido, indices_origem, erros in planejados:
         with connect() as db:
             db.execute('INSERT INTO ofertas_pedidos VALUES(?,?,?,?,?,?,?,?)', (pedido['id'], pedido['template'], pedido['titulo'],
-                       json.dumps(dados, ensure_ascii=False), 1, now(), now(), owner()))
+                       json.dumps(pedido['dados'], ensure_ascii=False), 1, now(), now(), owner()))
         rastreio.append({'pedido': pedido['id'], 'indices': indices_origem})
-        erros = preparar(schema['id'], dados)['erros']
         videos.append({'pedido': pedido['id'], 'titulo': pedido['titulo'], 'render': None if erros or revisar else enfileirar(pedido), 'erros': erros[:3]})
     with connect() as db: registrar(db, 'Vídeos do encarte preparados para revisão' if revisar else 'Vídeos do encarte enviados para a fila', row['nome'], videos=total)
     lote_id = uid()
@@ -704,7 +740,7 @@ def api(method, path, query, raw, content_type=''):
     q = lambda k: query.get(k, [''])[0]
     if path == '/status': return status()
     # o id de pedido, vídeo ou encarte só vale para o dono (login no servidor)
-    tabela = {'/pedido': 'ofertas_pedidos', '/cartelas-miniaturas': 'ofertas_pedidos', '/lote': 'ofertas_lotes', '/pedido-salvar': 'ofertas_pedidos', '/pedido-excluir': 'ofertas_pedidos', '/gerar': 'ofertas_pedidos',
+    tabela = {'/pedido': 'ofertas_pedidos', '/cartelas-miniaturas': 'ofertas_pedidos', '/lote': 'ofertas_lotes', '/pedido-salvar': 'ofertas_pedidos', '/pedido-excluir': 'ofertas_pedidos', '/gerar': 'ofertas_pedidos', '/pedido-gerar-videos': 'ofertas_pedidos',
               '/render-cancelar': 'ofertas_renders', '/encarte-paginas': 'ofertas_encartes', '/encarte-item-salvar': 'ofertas_encartes',
               '/encarte-item-excluir': 'ofertas_encartes', '/encarte-recortar': 'ofertas_encartes', '/encarte-excluir': 'ofertas_encartes',
               '/encarte-gerar-todos': 'ofertas_encartes'}.get(path)
@@ -871,6 +907,7 @@ def api(method, path, query, raw, content_type=''):
     if path == '/encarte-item-salvar': return conferir_item(value)
     if path == '/encarte-item-excluir': return excluir_item(value)
     if path == '/encarte-recortar': return recortar_encarte(value)
+    if path == '/pedido-gerar-videos': return gerar_todos({**value, 'pedido': value.get('id')})
     if path == '/encarte-gerar-todos': return gerar_todos(value)
     if path == '/encarte-excluir':
         return apagar_encarte(str(value.get('id', '')))

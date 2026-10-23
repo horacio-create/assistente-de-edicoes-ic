@@ -6,6 +6,27 @@ from pathlib import Path
 from modules.ofertas.templates_fabrica import atualizar, resumo
 
 class FabricaTests(unittest.TestCase):
+    def test_complementos_atualizam_cinco_templates_com_backup_sem_alterar_personalizados(self):
+        with tempfile.TemporaryDirectory() as t:
+            base=Path(t)/'base';dados=Path(t)/'dados';(base/'atualizacoes').mkdir(parents=True)
+            manifest={}
+            ids=['hora-da-carne','hora-da-feira','momento-do-bebe','sadia','perdigao']
+            for nome in ids:
+                ident=f'uniforca-{nome}-flexivel';src=base/'templates'/ident;dst=dados/ident
+                src.mkdir(parents=True);dst.mkdir(parents=True)
+                (src/'index.html').write_text('novo');(dst/'index.html').write_text('antigo')
+                manifest[ident]={'index.html':{'antes':resumo(dst/'index.html'),'depois':resumo(src/'index.html')}}
+            personalizado=dados/'uniforca-perdigao-flexivel/index.html';personalizado.write_text('personalizado')
+            (base/'atualizacoes/complementos-20261023.json').write_text(json.dumps(manifest))
+            r=atualizar(base,dados)
+            self.assertEqual(sum(status=='atualizado com backup' for _,status in r),4)
+            self.assertEqual(personalizado.read_text(),'personalizado')
+            for nome in ids[:-1]:
+                ident=f'uniforca-{nome}-flexivel'
+                self.assertEqual((dados/ident/'index.html').read_text(),'novo')
+                self.assertEqual((dados/'.versoes'/ident/'antes-complementos-20261023/index.html').read_text(),'antigo')
+            self.assertTrue(all(status!='atualizado com backup' for _,status in atualizar(base,dados)))
+
     def ambiente(self,pasta):
         base=pasta/'base';dados=pasta/'dados';ident='uniforca-hora-da-carne-flexivel'
         novo=base/'templates'/ident;atual=dados/ident;novo.mkdir(parents=True);atual.mkdir(parents=True)

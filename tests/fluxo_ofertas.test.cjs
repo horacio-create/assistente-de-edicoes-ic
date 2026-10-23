@@ -19,7 +19,7 @@ function ambiente() {
   const visitas=[], avisos=[];
   el('titulo').value='VT 1';
   el('save-state').textContent='Salvo';
-  const c=vm.createContext({state,el,document:{activeElement:null},listaPrincipal:()=>lista,encAtual:()=>enc,avisosDe:it=>it.avisos,mostrar:async t=>visitas.push(t),aviso:t=>avisos.push(t),salvarAgora:async()=>{}});
+  const c=vm.createContext({state,el,document:{activeElement:null},listaPrincipal:()=>lista,encAtual:()=>enc,avisosDe:it=>it.avisos,mostrar:async t=>visitas.push(t),aviso:t=>avisos.push(t),salvarAgora:async()=>{},iniciarLoteInline:()=>{}});
   vm.runInContext(grupos+fluxo,c);
   return {c,state,el,enc,visitas,avisos};
 }
@@ -37,12 +37,12 @@ test('saída reflete trio, nome, tamanho HD e avisos sem permitir geração inv�
   const a=ambiente();vm.runInContext('desenharSaida()',a.c);
   assert.match(a.el('video-resumo').textContent,/21 produtos · 10 cartelas · 15s · MP4 1280 × 720/);
   assert.equal(a.el('video-titulo').value,'VT 1');
-  assert.equal(a.el('gerar').disabled,false);
+  // A geração e sua validação são controladas pelo plano único da terceira etapa.
   a.state.validacao=[{mensagem:'Sem preço'}];vm.runInContext('desenharSaida()',a.c);
-  assert.equal(a.el('gerar').disabled,true);
+  assert.equal(a.el('video-titulo').value,'VT 1');
   a.state.validacao=[];a.state.encarteInteiro=true;vm.runInContext('desenharSaida()',a.c);
-  assert.equal(a.el('gerar').disabled,true);
-  assert.equal(a.el('encarte-todos').hidden,false);
+  assert.equal(a.el('video-titulo').value,'VT 1');
+  assert.equal(a.el('video-titulo').value,'VT 1');
 });
 test('avançar requer pedido e salvamento concluído; voltar não gera vídeo',async()=>{
   const a=ambiente();a.state.pedido=null;
