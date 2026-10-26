@@ -48,3 +48,21 @@
 .tag-promo-moeda{position:absolute;left:-16px;top:20px;font-size:8px}
 .tag-promo-int{font-size:var(--promo-inteiro,48px)}
 .tag-promo-cent{font-size:calc(var(--promo-inteiro,48px)*.49);padding-top:5px}
+
+/* Unidade do preço normal: abaixo dos centavos, alinhada à esquerda. */
+.produto .de .un{font-size:18px;line-height:1;text-align:left;padding-left:3px;padding-right:0;margin-top:2px}
+
+/* Base vetorial original do encarte semanal: sem textos gravados na arte. */
+.produto[data-equivalencia="1"][data-estilo-selo="amarelo"] .selo-forma{height:227px}
+.produto[data-equivalencia="1"][data-estilo-selo="amarelo"] .selo-preco{height:119px}
+.produto[data-equivalencia="1"][data-estilo-selo="amarelo"] .selo-preco .valor{top:calc(106px - var(--preco-inteiro))}
+.produto[data-equivalencia="1"][data-estilo-selo="amarelo"] .selo-preco .rs{top:4px}
+.produto[data-estilo-selo="amarelo"] .selo-complemento{z-index:2;left:0;top:0;width:229px;height:227px;color:#fbf5ea;font-family:"Bw Seido Round",sans-serif}
+.produto[data-estilo-selo="amarelo"] .selo-complemento-forma{display:none}
+.produto[data-estilo-selo="amarelo"] .selo-complemento-conteudo{top:158px;height:69px}
+.produto[data-estilo-selo="amarelo"] .equivalencia-texto{left:12px;width:84px;font-size:13px;line-height:1.03}
+.produto[data-estilo-selo="amarelo"] .equivalencia-preco{left:104px;width:122px;--equivalencia-inteiro:var(--equivalencia-amarelo,54px)}
+.produto[data-estilo-selo="amarelo"] .equivalencia-cent{font-size:calc(var(--equivalencia-inteiro)*.583)}
+.produto[data-estilo-selo="amarelo"] .equivalencia-unidade{font-family:Barlow,sans-serif;font-size:8px}
+
+.produto[data-estilo-selo="amarelo"] .equivalencia-moeda{top:0}

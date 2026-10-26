@@ -27,6 +27,26 @@ class FabricaTests(unittest.TestCase):
                 self.assertEqual((dados/'.versoes'/ident/'antes-complementos-20261023/index.html').read_text(),'antigo')
             self.assertTrue(all(status!='atualizado com backup' for _,status in atualizar(base,dados)))
 
+    def test_selo_20261026_atualiza_com_backup_sem_sobrescrever_arte_personalizada(self):
+        with tempfile.TemporaryDirectory() as t:
+            base=Path(t)/'base';publicados=Path(t)/'dados'
+            (base/'atualizacoes').mkdir(parents=True)
+            ident='uniforca-hora-da-feira-flexivel'
+            src=base/'templates'/ident;dst=publicados/ident
+            src.mkdir(parents=True);dst.mkdir(parents=True)
+            (src/'index.html').write_text('arte aprovada');(dst/'index.html').write_text('arte aprovada')
+            (src/'edicao.js').write_text('novo');(dst/'edicao.js').write_text('anterior')
+            manifest={ident:{'index.html':{'antes':resumo(dst/'index.html'),'depois':resumo(src/'index.html')},
+                             'edicao.js':{'antes':resumo(dst/'edicao.js'),'depois':resumo(src/'edicao.js')}}}
+            (base/'atualizacoes/selos-editor-20261026.json').write_text(json.dumps(manifest))
+            self.assertEqual(atualizar(base,publicados),[(ident,'atualizado com backup')])
+            self.assertEqual((dst/'edicao.js').read_text(),'novo')
+            self.assertEqual((publicados/'.versoes'/ident/'antes-selos-editor-20261026/edicao.js').read_text(),'anterior')
+            self.assertEqual(atualizar(base,publicados),[])
+            (dst/'index.html').write_text('arte personalizada');(dst/'edicao.js').write_text('anterior')
+            self.assertEqual(atualizar(base,publicados),[(ident,'personalizado — preservado')])
+            self.assertEqual((dst/'edicao.js').read_text(),'anterior')
+
     def ambiente(self,pasta):
         base=pasta/'base';dados=pasta/'dados';ident='uniforca-hora-da-carne-flexivel'
         novo=base/'templates'/ident;atual=dados/ident;novo.mkdir(parents=True);atual.mkdir(parents=True)

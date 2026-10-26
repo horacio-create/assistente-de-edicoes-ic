@@ -1130,3 +1130,8 @@ main>header>div.atv-timer:not([hidden]){display:flex;flex-direction:row;align-it
 #video-import-choice{width:min(720px,calc(100vw - 48px))}
 #video-import-choice .check{display:flex;align-items:center;justify-content:flex-start;gap:12px;font-size:15px;line-height:1.5;padding:10px 0}
 #video-import-choice .check input{width:18px;height:18px;min-width:18px;flex:0 0 18px;margin:0;accent-color:var(--accent,#35d477)}
+#timeline-clip-menu{position:fixed;z-index:12000;width:290px;padding:8px;background:#fff;border:1px solid #dadae5;border-radius:12px;box-shadow:0 8px 32px #1a1a3930}
+#timeline-clip-menu[hidden]{display:none}
+#timeline-clip-menu button{width:100%;text-align:left;padding:12px;border:0;border-radius:8px;background:#f4f3fb;color:#2d3144}
+#timeline-clip-menu p{font-size:12px;line-height:1.4;margin:8px;color:#626266}
+#timeline-sequence-dialog{width:min(620px,calc(100vw - 40px))}

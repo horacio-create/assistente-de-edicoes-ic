@@ -57,7 +57,7 @@ current=function(){
  if(editorKind==='video'&&job){const c=projectClip(),m=projectMedia(c);if(c&&m){const output=project().settings;return {...m,settings:{...c.settings,...Object.fromEntries(['width','height','screenPreset','aspectLocked','aspectRatio','mute','targetMB'].filter(key=>key in output).map(key=>[key,output[key]]))}};}if(project()&&job.media[0])return {...job.media[0],settings:{...defaults,...project().settings}};}
  return compositionLegacy.current();
 };
-function editProject(mutate){if(busy||!ensureProject())return false;stopComposition();undoGesture=null;const before=structuredClone(job.meta);try{editSettings(job.media,()=>{mutate();closeGaps();if(projectDuration()>3600+.001)throw new Error('A montagem deve ter no máximo uma hora.');});}catch(error){job.meta=before;toast(error.message);syncVideo();return false;}markDirty();syncVideo();renderLibrary();updateCounts();drawSoon();return true;}
+function editProject(mutate,options={}){if(busy||!ensureProject())return false;stopComposition();undoGesture=null;const before=structuredClone(job.meta);try{editSettings(job.media,()=>{mutate();if(options.closeGaps!==false)closeGaps();if(projectDuration()>3600+.001)throw new Error('A montagem deve ter no máximo uma hora.');});}catch(error){job.meta=before;toast(error.message);syncVideo();return false;}markDirty();syncVideo();renderLibrary();updateCounts();drawSoon();return true;}
 function closeGaps(){
  const p=project();let covered=0;
  for(const c of p.clips.filter(c=>projectMedia(c)?.kind!=='audio').sort((a,b)=>a.at-b.at)){

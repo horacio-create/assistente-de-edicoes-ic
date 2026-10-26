@@ -38,18 +38,27 @@ test('Alt + rolagem amplia no cursor, limita o zoom e não altera camadas',()=>{
   assert.ok(bloqueou);assert.ok(parseFloat(a.palco.style.width)>960);assert.ok(a.viewport.scrollLeft>0);
   a.receber({tipo:'vista',acao:'zoom-vista',delta:-99999,x:960,y:540});assert.equal(parseFloat(a.palco.style.width),3840);
   a.receber({tipo:'vista',acao:'zoom-vista',delta:99999,x:960,y:540});assert.equal(parseFloat(a.palco.style.width),960);
-  assert.equal(a.mensagens.length,0);
+  assert.equal(a.mensagens.filter(m=>m.acao!=='vista-escala').length,0);
 });
 test('arraste direito recebido do iframe desloca só a vista e termina sem mover seleção',()=>{
   const a=ambiente();a.viewport.scrollLeft=400;a.viewport.scrollTop=300;
   a.receber({tipo:'vista',acao:'pan-inicio'});a.receber({tipo:'vista',acao:'pan-mover',x:80,y:-40});
   assert.equal(a.viewport.scrollLeft,320);assert.equal(a.viewport.scrollTop,340);
   a.receber({tipo:'vista',acao:'pan-fim'});a.receber({tipo:'vista',acao:'pan-mover',x:200,y:200});
-  assert.equal(a.viewport.scrollLeft,320);assert.equal(a.mensagens.length,0);
+  assert.equal(a.viewport.scrollLeft,320);assert.equal(a.mensagens.filter(m=>m.acao!=='vista-escala').length,0);
 });
 test('Ctrl Z e Ctrl Shift Z nos controles encaminham histórico, preservando edição de campos',()=>{
   const a=ambiente();const evento=shiftKey=>({ctrlKey:true,key:'z',shiftKey,target:{matches:()=>false},preventDefault(){}});
   a.dialog.emitir('keydown',evento(false));a.dialog.emitir('keydown',evento(true));
-  assert.deepEqual(a.mensagens.map(m=>m.acao),['desfazer','refazer']);
-  a.dialog.emitir('keydown',{...evento(false),target:{matches:()=>true}});assert.equal(a.mensagens.length,2);
+  assert.deepEqual(a.mensagens.filter(m=>m.acao!=='vista-escala').map(m=>m.acao),['desfazer','refazer']);
+  a.dialog.emitir('keydown',{...evento(false),target:{matches:()=>true}});assert.equal(a.mensagens.filter(m=>m.acao!=='vista-escala').length,2);
+});
+
+test('zoom informa a escala real para manter a alça com tamanho constante na tela',()=>{
+ const a=ambiente();
+ assert.equal(a.mensagens.at(-1).acao,'vista-escala');assert.equal(a.mensagens.at(-1).valor,.5);
+ a.receber({tipo:'vista',acao:'zoom-vista',delta:-99999,x:960,y:540});
+ assert.equal(a.mensagens.at(-1).valor,2);
+ a.receber({tipo:'vista',acao:'zoom-vista',delta:99999,x:960,y:540});
+ assert.equal(a.mensagens.at(-1).valor,.5);
 });

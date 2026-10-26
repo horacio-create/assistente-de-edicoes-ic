@@ -453,6 +453,8 @@ def recortar_encarte(value):
     item = {k: lido[k] for k in ('nome', 'por', 'de', 'unidade')} | {
         'imagem': img['id'], 'pagina': numero, 'area': [round(v, 1) for v in caixa], 'manual': True,
         'avisos': ['Marcado à mão: confira os dados'] + avisos(lido['nome'], lido['por'], lido['de'], lido['unidade'])}
+    for campo in ('equivalenciatexto', 'equivalenciapreco', 'equivalenciaunidade'):
+        if lido.get(campo): item[campo] = lido[campo]
     def mudar(itens, _):
         itens.append(item)
         return {'k': len(itens) - 1, 'item': item}

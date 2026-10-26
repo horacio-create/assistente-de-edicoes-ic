@@ -1,0 +1,68 @@
+.produto[data-estilo-selo="vermelho"] .nome,
+.produto[data-estilo-selo="vermelho"] .de,
+.produto[data-estilo-selo="vermelho"] .de .rs,
+.produto[data-estilo-selo="vermelho"] .de .un,
+.produto[data-estilo-selo="vermelho"] .selo-preco,
+.produto[data-estilo-selo="vermelho"] .selo-preco .rs,
+.produto[data-estilo-selo="vermelho"] .selo-preco .un,
+.produto[data-estilo-selo="vermelho"] .selo-titulo{font-family:Montserrat,sans-serif;font-weight:900;font-synthesis:none}
+.produto[data-estilo-selo="vermelho"] .selo{height:133px;color:#f8ee30}
+.produto[data-estilo-selo="vermelho"] .selo-titulo{top:13px;left:6px;right:12px;font-size:15.5px;line-height:1;text-transform:uppercase;color:#e5e638}
+.produto[data-estilo-selo="vermelho"] .selo-preco{--preco-inteiro:85px;top:36px;bottom:2px;left:10px;right:2px}
+.produto[data-estilo-selo="vermelho"] .selo-preco .rs{left:6px;right:auto;top:3px;color:white;font-size:12px}
+.produto[data-estilo-selo="vermelho"] .selo-preco .valor{top:10px;left:3px;right:6px}
+.produto[data-estilo-selo="vermelho"] .selo-preco .valor-conteudo{gap:0}
+.produto[data-estilo-selo="vermelho"] .selo-preco .virgula{font-size:calc(var(--preco-inteiro)*.32);margin-top:calc(var(--preco-inteiro)*.18);margin-left:0;margin-right:0}
+.produto[data-estilo-selo="vermelho"] .selo-preco .cent{font-size:calc(var(--preco-inteiro)*.478);margin-top:calc(var(--preco-inteiro)*.065)}
+.produto[data-estilo-selo="vermelho"] .selo-preco .un{color:white;font-size:calc(var(--preco-inteiro)*.14);margin-top:3px;padding-left:0;text-align:left;text-transform:lowercase}
+.produto[data-estilo-selo="amarelo"] .selo{height:175px;color:#5f4535}
+.produto[data-estilo-selo="amarelo"] .selo-titulo{color:#fbf5ea;top:9px;font-size:22.5px;font-family:Barlow,sans-serif;font-weight:700;text-transform:none}
+.produto[data-estilo-selo="amarelo"] .selo-preco{color:#5f4535}
+.produto[data-estilo-selo="amarelo"] .selo-preco .rs,.produto[data-estilo-selo="amarelo"] .selo-preco .un{color:#5f4535}
+
+/* Informação equivalente opcional, presente apenas na oferta que a declara. */
+.produto[data-equivalencia="1"] .selo{height:227px}
+.produto[data-equivalencia="1"][data-estilo-selo="vermelho"] .selo{height:185px}
+.produto[data-equivalencia="1"] .selo-forma{height:175px;z-index:1}
+.produto[data-equivalencia="1"][data-estilo-selo="vermelho"] .selo-forma{height:133px}
+.produto[data-equivalencia="1"] .selo-titulo,.produto[data-equivalencia="1"] .selo-preco{z-index:2}
+.produto[data-equivalencia="1"] .selo-preco{bottom:auto;height:140px}
+.produto[data-equivalencia="1"][data-estilo-selo="vermelho"] .selo-preco{height:95px}
+.selo-complemento{position:absolute;left:14px;top:137px;width:207px;height:88px;font-family:Montserrat,sans-serif;font-weight:900;color:#f8ee30}
+.produto[data-estilo-selo="vermelho"] .selo-complemento{top:95px}
+.selo-complemento-forma{position:absolute;inset:0;width:100%;height:100%;fill:#7a142b}
+.produto[data-estilo-selo="amarelo"] .selo-complemento-forma{fill:#5f4535}
+.selo-complemento-conteudo{position:absolute;left:0;right:0;top:37px;height:49px}
+.equivalencia-texto{position:absolute;left:14px;top:0;width:72px;font-size:9.4px;line-height:1.03;color:white;white-space:pre-line;overflow-wrap:anywhere}
+.equivalencia-preco{position:absolute;left:94px;top:0;width:109px;display:flex;align-items:flex-start;line-height:1;gap:0}
+.equivalencia-moeda{position:absolute;left:0;top:0;font-size:6px;color:white}
+.equivalencia-int{font-size:var(--equivalencia-inteiro,40px);letter-spacing:0;font-kerning:none;flex-shrink:0;padding-top:4px}
+.equivalencia-final{display:flex;flex-direction:column;padding-top:6px}
+.equivalencia-cent{font-size:calc(var(--equivalencia-inteiro,40px)*.49);letter-spacing:0}
+.equivalencia-unidade{font-size:8px;letter-spacing:0;margin-top:2px;text-transform:lowercase}
+
+/* Tag opcional de equivalência promocional, independente do selo principal. */
+.tag-promo{position:absolute;right:0;top:0;width:150px;height:150px;border-radius:50%;background:#ffeb00;color:#e60000;font-family:Montserrat,sans-serif;font-weight:900;z-index:3;display:flex;flex-direction:column;justify-content:center;align-items:center;box-sizing:border-box;padding:18px 10px;gap:4px}
+.tag-promo-texto{color:#111;font-weight:700;font-size:15px;line-height:1.1;text-align:center;white-space:pre-line;overflow-wrap:anywhere}
+.tag-promo-preco{display:flex;align-items:flex-start;position:relative;line-height:1;white-space:nowrap}
+.tag-promo-moeda{position:absolute;left:-16px;top:20px;font-size:8px}
+.tag-promo-int{font-size:var(--promo-inteiro,48px)}
+.tag-promo-cent{font-size:calc(var(--promo-inteiro,48px)*.49);padding-top:5px}
+
+/* Unidade do preço normal: abaixo dos centavos, alinhada à esquerda. */
+.produto .de .un{font-size:18px;line-height:1;text-align:left;padding-left:3px;padding-right:0;margin-top:2px}
+
+/* Base vetorial original do encarte semanal: sem textos gravados na arte. */
+.produto[data-equivalencia="1"][data-estilo-selo="amarelo"] .selo-forma{height:227px}
+.produto[data-equivalencia="1"][data-estilo-selo="amarelo"] .selo-preco{height:119px}
+.produto[data-equivalencia="1"][data-estilo-selo="amarelo"] .selo-preco .valor{top:calc(106px - var(--preco-inteiro))}
+.produto[data-equivalencia="1"][data-estilo-selo="amarelo"] .selo-preco .rs{top:4px}
+.produto[data-estilo-selo="amarelo"] .selo-complemento{z-index:2;left:0;top:0;width:229px;height:227px;color:#fbf5ea;font-family:"Bw Seido Round",sans-serif}
+.produto[data-estilo-selo="amarelo"] .selo-complemento-forma{display:none}
+.produto[data-estilo-selo="amarelo"] .selo-complemento-conteudo{top:158px;height:69px}
+.produto[data-estilo-selo="amarelo"] .equivalencia-texto{left:12px;width:84px;font-size:13px;line-height:1.03}
+.produto[data-estilo-selo="amarelo"] .equivalencia-preco{left:104px;width:122px;--equivalencia-inteiro:var(--equivalencia-amarelo,54px)}
+.produto[data-estilo-selo="amarelo"] .equivalencia-cent{font-size:calc(var(--equivalencia-inteiro)*.583)}
+.produto[data-estilo-selo="amarelo"] .equivalencia-unidade{font-family:Barlow,sans-serif;font-size:8px}
+
+.produto[data-estilo-selo="amarelo"] .equivalencia-moeda{top:0}

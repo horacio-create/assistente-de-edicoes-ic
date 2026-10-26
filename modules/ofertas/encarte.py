@@ -132,6 +132,40 @@ def _unidade(unidades, rect_por):
     return 'UN' if texto.startswith('UNID') else texto
 
 
+def _complemento(spans, principal):
+    """Lê a equivalência impressa abaixo do selo, inclusive letras menores que 5pt.
+
+    Exige a chamada completa e um preço ao lado dela; não calcula valores nem
+    empresta o complemento de outra oferta.
+    """
+    if principal is None: return {}, None
+    inicios = [s for s in spans if re.search(r'^No Clube de', s[1], re.I)
+               and abs(s[0].x0-principal.x0) < max(40, principal.height*2)
+               and principal.y0 < s[0].y0 < principal.y1+principal.height]
+    for inicio in sorted(inicios, key=lambda s: abs(s[0].x0-principal.x0)+abs(s[0].y0-principal.y1)):
+        r = inicio[0]
+        linhas = [s for s in spans if abs(s[0].x0-r.x0) < 3
+                  and r.y0-1 <= s[0].y0 <= r.y0+r.height*4
+                  and re.search('[A-Za-zÀ-ú]', s[1]) and '$' not in s[1]]
+        texto = ' '.join(s[1] for s in sorted(linhas,key=lambda s:s[0].y0))
+        if not re.search(r'no clube.*pre[çc]o.*(?:kg|quilo).*sai por', texto, re.I): continue
+        legenda = pymupdf.Rect(r)
+        for s in linhas: legenda |= s[0]
+        valores = [s for s in _tokens_preco(spans)
+                   if -3 <= s[0].x0-legenda.x1 < max(25,legenda.width*1.5)
+                   and legenda.y0-s[0].height*.4 <= s[0].y0 <= legenda.y1]
+        if not valores: continue
+        preco = min(valores,key=lambda s:abs(s[0].x0-legenda.x1)+abs(s[0].y0-legenda.y0))
+        unidades = [s for s in spans if UNIDADE.fullmatch(s[1])
+                    and preco[0].x0 <= s[0].x0 <= preco[0].x1+25
+                    and preco[0].y0 <= s[0].y0 <= preco[0].y1+5]
+        unidade = _unidade(unidades,preco[0])
+        if unidade.lower() not in ('kg','quilo'): continue
+        return {'equivalenciatexto':texto,'equivalenciapreco':preco[1],
+                'equivalenciaunidade':unidade.lower()}, legenda | preco[0]
+    return {}, None
+
+
 def avisos(nome, por, de, unidade):
     """O que o usuário deve conferir antes de usar (mostrado no card do encarte)."""
     avisos = []
@@ -203,11 +237,12 @@ def _extrair_documento(doc):
             itens.extend(ofertas_por_selos)
             continue
         area = page.rect.width * page.rect.height
-        spans, unidades, legendas = [], [], []
+        spans, unidades, legendas, todos_spans = [], [], [], []
         for b in page.get_text('dict')['blocks']:
             for l in b.get('lines', []):
                 for s in l['spans']:
                     t = s['text'].strip()
+                    if t: todos_spans.append((pymupdf.Rect(s['bbox']), t, s['size']))
                     if EQUIVALENCIA.search(t): legendas.append(pymupdf.Rect(s['bbox']))
                     if UNIDADE.match(t): unidades.append((pymupdf.Rect(s['bbox']), t, s['size']))
                     if t and s['size'] >= 5 and len(t) <= 60 and not RUIDO.match(t):
@@ -231,10 +266,12 @@ def _extrair_documento(doc):
             por, de, rect_por = _precos(g['precos'])
             if not nome or not por: continue  # sem nome ou preço não é produto (ex.: logo do SAC)
             unidade = _unidade(g['unidades'], rect_por)
+            complemento, area_complemento = _complemento(todos_spans, rect_por)
             # área da oferta (foto + textos) em pontos do PDF, para o "ver no encarte"
             area_oferta = pymupdf.Rect(g['rect'])
             for x in g['spans'] + g['precos'] + g['unidades']: area_oferta |= x[0]
-            itens.append({'nome': nome, 'por': por, 'de': de, 'unidade': unidade, 'avisos': avisos(nome, por, de, unidade),
+            if area_complemento: area_oferta |= area_complemento
+            itens.append({'nome': nome, 'por': por, 'de': de, 'unidade': unidade, **complemento, 'avisos': avisos(nome, por, de, unidade),
                           'pagina': page.number + 1, 'area': [round(v, 1) for v in area_oferta],
                           'png': _foto(doc, [x for x in recortes if g['rect'].contains(x[0])])})
     return itens
@@ -262,12 +299,13 @@ def ler_area(pdf_bytes, numero, area):
     pg = doc[numero - 1]
     rect = pymupdf.Rect(area) & pg.rect
     if rect.is_empty or rect.width < 10 or rect.height < 10: raise ValueError('Marque uma área maior.')
-    spans, unidades, legendas = [], [], []
+    spans, unidades, legendas, todos_spans = [], [], [], []
     for b in pg.get_text('dict')['blocks']:  # sem clip: o clip corta o texto na borda ("Clube d")
         for l in b.get('lines', []):
             for sp in l['spans']:
                 t, r = sp['text'].strip(), pymupdf.Rect(sp['bbox'])
                 if not rect.contains((r.tl + r.br) / 2): continue
+                if t: todos_spans.append((r, t, sp['size']))
                 if EQUIVALENCIA.search(t): legendas.append(r)
                 if UNIDADE.match(t): unidades.append((r, t, sp['size']))
                 if t and sp['size'] >= 5 and len(t) <= 60 and not RUIDO.match(t): spans.append((r, t, sp['size']))
@@ -285,7 +323,8 @@ def ler_area(pdf_bytes, numero, area):
         png = pg.get_pixmap(matrix=pymupdf.Matrix(3, 3), clip=rect).tobytes('png')
     nome = _nome([x for x in spans if LETRAS.search(x[1])], foto)
     unidade = _unidade(unidades, rect_por)
-    return {'nome': nome, 'por': por, 'de': de, 'unidade': unidade, 'png': png, 'transparente': bool(candidatos)}
+    complemento, _ = _complemento(todos_spans, rect_por)
+    return {'nome': nome, 'por': por, 'de': de, 'unidade': unidade, **complemento, 'png': png, 'transparente': bool(candidatos)}
 
 
 if __name__ == '__main__':

@@ -51,14 +51,14 @@ function criarEditor(inline=false,host=null) {
   if(inline)dialog.querySelector('.edicao-conteudo').before(ferramentas);else dialog.querySelector('.edicao-propriedades').append(ferramentas);
   if(inline){
     const lote=document.createElement('details');lote.className='edicao-padronizar';
-    lote.innerHTML=`<summary>Padronizar várias cartelas</summary><p>Use o produto ativo como modelo. Copia a escala do elemento; textos, imagens e valores são preservados.</p><label>Elemento <select data-ed="lote-parte"><option value="produto">Imagem do produto</option><option value="titulo">Título</option><option value="normal">Preço normal</option><option value="selo">Selo completo</option><option value="precos">Conjunto de preços</option></select></label><label><input type="checkbox" data-ed="lote-posicao"> Copiar também deslocamento X e Y</label><div class="edicao-lote-cartelas" data-ed="lote-cartelas"></div><div class="edicao-lote-botoes"><button type="button" data-ed="lote-ver">Ver prévia</button><button type="button" data-ed="lote-confirmar" class="primary" disabled>Aplicar</button><button type="button" data-ed="lote-cancelar" disabled>Cancelar prévia</button></div><p role="status" data-ed="lote-status">Escolha as cartelas que receberão o ajuste.</p>`;
+    lote.innerHTML=`<summary>Padronizar várias cartelas</summary><p>Use o produto ativo como modelo. Copia a escala do elemento; textos, imagens e valores são preservados.</p><label>Elemento <select data-ed="lote-parte"><option value="produto">Imagem do produto</option><option value="titulo">Título</option><option value="normal">Preço normal</option><option value="de-unidade">Unidade do preço normal (KG, CADA, 100g…)</option><option value="selo">Selo completo</option><option value="clube-virgula">Vírgula do preço do selo</option><option value="precos">Conjunto de preços</option></select></label><label><input type="checkbox" data-ed="lote-posicao"> Copiar também deslocamento X e Y</label><div class="edicao-lote-cartelas" data-ed="lote-cartelas"></div><div class="edicao-lote-botoes"><button type="button" data-ed="lote-ver">Ver prévia</button><button type="button" data-ed="lote-confirmar" class="primary" disabled>Aplicar</button><button type="button" data-ed="lote-cancelar" disabled>Cancelar prévia</button></div><p role="status" data-ed="lote-status">Escolha as cartelas que receberão o ajuste.</p>`;
     dialog.querySelector('.edicao-conteudo').before(lote);
   }
   const el=id=>dialog.querySelector(`[data-ed="${id}"]`),iframe=dialog.querySelector('iframe'),viewport=dialog.querySelector('.edicao-viewport');
   let op=null,sessao=null,pronto=false,cartela=0,cartelas=[],elementos=[],ajustes={},selecionados=[],ocupado=false,zoom=1,pan=null,assinatura=null,retomar=null,produtoAtivo=null,emPrevia=false,recarregarConteudo=false,observadorMini=null,ampliado=false;
   let cancelarPadronizacao=()=>{};
   function enviar(acao,extra={}){if(pronto)iframe.contentWindow.postMessage({tipo:'comando',sessao,acao,...extra},location.origin);}
-  function redimensionar(){const largura=Math.min(viewport.clientWidth,viewport.clientHeight*1920/1080)*zoom;iframe.style.transform=`scale(${largura/1920})`;const palco=dialog.querySelector('.edicao-palco');palco.style.width=largura+'px';palco.style.height=largura*1080/1920+'px';}
+  function redimensionar(){const largura=Math.min(viewport.clientWidth,viewport.clientHeight*1920/1080)*zoom;iframe.style.transform=`scale(${largura/1920})`;const palco=dialog.querySelector('.edicao-palco');palco.style.width=largura+'px';palco.style.height=largura*1080/1920+'px';enviar('vista-escala',{valor:largura/1920});}
   function definirZoom(valor,clientX,clientY){
     const r=iframe.getBoundingClientRect(),v=viewport.getBoundingClientRect();
     const x=clientX??v.left+v.width/2,y=clientY??v.top+v.height/2;
@@ -116,6 +116,7 @@ function criarEditor(inline=false,host=null) {
         else atualizarContexto();
         redimensionar();
       }
+      redimensionar();
       if(op.gerarDepois)el('status').textContent='Confira as cartelas. Depois, salve os ajustes e gere o vídeo.';
     }
     if(d.tipo==='estado'){
