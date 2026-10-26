@@ -16,15 +16,22 @@
     forma.innerHTML = estilo === 'vermelho' ? vermelho : amarelo;
     produto.querySelector('.selo-titulo').textContent = estilo === 'vermelho' ? 'CLUBE DE DESCONTO' : 'Clube de Desconto';
   }
+  // Caminhos copiados diretamente do PDF semanal, sem rasterizar os textos.
+  const amareloCompleto = "<path fill=\"#4d392d\" d=\"M40.61200 0.00000 L14.56900 0.00000 C0.00000 0.00000 0.00000 6.53601 0.00000 14.56897 L0.00000 17.29297 L0.00000 23.17798 L0.00000 40.30200 C0.00000 48.33600 0.00000 54.87097 14.56900 54.87097 L40.61200 54.87097 C55.18100 54.87097 55.18100 48.33600 55.18100 40.30200 L55.18100 23.17798 L55.18100 17.29297 L55.18100 14.56897 C55.18100 6.53601 55.18100 0.00000 40.61200 0.00000 Z\"/><path fill=\"#e5e532\" d=\"M54.58279 22.62207 C54.58279 30.32605 48.31580 36.59308 40.61179 36.59308 L14.56879 36.59308 C6.86879 36.59308 0.60379 30.33105 0.59779 22.63208 L0.59779 22.15210 C0.59779 14.44806 6.86580 8.18005 14.56879 8.18005 L40.61179 8.18005 C48.31280 8.18005 54.57780 14.44305 54.58279 22.14209 L54.58279 22.62207 Z\"/>";
   function complemento(produto, valor, unidade, texto) {
     produto.querySelector('.selo-complemento')?.remove();
     delete produto.dataset.equivalencia;
     const m=/^(\d{1,4}),(\d{2})$/.exec(String(valor||'').trim().replace('.',','));
     if(!m)return;
     produto.dataset.equivalencia='1';
+    if(produto.dataset.estiloSelo==='amarelo'){
+      const forma=produto.querySelector('.selo-forma');
+      forma.setAttribute('viewBox','0 0 55.181 54.871');forma.innerHTML=amareloCompleto;
+    }
     const extra=document.createElement('div');extra.className='selo-complemento';extra.style.setProperty('--equivalencia-inteiro', (m[1].length>3?26:m[1].length>2?32:40)+'px');
+    extra.style.setProperty('--equivalencia-amarelo',(m[1].length>3?30:m[1].length>2?40:54)+'px');
     // Contorno vetorial extraído do complemento original do encarte Sadia.
-    extra.innerHTML='<svg class="selo-complemento-forma" viewBox="0 0 89.785 38.242" aria-hidden="true"><path d="M80.387 38.242H9.398C4.207 38.242 0 34.035 0 28.844V0H89.785V28.844C89.785 34.035 85.576 38.242 80.387 38.242Z"/></svg><div class="selo-complemento-conteudo"><div class="equivalencia-texto"></div><div class="equivalencia-preco"><span class="equivalencia-moeda">R$</span><span class="equivalencia-int"></span><span class="equivalencia-final"><span class="equivalencia-cent"></span><span class="equivalencia-unidade"></span></span></div></div>';
+    extra.innerHTML='<svg class="selo-complemento-forma" viewBox="0 0 89.785 38.242" aria-hidden="true"><path d="M80.387 38.242H9.398C4.207 38.242 0 34.035 0 28.844V0H89.785V28.844C89.785 34.035 85.576 38.242 80.387 38.242Z"/></svg><div class="selo-complemento-conteudo"><div class="equivalencia-texto"></div><div class="equivalencia-preco"><span class="equivalencia-moeda" data-layout-allow-overlap>R$</span><span class="equivalencia-int"></span><span class="equivalencia-final"><span class="equivalencia-cent"></span><span class="equivalencia-unidade"></span></span></div></div>';
     extra.querySelector('.equivalencia-texto').textContent=texto||'No Clube de Desconto o preço do kg sai por:';
     extra.querySelector('.equivalencia-int').textContent=m[1];
     extra.querySelector('.equivalencia-cent').textContent=','+m[2];

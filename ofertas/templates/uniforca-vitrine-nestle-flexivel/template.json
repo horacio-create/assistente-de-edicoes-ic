@@ -1,0 +1,148 @@
+{
+  "contrato": 1,
+  "id": "uniforca-vitrine-nestle-flexivel",
+  "nome": "Vitrine de Ofertas — Nestlé",
+  "cliente": "Rede Uniforça",
+  "descricao": "Campanha Nestlé com data editável, cartelas flexíveis, editor completo e vídeos HD. Produtos de exemplo substituíveis pelo encarte.",
+  "capaEm": 2.6,
+  "campos": [
+    {
+      "id": "validade",
+      "tipo": "texto",
+      "rotulo": "Datas da oferta",
+      "ajuda": "Período na faixa do cabeçalho. Ex.: 26 a 28 de outubro de 2026.",
+      "max": 40
+    },
+    {
+      "id": "estiloselo",
+      "tipo": "opcoes",
+      "rotulo": "Estilo dos selos do projeto",
+      "opcional": true,
+      "ajuda": "Padrão do template ou outro estilo. O vermelho usa Montserrat Black nos títulos e preços."
+    },
+    {
+      "id": "produtos",
+      "tipo": "lista",
+      "rotulo": "Produtos",
+      "rotuloItem": "Produto",
+      "itens": 30,
+      "grupo": {
+        "tamanho": 2,
+        "rotulo": "Cartela",
+        "incompleto": true,
+        "finalTres": true
+      },
+      "campos": [
+        {
+          "id": "nome",
+          "tipo": "texto",
+          "rotulo": "Nome",
+          "max": 150
+        },
+        {
+          "id": "estiloselo",
+          "tipo": "opcoes",
+          "rotulo": "Selo deste produto",
+          "opcional": true,
+          "ajuda": "Deixe no padrão do projeto para manter todos iguais."
+        },
+        {
+          "id": "imagem",
+          "tipo": "imagem",
+          "rotulo": "Imagem",
+          "ajuda": "PNG com fundo transparente."
+        },
+        {
+          "id": "de",
+          "tipo": "preco",
+          "rotulo": "Preço normal",
+          "opcional": true,
+          "ajuda": "Vazio = mostra só o selo."
+        },
+        {
+          "id": "por",
+          "tipo": "preco",
+          "rotulo": "Preço Clube de Desconto"
+        },
+        {
+          "id": "unidade",
+          "tipo": "opcoes",
+          "rotulo": "Unidade"
+        },
+        {
+          "id": "tamanho",
+          "tipo": "numero",
+          "rotulo": "Tamanho da imagem",
+          "min": 0.3,
+          "max": 1,
+          "passo": 0.05,
+          "ajuda": "Ajuste a proporção da imagem dentro da área do produto."
+        },
+        {
+          "id": "edicao",
+          "tipo": "texto",
+          "rotulo": "Ajustes visuais",
+          "opcional": true,
+          "oculto": true,
+          "max": 20000,
+          "formato": "ajustesVisuais"
+        },
+        {
+          "id": "equivalenciapreco",
+          "tipo": "preco",
+          "rotulo": "Valor equivalente no complemento",
+          "opcional": true,
+          "ajuda": "Preencha somente quando a oferta tiver a extensão inferior. Vazio: sem complemento."
+        },
+        {
+          "id": "equivalenciaunidade",
+          "tipo": "texto",
+          "rotulo": "Unidade do valor equivalente",
+          "opcional": true,
+          "max": 12,
+          "ajuda": "Ex.: kg. É a unidade do valor extra, não a unidade do preço principal."
+        },
+        {
+          "id": "equivalenciatexto",
+          "tipo": "texto",
+          "rotulo": "Texto do complemento do selo",
+          "opcional": true,
+          "max": 100,
+          "ajuda": "Ex.: No Clube de Desconto o preço do kg sai por:"
+        },
+        {
+          "id": "promopreco",
+          "tipo": "preco",
+          "rotulo": "Valor da tag promocional",
+          "opcional": true,
+          "ajuda": "Vazio: sem tag circular. Valor extra, separado dos preços normal e clube."
+        },
+        {
+          "id": "promotexto",
+          "tipo": "texto",
+          "rotulo": "Texto da tag promocional",
+          "opcional": true,
+          "max": 100,
+          "ajuda": "Ex.: Nessa Promo 500g saem por:"
+        }
+      ],
+      "min": 1
+    },
+    {
+      "id": "animacoes",
+      "tipo": "booleano",
+      "rotulo": "Ativar animações",
+      "opcional": true,
+      "ajuda": "Desative para slides estáticos, com troca direta de cartela e sem movimentos."
+    },
+    {
+      "id": "ultimacartela",
+      "tipo": "opcoes",
+      "rotulo": "Quando sobrar um produto",
+      "opcional": true,
+      "ajuda": "Um produto fica centralizado. Três reúne os últimos três produtos na mesma cartela; com apenas um produto ele fica sozinho."
+    }
+  ],
+  "editorCartelas": true,
+  "seloPadrao": "vermelho"
+}

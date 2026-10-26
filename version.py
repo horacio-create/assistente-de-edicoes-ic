@@ -1,2 +1,2 @@
 """Versão única do sistema; incrementar a cada lançamento."""
-VERSION = "1.13.4"
+VERSION = "1.13.5"

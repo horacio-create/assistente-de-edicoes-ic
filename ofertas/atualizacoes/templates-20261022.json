@@ -16,10 +16,11 @@
     },
     "assets/edicao.js": {
       "antes": "1b06788c30ca4f77bede1a142d6809d4b19aad86a463c864773d635e7e13814d",
-      "depois": "b500fc02e46f441db969c7099923850c09b49b7aaee643c34f6eb8e8057e5b04",
+      "depois": "80fc5ce09e52d552d28a41deea224347b2ea23e248bab7648cb77ef5e56e4290",
       "intermediarios": [
         "5dbd0079d40413c8250030b4b7e7dde5ea17ba3ca8f9c6dc327d3c489412aea5",
-        "41987cce12ed8dfe5f47f57f79e0b2500e6a7863362fc5d26ed9d22bc08b14f8"
+        "41987cce12ed8dfe5f47f57f79e0b2500e6a7863362fc5d26ed9d22bc08b14f8",
+        "b500fc02e46f441db969c7099923850c09b49b7aaee643c34f6eb8e8057e5b04"
       ]
     },
     "assets/layout.js": {
@@ -31,18 +32,20 @@
     },
     "assets/selos.css": {
       "antes": null,
-      "depois": "2f88d770ce791d068f65db22895c2f6f92844add64c21733c3108fa480ea27a5",
+      "depois": "a7dee46baf0b9ae40bc9717c9ac86bcd8a2369c95e9a92bc36cd0ae842fc4d47",
       "intermediarios": [
         "62aebdc4f12f08a7b2e22457bb6152aa0b569fd549327052bb40e03273307753",
-        "4f041ebe8125a0e022493d3e1f8ad2628f86f7642143bcafdf9aed29e6ec86f9"
+        "4f041ebe8125a0e022493d3e1f8ad2628f86f7642143bcafdf9aed29e6ec86f9",
+        "2f88d770ce791d068f65db22895c2f6f92844add64c21733c3108fa480ea27a5"
       ]
     },
     "assets/selos.js": {
       "antes": null,
-      "depois": "38cc4a077edb25ee5a99cfbdff84dd9d366af35505b46a10231dbc8c1833cdba",
+      "depois": "819f4d04a0037355940e58117e675bb773614a1a0a4695d183c5b3adc73af6b3",
       "intermediarios": [
         "8bcea23367bd67872a680dd92033c3bf27cf95bf872da07a134926ef8961bdb3",
-        "b469e55cb9cb9ffadf344e631ba3ad4c099a40ef78ceb878057435a278ddf5a5"
+        "b469e55cb9cb9ffadf344e631ba3ad4c099a40ef78ceb878057435a278ddf5a5",
+        "38cc4a077edb25ee5a99cfbdff84dd9d366af35505b46a10231dbc8c1833cdba"
       ]
     }
   },
@@ -63,10 +66,11 @@
     },
     "assets/edicao.js": {
       "antes": "1b06788c30ca4f77bede1a142d6809d4b19aad86a463c864773d635e7e13814d",
-      "depois": "b500fc02e46f441db969c7099923850c09b49b7aaee643c34f6eb8e8057e5b04",
+      "depois": "80fc5ce09e52d552d28a41deea224347b2ea23e248bab7648cb77ef5e56e4290",
       "intermediarios": [
         "5dbd0079d40413c8250030b4b7e7dde5ea17ba3ca8f9c6dc327d3c489412aea5",
-        "41987cce12ed8dfe5f47f57f79e0b2500e6a7863362fc5d26ed9d22bc08b14f8"
+        "41987cce12ed8dfe5f47f57f79e0b2500e6a7863362fc5d26ed9d22bc08b14f8",
+        "b500fc02e46f441db969c7099923850c09b49b7aaee643c34f6eb8e8057e5b04"
       ]
     },
     "assets/layout.js": {
@@ -78,25 +82,30 @@
     },
     "assets/selos.css": {
       "antes": null,
-      "depois": "2f88d770ce791d068f65db22895c2f6f92844add64c21733c3108fa480ea27a5",
+      "depois": "a7dee46baf0b9ae40bc9717c9ac86bcd8a2369c95e9a92bc36cd0ae842fc4d47",
       "intermediarios": [
         "62aebdc4f12f08a7b2e22457bb6152aa0b569fd549327052bb40e03273307753",
-        "4f041ebe8125a0e022493d3e1f8ad2628f86f7642143bcafdf9aed29e6ec86f9"
+        "4f041ebe8125a0e022493d3e1f8ad2628f86f7642143bcafdf9aed29e6ec86f9",
+        "2f88d770ce791d068f65db22895c2f6f92844add64c21733c3108fa480ea27a5"
       ]
     },
     "assets/selos.js": {
       "antes": null,
-      "depois": "38cc4a077edb25ee5a99cfbdff84dd9d366af35505b46a10231dbc8c1833cdba",
+      "depois": "819f4d04a0037355940e58117e675bb773614a1a0a4695d183c5b3adc73af6b3",
       "intermediarios": [
         "8bcea23367bd67872a680dd92033c3bf27cf95bf872da07a134926ef8961bdb3",
-        "b469e55cb9cb9ffadf344e631ba3ad4c099a40ef78ceb878057435a278ddf5a5"
+        "b469e55cb9cb9ffadf344e631ba3ad4c099a40ef78ceb878057435a278ddf5a5",
+        "38cc4a077edb25ee5a99cfbdff84dd9d366af35505b46a10231dbc8c1833cdba"
       ]
     }
   },
   "uniforca-momento-do-bebe-flexivel": {
     "capa.png": {
       "antes": "2846332f6427cd94de91e26d19d96a7b95b60294d6c193dbc5e7499617903145",
-      "depois": "b9734418b3f47d18c4d48fbb97dae8d4c2379efa04c4788fdfd131a323a5432b"
+      "depois": "b9734418b3f47d18c4d48fbb97dae8d4c2379efa04c4788fdfd131a323a5432b",
+      "intermediarios": [
+        "b9734418b3f47d18c4d48fbb97dae8d4c2379efa04c4788fdfd131a323a5432b"
+      ]
     },
     "index.html": {
       "antes": "48baa7ee0ee9051649cf401ce8d2987a44197442233db6084825216cd717a8c6",
@@ -114,10 +123,11 @@
     },
     "assets/edicao.js": {
       "antes": "1b06788c30ca4f77bede1a142d6809d4b19aad86a463c864773d635e7e13814d",
-      "depois": "b500fc02e46f441db969c7099923850c09b49b7aaee643c34f6eb8e8057e5b04",
+      "depois": "80fc5ce09e52d552d28a41deea224347b2ea23e248bab7648cb77ef5e56e4290",
       "intermediarios": [
         "5dbd0079d40413c8250030b4b7e7dde5ea17ba3ca8f9c6dc327d3c489412aea5",
-        "41987cce12ed8dfe5f47f57f79e0b2500e6a7863362fc5d26ed9d22bc08b14f8"
+        "41987cce12ed8dfe5f47f57f79e0b2500e6a7863362fc5d26ed9d22bc08b14f8",
+        "b500fc02e46f441db969c7099923850c09b49b7aaee643c34f6eb8e8057e5b04"
       ]
     },
     "assets/layout.js": {
@@ -129,18 +139,20 @@
     },
     "assets/selos.css": {
       "antes": null,
-      "depois": "2f88d770ce791d068f65db22895c2f6f92844add64c21733c3108fa480ea27a5",
+      "depois": "a7dee46baf0b9ae40bc9717c9ac86bcd8a2369c95e9a92bc36cd0ae842fc4d47",
       "intermediarios": [
         "62aebdc4f12f08a7b2e22457bb6152aa0b569fd549327052bb40e03273307753",
-        "4f041ebe8125a0e022493d3e1f8ad2628f86f7642143bcafdf9aed29e6ec86f9"
+        "4f041ebe8125a0e022493d3e1f8ad2628f86f7642143bcafdf9aed29e6ec86f9",
+        "2f88d770ce791d068f65db22895c2f6f92844add64c21733c3108fa480ea27a5"
       ]
     },
     "assets/selos.js": {
       "antes": null,
-      "depois": "38cc4a077edb25ee5a99cfbdff84dd9d366af35505b46a10231dbc8c1833cdba",
+      "depois": "819f4d04a0037355940e58117e675bb773614a1a0a4695d183c5b3adc73af6b3",
       "intermediarios": [
         "8bcea23367bd67872a680dd92033c3bf27cf95bf872da07a134926ef8961bdb3",
-        "b469e55cb9cb9ffadf344e631ba3ad4c099a40ef78ceb878057435a278ddf5a5"
+        "b469e55cb9cb9ffadf344e631ba3ad4c099a40ef78ceb878057435a278ddf5a5",
+        "38cc4a077edb25ee5a99cfbdff84dd9d366af35505b46a10231dbc8c1833cdba"
       ]
     }
   }
