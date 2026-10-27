@@ -128,6 +128,7 @@ function criarEditor(inline=false,host=null) {
       if(inline){if(mudouCartela)produtoAtivo=null;atualizarContexto();}
       el('elemento').value=selecionados[0]||'';
       el('selecao').textContent=selecionados.length?`${selecionados.length} ${selecionados.length===1?'elemento selecionado':'elementos selecionados'}`:'Clique em um elemento da cartela.';
+      el('escala').max=selecionados.length&&selecionados.every(id=>id.endsWith(':produto'))?'1200':'400';
       for(const k of ['x','y','escala']){
         el(k).disabled=!d.valor;
         if(document.activeElement!==el(k))el(k).value=d.valor?Math.round((k==='escala'?d.valor[k]*100:d.valor[k])*10)/10:'';

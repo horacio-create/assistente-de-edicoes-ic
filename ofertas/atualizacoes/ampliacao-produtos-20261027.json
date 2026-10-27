@@ -1,0 +1,242 @@
+{
+  "uniforca-hora-da-carne-flexivel": {
+    "assets/edicao.js": {
+      "antes": "80fc5ce09e52d552d28a41deea224347b2ea23e248bab7648cb77ef5e56e4290",
+      "depois": "deca9b0514d185e8e4f70433683e0e600e81af541b771b29680866b207660fb3"
+    },
+    "index.html": {
+      "antes": "50551c4907531056ffb233cc6cbb86ea5fd272d9e0999921f20c798efde0bf71",
+      "depois": "50551c4907531056ffb233cc6cbb86ea5fd272d9e0999921f20c798efde0bf71"
+    },
+    "template.json": {
+      "antes": "4dd7ff95fcc0be19839412fbee8553be1677e22aa80d4f08da120353e9fd76dc",
+      "depois": "4dd7ff95fcc0be19839412fbee8553be1677e22aa80d4f08da120353e9fd76dc"
+    },
+    "assets/layout.js": {
+      "antes": "2b05ad25b169841e8f0ecb6401dba59a8a526806bab23c66b405556b469bcb0c",
+      "depois": "2b05ad25b169841e8f0ecb6401dba59a8a526806bab23c66b405556b469bcb0c"
+    },
+    "assets/animacao.js": {
+      "antes": "13ae1f97e6498caa7e951ea2375e2ecd6cadb89ede563c5355103d2df610144e",
+      "depois": "13ae1f97e6498caa7e951ea2375e2ecd6cadb89ede563c5355103d2df610144e"
+    },
+    "assets/selos.js": {
+      "antes": "819f4d04a0037355940e58117e675bb773614a1a0a4695d183c5b3adc73af6b3",
+      "depois": "819f4d04a0037355940e58117e675bb773614a1a0a4695d183c5b3adc73af6b3"
+    },
+    "assets/selos.css": {
+      "antes": "a7dee46baf0b9ae40bc9717c9ac86bcd8a2369c95e9a92bc36cd0ae842fc4d47",
+      "depois": "a7dee46baf0b9ae40bc9717c9ac86bcd8a2369c95e9a92bc36cd0ae842fc4d47"
+    }
+  },
+  "uniforca-hora-da-feira-flexivel": {
+    "assets/edicao.js": {
+      "antes": "80fc5ce09e52d552d28a41deea224347b2ea23e248bab7648cb77ef5e56e4290",
+      "depois": "deca9b0514d185e8e4f70433683e0e600e81af541b771b29680866b207660fb3"
+    },
+    "index.html": {
+      "antes": "16956c772902af2ea0450323261451f741e21cf5fccea566ad31a0dccfc1e3ce",
+      "depois": "16956c772902af2ea0450323261451f741e21cf5fccea566ad31a0dccfc1e3ce"
+    },
+    "template.json": {
+      "antes": "4ab4b8babb739a90ae44133d45d41ee75b0a54c32a414a0b4e31be6bbe80b721",
+      "depois": "4ab4b8babb739a90ae44133d45d41ee75b0a54c32a414a0b4e31be6bbe80b721"
+    },
+    "assets/layout.js": {
+      "antes": "2b05ad25b169841e8f0ecb6401dba59a8a526806bab23c66b405556b469bcb0c",
+      "depois": "2b05ad25b169841e8f0ecb6401dba59a8a526806bab23c66b405556b469bcb0c"
+    },
+    "assets/animacao.js": {
+      "antes": "13ae1f97e6498caa7e951ea2375e2ecd6cadb89ede563c5355103d2df610144e",
+      "depois": "13ae1f97e6498caa7e951ea2375e2ecd6cadb89ede563c5355103d2df610144e"
+    },
+    "assets/selos.js": {
+      "antes": "819f4d04a0037355940e58117e675bb773614a1a0a4695d183c5b3adc73af6b3",
+      "depois": "819f4d04a0037355940e58117e675bb773614a1a0a4695d183c5b3adc73af6b3"
+    },
+    "assets/selos.css": {
+      "antes": "a7dee46baf0b9ae40bc9717c9ac86bcd8a2369c95e9a92bc36cd0ae842fc4d47",
+      "depois": "a7dee46baf0b9ae40bc9717c9ac86bcd8a2369c95e9a92bc36cd0ae842fc4d47"
+    }
+  },
+  "uniforca-momento-do-bebe-flexivel": {
+    "assets/edicao.js": {
+      "antes": "80fc5ce09e52d552d28a41deea224347b2ea23e248bab7648cb77ef5e56e4290",
+      "depois": "deca9b0514d185e8e4f70433683e0e600e81af541b771b29680866b207660fb3"
+    },
+    "index.html": {
+      "antes": "515dcd6cc3abb0049d2f95606182dbca9dcb7469d624d79628156b6a8bb2ff22",
+      "depois": "515dcd6cc3abb0049d2f95606182dbca9dcb7469d624d79628156b6a8bb2ff22"
+    },
+    "template.json": {
+      "antes": "1da901033e728395599177b86026e7d243b2d35dc8f676f3fc749003914eec8f",
+      "depois": "1da901033e728395599177b86026e7d243b2d35dc8f676f3fc749003914eec8f"
+    },
+    "assets/layout.js": {
+      "antes": "2b05ad25b169841e8f0ecb6401dba59a8a526806bab23c66b405556b469bcb0c",
+      "depois": "2b05ad25b169841e8f0ecb6401dba59a8a526806bab23c66b405556b469bcb0c"
+    },
+    "assets/animacao.js": {
+      "antes": "13ae1f97e6498caa7e951ea2375e2ecd6cadb89ede563c5355103d2df610144e",
+      "depois": "13ae1f97e6498caa7e951ea2375e2ecd6cadb89ede563c5355103d2df610144e"
+    },
+    "assets/selos.js": {
+      "antes": "819f4d04a0037355940e58117e675bb773614a1a0a4695d183c5b3adc73af6b3",
+      "depois": "819f4d04a0037355940e58117e675bb773614a1a0a4695d183c5b3adc73af6b3"
+    },
+    "assets/selos.css": {
+      "antes": "a7dee46baf0b9ae40bc9717c9ac86bcd8a2369c95e9a92bc36cd0ae842fc4d47",
+      "depois": "a7dee46baf0b9ae40bc9717c9ac86bcd8a2369c95e9a92bc36cd0ae842fc4d47"
+    }
+  },
+  "uniforca-perdigao-flexivel": {
+    "assets/edicao.js": {
+      "antes": "80fc5ce09e52d552d28a41deea224347b2ea23e248bab7648cb77ef5e56e4290",
+      "depois": "deca9b0514d185e8e4f70433683e0e600e81af541b771b29680866b207660fb3"
+    },
+    "index.html": {
+      "antes": "d8f83a609340aa7fbd2032a06f247e411ccdeac22419f1c61079ac48d55dd2b9",
+      "depois": "d8f83a609340aa7fbd2032a06f247e411ccdeac22419f1c61079ac48d55dd2b9"
+    },
+    "template.json": {
+      "antes": "35b5661860ab8eee7c006076dd39d472efdf50af7e0175ffdc2a89f65e41c509",
+      "depois": "35b5661860ab8eee7c006076dd39d472efdf50af7e0175ffdc2a89f65e41c509"
+    },
+    "assets/layout.js": {
+      "antes": "2b05ad25b169841e8f0ecb6401dba59a8a526806bab23c66b405556b469bcb0c",
+      "depois": "2b05ad25b169841e8f0ecb6401dba59a8a526806bab23c66b405556b469bcb0c"
+    },
+    "assets/animacao.js": {
+      "antes": "13ae1f97e6498caa7e951ea2375e2ecd6cadb89ede563c5355103d2df610144e",
+      "depois": "13ae1f97e6498caa7e951ea2375e2ecd6cadb89ede563c5355103d2df610144e"
+    },
+    "assets/selos.js": {
+      "antes": "819f4d04a0037355940e58117e675bb773614a1a0a4695d183c5b3adc73af6b3",
+      "depois": "819f4d04a0037355940e58117e675bb773614a1a0a4695d183c5b3adc73af6b3"
+    },
+    "assets/selos.css": {
+      "antes": "a7dee46baf0b9ae40bc9717c9ac86bcd8a2369c95e9a92bc36cd0ae842fc4d47",
+      "depois": "a7dee46baf0b9ae40bc9717c9ac86bcd8a2369c95e9a92bc36cd0ae842fc4d47"
+    }
+  },
+  "uniforca-sadia-flexivel": {
+    "assets/edicao.js": {
+      "antes": "80fc5ce09e52d552d28a41deea224347b2ea23e248bab7648cb77ef5e56e4290",
+      "depois": "deca9b0514d185e8e4f70433683e0e600e81af541b771b29680866b207660fb3"
+    },
+    "index.html": {
+      "antes": "5a12da8d3f15a70d2cd76e242664919e61f328a485a9050d4e5890ea8bf7f03d",
+      "depois": "5a12da8d3f15a70d2cd76e242664919e61f328a485a9050d4e5890ea8bf7f03d"
+    },
+    "template.json": {
+      "antes": "690ff3c637c00482edc85dfa4a04c576b381dff6ee9b91879ff5d75ba66ec845",
+      "depois": "690ff3c637c00482edc85dfa4a04c576b381dff6ee9b91879ff5d75ba66ec845"
+    },
+    "assets/layout.js": {
+      "antes": "2b05ad25b169841e8f0ecb6401dba59a8a526806bab23c66b405556b469bcb0c",
+      "depois": "2b05ad25b169841e8f0ecb6401dba59a8a526806bab23c66b405556b469bcb0c"
+    },
+    "assets/animacao.js": {
+      "antes": "13ae1f97e6498caa7e951ea2375e2ecd6cadb89ede563c5355103d2df610144e",
+      "depois": "13ae1f97e6498caa7e951ea2375e2ecd6cadb89ede563c5355103d2df610144e"
+    },
+    "assets/selos.js": {
+      "antes": "819f4d04a0037355940e58117e675bb773614a1a0a4695d183c5b3adc73af6b3",
+      "depois": "819f4d04a0037355940e58117e675bb773614a1a0a4695d183c5b3adc73af6b3"
+    },
+    "assets/selos.css": {
+      "antes": "a7dee46baf0b9ae40bc9717c9ac86bcd8a2369c95e9a92bc36cd0ae842fc4d47",
+      "depois": "a7dee46baf0b9ae40bc9717c9ac86bcd8a2369c95e9a92bc36cd0ae842fc4d47"
+    }
+  },
+  "uniforca-vitrine-itambe-flexivel": {
+    "assets/edicao.js": {
+      "antes": "80fc5ce09e52d552d28a41deea224347b2ea23e248bab7648cb77ef5e56e4290",
+      "depois": "deca9b0514d185e8e4f70433683e0e600e81af541b771b29680866b207660fb3"
+    },
+    "index.html": {
+      "antes": "83f761d6446654720330f786f444674f82af9bf4cba30710223784af4f1e0c8a",
+      "depois": "83f761d6446654720330f786f444674f82af9bf4cba30710223784af4f1e0c8a"
+    },
+    "template.json": {
+      "antes": "02311bd301e49278aec70ff375c728b8954e0d3c9ae8b4e9d6a24b8aed3f4070",
+      "depois": "02311bd301e49278aec70ff375c728b8954e0d3c9ae8b4e9d6a24b8aed3f4070"
+    },
+    "assets/layout.js": {
+      "antes": "2b05ad25b169841e8f0ecb6401dba59a8a526806bab23c66b405556b469bcb0c",
+      "depois": "2b05ad25b169841e8f0ecb6401dba59a8a526806bab23c66b405556b469bcb0c"
+    },
+    "assets/animacao.js": {
+      "antes": "13ae1f97e6498caa7e951ea2375e2ecd6cadb89ede563c5355103d2df610144e",
+      "depois": "13ae1f97e6498caa7e951ea2375e2ecd6cadb89ede563c5355103d2df610144e"
+    },
+    "assets/selos.js": {
+      "antes": "819f4d04a0037355940e58117e675bb773614a1a0a4695d183c5b3adc73af6b3",
+      "depois": "819f4d04a0037355940e58117e675bb773614a1a0a4695d183c5b3adc73af6b3"
+    },
+    "assets/selos.css": {
+      "antes": "a7dee46baf0b9ae40bc9717c9ac86bcd8a2369c95e9a92bc36cd0ae842fc4d47",
+      "depois": "a7dee46baf0b9ae40bc9717c9ac86bcd8a2369c95e9a92bc36cd0ae842fc4d47"
+    }
+  },
+  "uniforca-vitrine-laranja-flexivel": {
+    "assets/edicao.js": {
+      "antes": "80fc5ce09e52d552d28a41deea224347b2ea23e248bab7648cb77ef5e56e4290",
+      "depois": "deca9b0514d185e8e4f70433683e0e600e81af541b771b29680866b207660fb3"
+    },
+    "index.html": {
+      "antes": "d6ce0b2b6ff9355570a4d90111ca7a709334e21a12d315a22a2488dce67433f5",
+      "depois": "d6ce0b2b6ff9355570a4d90111ca7a709334e21a12d315a22a2488dce67433f5"
+    },
+    "template.json": {
+      "antes": "571865bcd258fb49aa06f67a7481771de95ac27d01c093218e76cbcea864e107",
+      "depois": "571865bcd258fb49aa06f67a7481771de95ac27d01c093218e76cbcea864e107"
+    },
+    "assets/layout.js": {
+      "antes": "2b05ad25b169841e8f0ecb6401dba59a8a526806bab23c66b405556b469bcb0c",
+      "depois": "2b05ad25b169841e8f0ecb6401dba59a8a526806bab23c66b405556b469bcb0c"
+    },
+    "assets/animacao.js": {
+      "antes": "13ae1f97e6498caa7e951ea2375e2ecd6cadb89ede563c5355103d2df610144e",
+      "depois": "13ae1f97e6498caa7e951ea2375e2ecd6cadb89ede563c5355103d2df610144e"
+    },
+    "assets/selos.js": {
+      "antes": "819f4d04a0037355940e58117e675bb773614a1a0a4695d183c5b3adc73af6b3",
+      "depois": "819f4d04a0037355940e58117e675bb773614a1a0a4695d183c5b3adc73af6b3"
+    },
+    "assets/selos.css": {
+      "antes": "a7dee46baf0b9ae40bc9717c9ac86bcd8a2369c95e9a92bc36cd0ae842fc4d47",
+      "depois": "a7dee46baf0b9ae40bc9717c9ac86bcd8a2369c95e9a92bc36cd0ae842fc4d47"
+    }
+  },
+  "uniforca-vitrine-nestle-flexivel": {
+    "assets/edicao.js": {
+      "antes": "80fc5ce09e52d552d28a41deea224347b2ea23e248bab7648cb77ef5e56e4290",
+      "depois": "deca9b0514d185e8e4f70433683e0e600e81af541b771b29680866b207660fb3"
+    },
+    "index.html": {
+      "antes": "e9c90798e8623375263d19928aac4c4e1e6b37c6f5d937b3ed2eeebe82c7475d",
+      "depois": "e9c90798e8623375263d19928aac4c4e1e6b37c6f5d937b3ed2eeebe82c7475d"
+    },
+    "template.json": {
+      "antes": "249d906fef971bdc73aaba169f2a349ddf83dff5ac402fa2f0e20130a57306d7",
+      "depois": "249d906fef971bdc73aaba169f2a349ddf83dff5ac402fa2f0e20130a57306d7"
+    },
+    "assets/layout.js": {
+      "antes": "2b05ad25b169841e8f0ecb6401dba59a8a526806bab23c66b405556b469bcb0c",
+      "depois": "2b05ad25b169841e8f0ecb6401dba59a8a526806bab23c66b405556b469bcb0c"
+    },
+    "assets/animacao.js": {
+      "antes": "13ae1f97e6498caa7e951ea2375e2ecd6cadb89ede563c5355103d2df610144e",
+      "depois": "13ae1f97e6498caa7e951ea2375e2ecd6cadb89ede563c5355103d2df610144e"
+    },
+    "assets/selos.js": {
+      "antes": "819f4d04a0037355940e58117e675bb773614a1a0a4695d183c5b3adc73af6b3",
+      "depois": "819f4d04a0037355940e58117e675bb773614a1a0a4695d183c5b3adc73af6b3"
+    },
+    "assets/selos.css": {
+      "antes": "a7dee46baf0b9ae40bc9717c9ac86bcd8a2369c95e9a92bc36cd0ae842fc4d47",
+      "depois": "a7dee46baf0b9ae40bc9717c9ac86bcd8a2369c95e9a92bc36cd0ae842fc4d47"
+    }
+  }
+}

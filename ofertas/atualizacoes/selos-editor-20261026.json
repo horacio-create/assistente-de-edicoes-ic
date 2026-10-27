@@ -2,7 +2,10 @@
   "uniforca-hora-da-carne-flexivel": {
     "assets/edicao.js": {
       "antes": "b500fc02e46f441db969c7099923850c09b49b7aaee643c34f6eb8e8057e5b04",
-      "depois": "80fc5ce09e52d552d28a41deea224347b2ea23e248bab7648cb77ef5e56e4290"
+      "depois": "deca9b0514d185e8e4f70433683e0e600e81af541b771b29680866b207660fb3",
+      "intermediarios": [
+        "80fc5ce09e52d552d28a41deea224347b2ea23e248bab7648cb77ef5e56e4290"
+      ]
     },
     "assets/selos.js": {
       "antes": "38cc4a077edb25ee5a99cfbdff84dd9d366af35505b46a10231dbc8c1833cdba",
@@ -32,7 +35,10 @@
   "uniforca-hora-da-feira-flexivel": {
     "assets/edicao.js": {
       "antes": "b500fc02e46f441db969c7099923850c09b49b7aaee643c34f6eb8e8057e5b04",
-      "depois": "80fc5ce09e52d552d28a41deea224347b2ea23e248bab7648cb77ef5e56e4290"
+      "depois": "deca9b0514d185e8e4f70433683e0e600e81af541b771b29680866b207660fb3",
+      "intermediarios": [
+        "80fc5ce09e52d552d28a41deea224347b2ea23e248bab7648cb77ef5e56e4290"
+      ]
     },
     "assets/selos.js": {
       "antes": "38cc4a077edb25ee5a99cfbdff84dd9d366af35505b46a10231dbc8c1833cdba",
@@ -62,7 +68,10 @@
   "uniforca-momento-do-bebe-flexivel": {
     "assets/edicao.js": {
       "antes": "b500fc02e46f441db969c7099923850c09b49b7aaee643c34f6eb8e8057e5b04",
-      "depois": "80fc5ce09e52d552d28a41deea224347b2ea23e248bab7648cb77ef5e56e4290"
+      "depois": "deca9b0514d185e8e4f70433683e0e600e81af541b771b29680866b207660fb3",
+      "intermediarios": [
+        "80fc5ce09e52d552d28a41deea224347b2ea23e248bab7648cb77ef5e56e4290"
+      ]
     },
     "assets/selos.js": {
       "antes": "38cc4a077edb25ee5a99cfbdff84dd9d366af35505b46a10231dbc8c1833cdba",
@@ -92,7 +101,10 @@
   "uniforca-perdigao-flexivel": {
     "assets/edicao.js": {
       "antes": "b500fc02e46f441db969c7099923850c09b49b7aaee643c34f6eb8e8057e5b04",
-      "depois": "80fc5ce09e52d552d28a41deea224347b2ea23e248bab7648cb77ef5e56e4290"
+      "depois": "deca9b0514d185e8e4f70433683e0e600e81af541b771b29680866b207660fb3",
+      "intermediarios": [
+        "80fc5ce09e52d552d28a41deea224347b2ea23e248bab7648cb77ef5e56e4290"
+      ]
     },
     "assets/selos.js": {
       "antes": "38cc4a077edb25ee5a99cfbdff84dd9d366af35505b46a10231dbc8c1833cdba",
@@ -122,7 +134,10 @@
   "uniforca-sadia-flexivel": {
     "assets/edicao.js": {
       "antes": "b500fc02e46f441db969c7099923850c09b49b7aaee643c34f6eb8e8057e5b04",
-      "depois": "80fc5ce09e52d552d28a41deea224347b2ea23e248bab7648cb77ef5e56e4290"
+      "depois": "deca9b0514d185e8e4f70433683e0e600e81af541b771b29680866b207660fb3",
+      "intermediarios": [
+        "80fc5ce09e52d552d28a41deea224347b2ea23e248bab7648cb77ef5e56e4290"
+      ]
     },
     "assets/selos.js": {
       "antes": "38cc4a077edb25ee5a99cfbdff84dd9d366af35505b46a10231dbc8c1833cdba",

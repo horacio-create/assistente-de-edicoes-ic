@@ -46,6 +46,21 @@ def signup(email, name='Pessoa', role=None, superadmin=False):
 
 
 class AuthTests(unittest.TestCase):
+    def test_pdf_compactado_so_pode_ser_baixado_pelo_dono(self):
+        a, cookie_a = signup('pdf-dono@x.com', role=self.role)
+        _, cookie_b = signup('pdf-outro@x.com', role=self.role)
+        ident = uuid.uuid4().hex
+        with connect() as db:
+            db.execute("INSERT INTO ofertas_encartes(id,nome,status,criado,owner) VALUES(?,?,'pronto',?,?)",
+                       (ident, 'privado.pdf', now(), a['id']))
+        arquivo = ofertas.PASTA / 'encartes' / f'{ident}.pdf'
+        arquivo.write_bytes(b'%PDF teste privado')
+        arquivo.with_suffix('.preparacao.json').write_text(json.dumps({'reduzido': True}))
+        rota = f'/ofertas/encarte/{ident}/compactado.pdf'
+        self.assertEqual(call('GET', rota, cookie=cookie_a)[0], 200)
+        self.assertEqual(call('GET', rota, cookie=cookie_b)[0], 400)
+        self.assertEqual(call('GET', rota)[0], 401)
+
     @classmethod
     def setUpClass(cls):
         server.AUTH = True

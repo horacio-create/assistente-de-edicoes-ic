@@ -17,7 +17,7 @@ test('caracteres, imagem e título mantêm ajustes independentes, inclusive apó
 });
 test('ajustes não executam conteúdo e limitam valores não finitos ou extremos',()=>{
   const r=limpar({elementos:{'<script>':{x:1,y:2,escala:1},produto:{x:Infinity,y:-9000,escala:99}}});
-  assert.equal(Object.keys(r.elementos).length,1);assert.deepEqual(r.elementos.produto,{x:0,y:-1080,escala:4});
+  assert.equal(Object.keys(r.elementos).length,1);assert.deepEqual(r.elementos.produto,{x:0,y:-1080,escala:12});
 });
 test('o motor entrega para a exportação os mesmos ajustes salvos no pedido',async()=>{
   const {validarTemplate,dadosPadrao,prepararDados,esquema}=await import('../ofertas/motor/contrato.mjs');

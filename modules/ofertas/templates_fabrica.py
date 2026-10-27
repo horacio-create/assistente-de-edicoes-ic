@@ -17,7 +17,7 @@ def _atualizar_manifesto(base, publicados, arquivo, backup):
     for ident, arquivos in json.loads(manifest.read_text('utf-8')).items():
         origem, destino = base / 'templates' / ident, publicados / ident
         if not destino.is_dir() or origem.resolve() == destino.resolve(): continue
-        if ident not in ('uniforca-hora-da-carne-flexivel', 'uniforca-hora-da-feira-flexivel', 'uniforca-momento-do-bebe-flexivel', 'uniforca-sadia-flexivel', 'uniforca-perdigao-flexivel'): continue
+        if ident not in ('uniforca-hora-da-carne-flexivel', 'uniforca-hora-da-feira-flexivel', 'uniforca-momento-do-bebe-flexivel', 'uniforca-sadia-flexivel', 'uniforca-perdigao-flexivel', 'uniforca-vitrine-laranja-flexivel', 'uniforca-vitrine-nestle-flexivel', 'uniforca-vitrine-itambe-flexivel'): continue
         # Mudanças de conteúdo do designer impedem a atualização do conjunto; capa personalizada é mantida.
         seguros = all(resumo(destino / nome) in (info['antes'], info['depois'], *info.get('intermediarios', []))
                       for nome, info in arquivos.items() if nome != 'capa.png')
@@ -44,7 +44,8 @@ def _atualizar_manifesto(base, publicados, arquivo, backup):
 
 def atualizar(base, publicados):
     resultados = []
-    for arquivo, backup in [('selos-editor-20261026.json', 'antes-selos-editor-20261026'),
+    for arquivo, backup in [('ampliacao-produtos-20261027.json', 'antes-ampliacao-produtos-20261027'),
+                            ('selos-editor-20261026.json', 'antes-selos-editor-20261026'),
                             ('templates-20261022.json', 'antes-editor-lotes-20261022'),
                             ('titulos-20261022.json', 'antes-quebra-titulos-20261022'),
                             ('selo-original-20261022.json', 'antes-selo-original-20261022'),
