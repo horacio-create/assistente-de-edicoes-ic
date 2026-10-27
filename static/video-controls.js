@@ -104,17 +104,17 @@ function syncEditorKind() {
   const video = editorKind === 'video';
   document.body.classList.toggle('video-editor', video);
   $('files').accept = video ? '.mp4,.mov,.m4v,.mkv,.avi,.webm,.wmv,.mpg,.mpeg' : '.jpg,.jpeg,.png,.webp,.bmp,.tif,.tiff,.pdf';
-  $('empty').setAttribute('aria-label', video ? 'Adicionar vídeos' : 'Adicionar imagens');
-  $('empty').querySelector('.step-label').textContent = video ? 'Adicionar vídeos' : 'Adicionar imagens';
+  $('empty').setAttribute('aria-label', video ? 'Adicionar vídeos' : 'Adicionar imagens ou PDF');
+  $('empty').querySelector('.step-label').textContent = video ? 'Adicionar vídeos' : 'Adicionar imagens ou PDF';
   $('empty').querySelector('h2').textContent = video ? 'Traga seu primeiro vídeo.' : 'Traga sua primeira arte.';
-  $('empty').querySelector('p:not(.help)').textContent = video ? 'Arraste vídeos para esta área ou clique para escolher.' : 'Arraste imagens para esta área ou clique para escolher.';
+  $('empty').querySelector('p:not(.help)').textContent = video ? 'Arraste vídeos para esta área ou clique para escolher.' : 'Arraste imagens ou PDFs para esta área. Cada página do PDF vira uma imagem separada.';
   $('add-files').textContent = video ? 'Escolher vídeos' : 'Escolher imagens';
   const formats = video ? 'MP4, MOV, MKV, AVI, WebM e outros vídeos' : 'JPG, PNG, WebP, BMP, TIFF e PDF';
   const limite = video ? 'até 200 MB por arquivo' : 'até 100 MB por arquivo';
-  $('empty').querySelector('.help').textContent = formats + ' · ' + limite;
+  $('empty').querySelector('.help').textContent = formats + ' · ' + limite + (video?'':'. PDFs com até 100 páginas.');
   $('editor').querySelector('.step-label').textContent = video ? 'Ajustar vídeo' : 'Ajustar imagem';
   $('filmstrip').querySelector('.step-label').textContent = video ? 'Vídeos adicionados' : 'Imagens adicionadas';
-  $('filmstrip').querySelector('.section-title p').textContent = `Arraste mais ${video ? 'vídeos' : 'imagens'} aqui ou use o botão +. ${formats} · ${limite}.`;
+  $('filmstrip').querySelector('.section-title p').textContent = `Arraste mais ${video ? 'vídeos' : 'imagens'} aqui ou use o botão +. ${formats} · ${limite}.${video?'':' Cada página do PDF vira uma imagem separada.'}`;
   $('format').replaceChildren();
   for (const [value, label] of video ? [['mp4', 'MP4 · compatível com as telas']] : [['jpg', 'JPG · alta qualidade'], ['png', 'PNG · sem perdas']]) {
     const option = document.createElement('option'); option.value = value; option.textContent = label; $('format').append(option);

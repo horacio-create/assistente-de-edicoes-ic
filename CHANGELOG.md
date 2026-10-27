@@ -1,5 +1,13 @@
 # Histórico de versões
 
+## 1.13.6 — PDFs como imagens e ampliação de produtos — 27/10/2026
+
+- Imagens: botão Importar PDF na tela inicial e na biblioteca; cada página vira uma imagem independente, com edição e exportação JPG/PNG. Mensagem informa quantas páginas foram convertidas.
+- Ofertas: fotos podem ser ampliadas até 1200%; os limites usam a imagem visível, descontando margens transparentes e o espaço de enquadramento.
+- Ajustes maiores são preservados no salvamento, na exportação e na padronização de várias cartelas.
+- Atualização dos oito templates com backup, preservando artes e componentes personalizados.
+
+
 ## 1.13.4 — Ofertas e edição de vídeos em lote — 23/10/2026
 
 - Ofertas: opções de divisão e geração na terceira etapa, com preservação dos ajustes e geração de todos os vídeos previstos; títulos com até 150 caracteres.

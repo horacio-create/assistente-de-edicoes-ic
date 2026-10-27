@@ -112,7 +112,7 @@ function validarValor(campo, bruto, decl, ctx) {
           if (typeof elementos !== 'object' || !elementos || Array.isArray(elementos) || Object.keys(elementos).length > 200) throw Error();
           for (const [id, a] of Object.entries(elementos)) {
             if (!ids.test(id) || !a || typeof a !== 'object') throw Error();
-            for (const [k,min,max] of [['x',-1920,1920],['y',-1080,1080],['escala',.2,4]])
+            for (const [k,min,max] of [['x',-1920,1920],['y',-1080,1080],['escala',.2,id==='produto'?12:4]])
               if (typeof a[k] !== 'number' || !Number.isFinite(a[k]) || a[k] < min || a[k] > max) throw Error();
           }
         } catch { return {erro:'ajustes visuais inválidos. Restaure a cartela no editor.'}; }
