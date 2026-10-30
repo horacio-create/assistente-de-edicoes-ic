@@ -88,6 +88,11 @@ def extrair_pagina(page, doc):
     objetos = [im for im in imagens if im[1] not in ids_selos
                and im[0].x1 <= page.rect.width + 2 and im[0].width > 12 and im[0].height > 12
                and im[0].get_area() < page.rect.get_area() * .25]
+    if len(selos)>=25:
+        from .encarte_grade_mista import extrair_grade
+        fotos_grade=[im for im in objetos if not (im[0].width>largura*1.7
+                     and sum(im is not outro and im[0].contains(outro[0]) for outro in objetos)>=2)]
+        return extrair_grade(page,doc,selos,fotos_grade,imagens,spans,caracteres,precos_selo,numero)
     # Caixas coloridas de destaque podem conter duas fotos independentes.
     objetos = [im for im in objetos if not (im[0].width > largura * 1.7
                and sum(im is not outro and im[0].contains(outro[0]) for outro in objetos) >= 2)]

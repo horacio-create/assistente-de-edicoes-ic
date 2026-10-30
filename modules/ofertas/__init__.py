@@ -137,6 +137,9 @@ def garantir():
                 else:
                     db.execute("UPDATE ofertas_renders SET status='interrompido', terminado=? WHERE id=?", (now(), r['id']))
             pendentes = [r['id'] for r in db.execute("SELECT id FROM ofertas_encartes WHERE status='lendo'")]
+        from . import entregas
+        entregas.garantir()
+        threading.Thread(target=worker_entregas,daemon=True).start()
         if status()['pronto']:
             threading.Thread(target=worker, daemon=True).start()
             FILA.set()
@@ -248,6 +251,14 @@ def remover_fundo(ident):
         saida.unlink(missing_ok=True)
 
 # ---------- fila de render ----------
+
+def worker_entregas():
+    from .entregas import processar
+    while True:
+        try:processar(PASTA)
+        except Exception:pass  # uma pasta indisponível não encerra o acompanhamento
+        time.sleep(3)
+
 
 def worker():
     while True:
@@ -748,6 +759,12 @@ def api(method, path, query, raw, content_type=''):
               '/encarte-gerar-todos': 'ofertas_encartes'}.get(path)
     if tabela:
         with connect() as db: mine(db, tabela, q('id') or str(value.get('encarte' if path == '/encarte-gerar-todos' else 'id', '')))
+    if path.startswith('/exportacoes'):
+        from . import entregas
+        if path=='/exportacoes' and method=='GET':return entregas.listar()
+        if path=='/exportacoes' and method=='POST':return {'id':entregas.criar(value)}
+        if path=='/exportacoes-confirmar':entregas.confirmar(value);return {'ok':True}
+        if path=='/exportacoes-cancelar':entregas.cancelar(value.get('id'));return {'ok':True}
     if not status()['pronto'] and path not in ('/imagens',): raise ValueError(status()['motivo'])
     if path == '/cartelas-miniaturas' and method == 'GET':
         from modules.ofertas.miniaturas_cartelas import manifestar

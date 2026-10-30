@@ -418,7 +418,7 @@ upload=async function(files){
     const data=await fetchImportFile(f);job=data.job;if(data.cancelled)break;
     if(data.unsupported){failures.push(f.name+': formato não suportado.');continue;}
     const imported=job.media.filter(m=>!known.has(m.id));
-    for(const m of imported){if(m.kind==='video'&&importChoice.mode!=='library'){appendImportedVideo(m,importChoice.mode);firstAdded=true;continue;}if(m.kind==='audio'||(!project().clips.some(c=>projectMedia(c)?.kind!=='audio')&&!firstAdded&&m.kind!=='audio')){if(project().clips.length>=100)throw new Error('A biblioteca recebeu o arquivo; libere um trecho para colocá-lo na timeline.');const t=trackForMedia(m,null,m.kind==='audio'),c=defaultClip(m,t.id);project().clips.push(c);compositionSelected=c.id;active=m.id;selected=new Set([m.id]);if(m.kind!=='audio')firstAdded=true;}}
+    for(const m of imported){if(['video','image'].includes(m.kind)&&importChoice.mode!=='library'){appendImportedVideo(m,importChoice.mode);firstAdded=true;continue;}if(m.kind==='audio'||(!project().clips.some(c=>projectMedia(c)?.kind!=='audio')&&!firstAdded&&m.kind!=='audio')){if(project().clips.length>=100)throw new Error('A biblioteca recebeu o arquivo; libere um trecho para colocá-lo na timeline.');const t=trackForMedia(m,null,m.kind==='audio'),c=defaultClip(m,t.id);project().clips.push(c);compositionSelected=c.id;active=m.id;selected=new Set([m.id]);if(m.kind!=='audio')firstAdded=true;}}
     markDirty();await save();
    }catch(error){failures.push(f.name+': '+error.message);}
   }
@@ -449,7 +449,7 @@ $('source-dialog').addEventListener('close',()=>{$('source-video').pause();$('so
 
 openExport=async function(){
  if(editorKind!=='video')return compositionLegacy.openExport();stopComposition();const folder=await chooseFolder();if(!folder)return;await save();exportFolder=folder;exportIds=['composition'];previewIndex=0;
- $('export-name').value=job.meta.template||('VT - '+(job.title==='Nova edição'?'Cliente - Campanha '+dateName():job.title)).slice(0,85);$('format').value='mp4';$('folder-label').textContent=folder;$('overwrite').checked=false;$('overwrite-label').hidden=true;$('export-result').hidden=true;resetCompletion();
+ $('export-name').value='VT';$('format').value='mp4';$('folder-label').textContent=folder;$('overwrite').checked=false;$('overwrite-label').hidden=true;$('export-result').hidden=true;resetCompletion();
  $('export-dialog').showModal();await Promise.all([finalPreview(),refreshPlan()]);syncAudio();
 };
 exportValues=function(){return editorKind==='video'?{job:job.id,composition:true,template:$('export-name').value,folder:exportFolder,format:'mp4'}:compositionLegacy.exportValues();};

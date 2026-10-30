@@ -115,8 +115,8 @@ function syncQueueControls(){const video=editorKind==='video';queueActions.hidde
 function renderQueue(){
  const list=$('queue-list');list.replaceChildren();
  for(const item of exportQueue()){
-  const row=document.createElement('div');row.className='queue-entry';row.dataset.queueId=item.id;const text=document.createElement('div'),name=document.createElement('strong'),detail=document.createElement('small');name.textContent='VT '+String(item.number).padStart(2,'0')+' · '+item.name;const s=item.composition.settings;detail.append(document.createTextNode(seconds(projectDuration(item.composition))+' · '+s.width+' × '+s.height+' · '));const audioState=document.createElement('strong');audioState.className='queue-audio-state';audioState.textContent=s.mute?'Sem áudio':'Áudio mantido';detail.append(audioState);text.append(name,detail);
-  const remove=document.createElement('button');remove.type='button';remove.innerHTML=trashIcon;remove.setAttribute('aria-label','Remover VT '+String(item.number).padStart(2,'0')+' da fila');remove.dataset.help='Retirar da fila. A timeline continua na edição.';remove.onclick=()=>guard(async()=>{mutateEdition(()=>job.meta.exportQueue=exportQueue().filter(q=>q.id!==item.id));await save();renderQueue();});row.append(text,remove);list.append(row);
+  const row=document.createElement('div');row.className='queue-entry';row.dataset.queueId=item.id;const text=document.createElement('div'),name=document.createElement('strong'),detail=document.createElement('small');name.textContent='VT '+String(item.number)+' · '+item.name;const s=item.composition.settings;detail.append(document.createTextNode(seconds(projectDuration(item.composition))+' · '+s.width+' × '+s.height+' · '));const audioState=document.createElement('strong');audioState.className='queue-audio-state';audioState.textContent=s.mute?'Sem áudio':'Áudio mantido';detail.append(audioState);text.append(name,detail);
+  const remove=document.createElement('button');remove.type='button';remove.innerHTML=trashIcon;remove.setAttribute('aria-label','Remover VT '+String(item.number)+' da fila');remove.dataset.help='Retirar da fila. A timeline continua na edição.';remove.onclick=()=>guard(async()=>{mutateEdition(()=>job.meta.exportQueue=exportQueue().filter(q=>q.id!==item.id));await save();renderQueue();});row.append(text,remove);list.append(row);
  }
  if(!exportQueue().length){const empty=document.createElement('p');empty.textContent='Nenhum vídeo na fila.';list.append(empty);}syncQueueControls();
 }
@@ -131,7 +131,7 @@ const projectOpenExport=openExport,projectExportValues=exportValues,projectFinal
 openExport=async function(){
  if(editorKind!=='video'||!exportQueue().length){queueExportMode=false;return projectOpenExport();}
  stopComposition();const folder=await chooseFolder();if(!folder)return;await save();exportFolder=folder;queueExportMode=true;exportIds=exportQueue().map(q=>q.id);previewIndex=0;
- $('export-name').value=job.meta.template||('VT - '+job.title).slice(0,85);$('format').value='mp4';$('folder-label').textContent=folder;$('overwrite').checked=false;$('overwrite-label').hidden=true;$('export-result').hidden=true;resetCompletion();$('export-dialog').showModal();await Promise.all([finalPreview(),refreshPlan()]);syncAudio();
+ $('export-name').value='VT';$('format').value='mp4';$('folder-label').textContent=folder;$('overwrite').checked=false;$('overwrite-label').hidden=true;$('export-result').hidden=true;resetCompletion();$('export-dialog').showModal();await Promise.all([finalPreview(),refreshPlan()]);syncAudio();
 };
 exportValues=function(){return editorKind==='video'&&queueExportMode?{job:job.id,queue:true,template:$('export-name').value,folder:exportFolder,format:'mp4'}:projectExportValues();};
 finalPreview=async function(){

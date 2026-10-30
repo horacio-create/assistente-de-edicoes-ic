@@ -4,14 +4,14 @@
 const videoImportChoice=document.createElement('dialog');
 videoImportChoice.id='video-import-choice';
 videoImportChoice.setAttribute('aria-labelledby','video-import-choice-title');
-videoImportChoice.innerHTML=`<div class="dialog-head"><h2 id="video-import-choice-title">Como organizar os vídeos?</h2><button class="close" type="button" aria-label="Cancelar importação">×</button></div>
+videoImportChoice.innerHTML=`<div class="dialog-head"><h2 id="video-import-choice-title">Como organizar as imagens e os vídeos?</h2><button class="close" type="button" aria-label="Cancelar importação">×</button></div>
 <p id="video-import-choice-summary"></p>
-<label class="check"><input type="radio" name="video-import-mode" value="single" checked> Uma timeline — adicionar os vídeos em sequência</label>
-<label class="check"><input type="radio" name="video-import-mode" value="separate"> Uma timeline para cada vídeo — editar e exportar separadamente</label>
+<label class="check"><input type="radio" name="video-import-mode" value="single" checked> Uma timeline — adicionar os arquivos em sequência</label>
+<label class="check"><input type="radio" name="video-import-mode" value="separate"> Uma timeline para cada arquivo — editar e exportar separadamente</label>
 <p id="video-import-capacity" class="help"></p>
 <label class="check"><input id="video-import-enqueue" type="checkbox"> Colocar todas as timelines na fila ao concluir a importação</label>
-<p class="help">As timelines existentes são preservadas. Imagens e áudios continuam disponíveis na biblioteca.</p>
-<div class="dialog-footer"><button id="video-import-back" type="button" class="secondary">Cancelar</button><button id="video-import-proceed" type="button" class="primary">Importar vídeos</button></div>`;
+<p class="help">As timelines existentes são preservadas. Os arquivos continuam disponíveis na biblioteca. Áudios não são separados em timelines.</p>
+<div class="dialog-footer"><button id="video-import-back" type="button" class="secondary">Cancelar</button><button id="video-import-proceed" type="button" class="primary">Importar arquivos</button></div>`;
 document.body.append(videoImportChoice);
 let resolveVideoImport=null;
 function finishVideoImport(value){const resolve=resolveVideoImport;resolveVideoImport=null;videoImportChoice.close();resolve?.(value);}
@@ -19,15 +19,15 @@ videoImportChoice.querySelector('.close').onclick=$('video-import-back').onclick
 videoImportChoice.addEventListener('cancel',e=>{e.preventDefault();finishVideoImport(null);});
 $('video-import-proceed').onclick=()=>finishVideoImport({mode:videoImportChoice.querySelector('input[name="video-import-mode"]:checked').value,queue:$('video-import-enqueue').checked});
 async function chooseVideoTimelineMode(files){
- const count=files.filter(f=>/\.(mp4|mov|m4v|mkv|avi|webm|wmv|mpg|mpeg)$/i.test(f.name)).length;
- if(!count||count+(job?.media.filter(m=>m.kind==='video').length||0)<2)return {mode:'library',queue:false};
+ const count=files.filter(f=>/\.(mp4|mov|m4v|mkv|avi|webm|wmv|mpg|mpeg|jpg|jpeg|png|webp|bmp|tif|tiff)$/i.test(f.name)).length;
+ if(!count||count+(job?.media.filter(m=>['video','image'].includes(m.kind)).length||0)<2)return {mode:'library',queue:false};
  if(resolveVideoImport)return null;
  const empty=!!project()&&!project().clips.length;
  const slots=TIMELINE_LIMIT-timelines().length+(empty?1:0);
  const separate=videoImportChoice.querySelector('[value="separate"]');separate.disabled=count>slots;
  videoImportChoice.querySelector('[value="single"]').checked=true;
  $('video-import-enqueue').checked=false;
- $('video-import-choice-summary').textContent=`Você está adicionando ${count} vídeo(s). Escolha como quer trabalhar com eles.`;
+ $('video-import-choice-summary').textContent=`Você está adicionando ${count} imagem(ns)/vídeo(s). Escolha como quer trabalhar com eles.`;
  $('video-import-capacity').textContent=count>slots?`Há espaço para ${slots} timeline(s) nesta edição (limite de ${TIMELINE_LIMIT}). Para separar todos, use uma nova edição ou importe menos arquivos.`:`Até ${TIMELINE_LIMIT} timelines por edição. Você pode trocar entre elas pelas abas.`;
  return new Promise(resolve=>{resolveVideoImport=resolve;videoImportChoice.showModal();});
 }
@@ -57,7 +57,7 @@ function appendImportedVideo(media,mode){
 // Refresh an already queued timeline instead of adding the same timeline twice.
 async function enqueueAllTimelines(){
  ensureTimelines();const candidates=timelines().filter(t=>t.composition.clips.length);
- if(!candidates.length)throw new Error('Adicione vídeos às timelines antes de colocá-las na fila.');
+ if(!candidates.length)throw new Error('Adicione imagens ou vídeos às timelines antes de colocá-las na fila.');
  const queue=structuredClone(exportQueue());let number=Math.max(0,...queue.map(q=>q.number));
  const add=candidates.filter(t=>!queue.some(q=>q.timelineId===t.id));
  if(queue.length+add.length>50||number+add.length>999)throw new Error('A fila não tem espaço para todas as timelines. Exporte ou remova itens antes de continuar.');
