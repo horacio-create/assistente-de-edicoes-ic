@@ -602,7 +602,7 @@ def api(method, path, query, raw, environ=None, background=False):
         used_names = set()
         names = value.get('names', [])
         for i, m in enumerate(media):
-            number = (' '+str(m['number']).zfill(2)) if value.get('queue') else (' '+str(i+1) if len(media)>1 else '')
+            number = (' '+str(m['number'])) if value.get('queue') else (' '+str(i+1) if len(media)>1 else '')
             if original_names:
                 base = m['name'] if m['kind']=='composition' else Path(m['name'].replace('\\','/')).stem
                 base = clean(base[:90])
@@ -612,6 +612,7 @@ def api(method, path, query, raw, environ=None, background=False):
                     ending=f' ({suffix})';name=clean(base[:90-len(ending)]+ending);suffix+=1
                 used_names.add(name.casefold())
             elif names: name = clean(names[i])
+            elif fmt=='mp4' and template=='VT':name=f"VT {m.get('number',i+1)}"
             elif template is not None:
                 base = re.sub(r'^VT\s*\d*\s*-\s*', '', template, flags=re.IGNORECASE)
                 name = clean(f"VT{number} - {base}")
@@ -916,7 +917,7 @@ def app(environ, start_response):
             content_type = 'image/png'
         else:
             name = 'index.html' if path == '/' else path.lstrip('/')
-            if name not in ('index.html','app.js','video-controls.js','composition-controls.js','project-controls.js','video-batch.js','editor-layout.js','audio-panels.js','transform-controls.js','clip-dialogs.js','timeline-sequence.js','editing-tabs.js','preview-ruler.js','icons.js', 'edition-names.js','export-progress.js','undo-history.js','vector.js','eap.js','style.css','favicon.svg','logo-indoor.png','ofertas.js','ofertas-editor.js','ofertas.css','tarefas.js','tarefas.css','login.html','login.js','admin.js','acesso.css','conta.js','home.js','eap-icon.svg','atividades.js','relatorios.js','molduras.js','zoom.js','estampas.js'): raise FileNotFoundError()
+            if name not in ('index.html','app.js','video-controls.js','composition-controls.js','project-controls.js','video-batch.js','editor-layout.js','audio-panels.js','transform-controls.js','clip-dialogs.js','timeline-sequence.js','editing-tabs.js','preview-ruler.js','icons.js', 'edition-names.js','export-progress.js','undo-history.js','vector.js','eap.js','style.css','favicon.svg','logo-indoor.png','ofertas.js','ofertas-editor.js','ofertas-entregas.js','ofertas.css','tarefas.js','tarefas.css','login.html','login.js','admin.js','acesso.css','conta.js','home.js','eap-icon.svg','atividades.js','relatorios.js','molduras.js','zoom.js','estampas.js'): raise FileNotFoundError()
             data = (ROOT / 'static' / name).read_bytes()
             content_type = mimetypes.guess_type(name)[0] or 'application/octet-stream'
     except Conflict as exc:

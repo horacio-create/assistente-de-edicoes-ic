@@ -1225,6 +1225,8 @@ async function carregarPedidos() {
   } catch (e) { falha(e); }
 }
 
+el('exportar-videos').onclick=async()=>{try{const {renders}=await api('/renders');window.OfertasEntregas.abrir(renders);}catch(e){falha(e);}};
+
 // ---------- fila ----------
 let filaTimer;
 const tarefaRender = {};  // id do render -> tarefa no painel
@@ -1238,6 +1240,7 @@ async function carregarFila() {
   clearTimeout(filaTimer);
   try {
     const { renders, mediaSegundos } = await api('/renders');
+    window.OfertasEntregas?.atualizar();
     const ativos = renders.filter((r) => r.status === 'na_fila' || r.status === 'gerando');
     for (const r of renders) {
       let t = tarefaRender[r.id];
@@ -1288,10 +1291,13 @@ function montarRender(card, r, media) {
       <span class="acoes"><span class="status ${r.status}">${STATUS[r.status]}</span>
       ${r.status === 'pronto' ? `<a class="primary botao-link" href="/ofertas/video/${r.id}.mp4?baixar=1">Baixar MP4</a>` : ''}
       ${['na_fila', 'gerando'].includes(r.status) ? '<button type="button" class="secondary cancelar">Cancelar</button>' : ''}
+      ${['pronto','na_fila','gerando'].includes(r.status)?'<button type="button" class="secondary entregar">Exportar para pasta</button>':''}
       <button type="button" class="text-button abrir">Abrir pedido</button></span>
       ${r.status === 'gerando' ? `<span class="progresso"><i style="width:${Math.min(95, (segundos(r) / media) * 100)}%"></i></span>` : ''}</summary>
     <div class="corpo">${corpoRender(r, media)}</div>`;
   card.querySelector('.abrir').onclick = async (e) => { e.preventDefault(); try { state.importarNaEscolha = false; abrirPedido(await api('/pedido?id=' + r.pedido)); } catch (err) { falha(err); } };
+  const entrega=card.querySelector('.entregar');
+  if(entrega)entrega.onclick=e=>{e.preventDefault();window.OfertasEntregas.abrir([r],[r.id]);};
   const c = card.querySelector('.cancelar');
   if (c) c.onclick = async (e) => { e.preventDefault(); await api('/render-cancelar', { body: { id: r.id } }).catch(falha); carregarFila(); };
   const tocar = card.querySelector('.tocar');

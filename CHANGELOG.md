@@ -1,5 +1,12 @@
 # Histórico de versões
 
+## 1.13.7 — Exportação de Ofertas e imagens em timelines — 30/10/2026
+
+- Imagens e vídeos podem ser importados em sequência ou em uma timeline por arquivo, com envio de todas à fila.
+- Ofertas: exportar vídeos prontos ou ainda em geração para a pasta escolhida, com numeração inicial e preservação de arquivos existentes.
+- Nomes padrão dos MP4s: VT 1, VT 2, VT 3, mantendo a opção de nomes originais no editor.
+- Novo template Ofertas Incríveis, com data editável, e extração de encartes com grades mistas.
+
 ## 1.13.6 — PDFs como imagens e ampliação de produtos — 27/10/2026
 
 - Imagens: botão Importar PDF na tela inicial e na biblioteca; cada página vira uma imagem independente, com edição e exportação JPG/PNG. Mensagem informa quantas páginas foram convertidas.

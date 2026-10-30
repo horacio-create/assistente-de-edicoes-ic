@@ -80,8 +80,8 @@ class ProjectQueueTests(unittest.TestCase):
         self.assertEqual(job['meta']['exportQueue'][0]['composition'],snapshot)
         with tempfile.TemporaryDirectory() as folder:
             plan=self.plan(job,folder);self.assertEqual(len(plan['files']),2)
-            self.assertEqual(plan['files'][0]['name'],'VT 01 - Supermercado - Ofertas 07 a 09.10.mp4')
-            self.assertEqual(plan['files'][1]['name'],'VT 02 - Supermercado - Ofertas 07 a 09.10.mp4')
+            self.assertEqual(plan['files'][0]['name'],'VT 1 - Supermercado - Ofertas 07 a 09.10.mp4')
+            self.assertEqual(plan['files'][1]['name'],'VT 2 - Supermercado - Ofertas 07 a 09.10.mp4')
             self.assertEqual(composition.duration(plan['files'][0]['settings']),1)
 
     def test_queue_rejects_foreign_media_gaps_empty_and_excess(self):
@@ -90,10 +90,10 @@ class ProjectQueueTests(unittest.TestCase):
             job=copy.deepcopy(original);mutate(job['meta']['exportQueue'])
             with self.assertRaises(ValueError):api('/api/save',job)
 
-    def test_single_queue_item_keeps_two_digit_number_and_stale_plan_rejected(self):
+    def test_single_queue_item_keeps_number_and_stale_plan_rejected(self):
         job=self.queued();job['meta']['exportQueue']=job['meta']['exportQueue'][1:];job=api('/api/save',job)
         with tempfile.TemporaryDirectory() as folder:
-            plan=self.plan(job,folder);self.assertTrue(plan['files'][0]['name'].startswith('VT 02 - '))
+            plan=self.plan(job,folder);self.assertTrue(plan['files'][0]['name'].startswith('VT 2 - '))
             api('/api/save',job)
             with self.assertRaises(server.Conflict):api('/api/export',{'token':plan['token']})
 

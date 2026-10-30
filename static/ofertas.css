@@ -464,3 +464,12 @@ body.of-editor-expandido::after{content:'';position:fixed;inset:0;background:#11
 #of-lote-painel .lote-resumo li{align-items:center;flex-wrap:wrap}
 #of-lote-painel .lote-resumo li small{display:block;width:100%;line-height:1.5;color:#626266}
 @media(max-width:950px){#of-lote-painel .of-saida-grid{grid-template-columns:1fr}#of-lote-painel .of-plano-videos{position:static}}
+
+.of-entrega-dialog{width:min(740px,94vw);max-height:90vh;overflow:auto}
+.of-entrega-videos{max-height:32vh;overflow:auto;margin:14px 0;border:1px solid #dedee8;border-radius:10px;padding:8px}
+.of-entrega-videos .check{display:flex;align-items:center;gap:12px;padding:9px;font-size:14px}
+.of-entrega-videos input{width:18px;min-width:18px;margin:0}
+.of-entrega-videos small{display:block;font-size:12px;opacity:.75}
+.of-entrega-status{border:1px solid #dedee8;border-radius:10px;padding:12px;margin:12px 0;background:white}
+.of-entrega-status summary{cursor:pointer;font-size:14px}
+.of-entrega-status li{margin:6px 0;font-size:13px}
