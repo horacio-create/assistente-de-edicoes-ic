@@ -3,27 +3,27 @@
  * display + body: fonte do sistema (herdada de style.css) · axes: light / rounded-system-sans / chromatic-green
  * Telas de acesso (login, cadastro por convite, nova senha) e Usuários. Destaque = o verde de "Escolher mídias" (--green). */
 :root{
-  --ac-paper:#f9f9f9;           /* = fundo do app (#f9f9f9) */
+  --ac-paper:var(--ui-f9f9f9,#f9f9f9);           /* = fundo do app (var(--ui-f9f9f9,#f9f9f9)) */
   --ac-surface:oklch(99.6% 0.002 285);
   --ac-tint:oklch(95.6% 0.007 285);            /* neutro claro: faixas, campos só leitura */
   --ac-tint-2:oklch(94% 0.055 145);            /* verde bem claro: selecionado */
-  --ac-ink:#2d3144;              /* = --ink #1a1a39 */
+  --ac-ink:var(--ui-2d3144,#2d3144);              /* = --ink var(--ui-1a1a39,#1a1a39) */
   --ac-ink-2:oklch(36% 0.05 284);
-  --ac-muted:#626266;
+  --ac-muted:var(--ui-626266,#626266);
   --ac-faint:oklch(64% 0.025 284);
-  --ac-rule:#dadae5;            /* = --line */
-  --ac-rule-2:#dadae5;
-  --ac-accent:#46d880;          /* = --green #46d880, o botão "Escolher mídias" */
-  --ac-accent-hover:#75dba9;     /* = .primary:hover #75dba9 */
-  --ac-accent-ink:oklch(33% 0.07 145);         /* = texto do .primary #18391a */
+  --ac-rule:var(--ui-dadae5,#dadae5);            /* = --line */
+  --ac-rule-2:var(--ui-dadae5,#dadae5);
+  --ac-accent:var(--ui-46d880,#46d880);          /* = --green var(--ui-46d880,#46d880), o botão "Escolher mídias" */
+  --ac-accent-hover:var(--ui-75dba9,#75dba9);     /* = .primary:hover var(--ui-75dba9,#75dba9) */
+  --ac-accent-ink:oklch(33% 0.07 145);         /* = texto do .primary var(--ui-18391a,#18391a) */
   --ac-accent-line:oklch(70% 0.13 145);        /* borda de selecionado */
   --ac-link:oklch(45% 0.11 145);               /* verde escuro: texto clicável (verde claro não passa contraste) */
   --ac-rule-hover:oklch(78% 0.02 285);
-  --ac-ok:#46d880;                 /* = --green */
+  --ac-ok:var(--ui-46d880,#46d880);                 /* = --green */
   --ac-ok-ink:oklch(36% 0.08 145);
   --ac-danger:oklch(52% 0.17 25);
   --ac-danger-tint:oklch(96% 0.025 25);
-  --ac-focus:#6a68cb;             /* = --purple: o anel de foco do app inteiro */
+  --ac-focus:var(--ui-6a68cb,#6a68cb);             /* = --purple: o anel de foco do app inteiro */
   --ac-knob-shadow:0 1px 2px oklch(25% 0.06 284 / .25);
 
   --ac-space-2xs:.5rem;--ac-space-xs:.75rem;--ac-space-sm:1rem;

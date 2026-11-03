@@ -1130,6 +1130,15 @@ el('lote-animacoes').addEventListener('change',()=>{if('animacoes' in state.pedi
 document.querySelectorAll('input[name=of-lote-impar]').forEach(r=>r.addEventListener('change',()=>{
   if('ultimacartela' in state.pedido.dados)definir(['ultimacartela'],r.value==='tres'?'tres':'sozinho');desenharLote();
 }));
+let destinoVideos=null;
+el('destino-escolher').onclick=async()=>{
+ try{
+  const destino=await window.OfertasEntregas.escolherDestino();if(!destino)return;
+  destinoVideos=destino;el('destino-pasta').textContent=destino.label;el('destino-limpar').hidden=false;
+  el('destino-ajuda').textContent=destino.target?'Os MP4s serão entregues aqui. Mantenha esta aba aberta até concluir a entrega.':'Os MP4s serão salvos nesta pasta assim que terminarem. Você pode continuar trabalhando.';
+ }catch(e){falha(e);}
+};
+el('destino-limpar').onclick=()=>{destinoVideos=null;el('destino-pasta').textContent='Nenhuma pasta escolhida';el('destino-limpar').hidden=true;el('destino-ajuda').textContent='Os vídeos ficarão disponíveis na página de downloads.';};
 async function gerarPlanoVideos() {
   if(state.gerandoLote)return;
   state.gerandoLote=true;el('gerar').disabled=true;
@@ -1137,12 +1146,20 @@ async function gerarPlanoVideos() {
     await salvarAgora();
     if(!el('save-state').textContent.startsWith('Salvo'))throw new Error('Aguarde o salvamento antes de gerar.');
     const p=planoLote();
+    const destino=destinoVideos,inicio=Number(el('destino-inicio').value);
+    if(destino&&(!Number.isInteger(inicio)||inicio<1||inicio>99999))throw new Error('Confira a numeração inicial dos MP4s.');
     const r=await api('/pedido-gerar-videos',{body:{id:state.pedido.id,revision:state.pedido.revision,cartelas:p.cartelas,impar:p.impar,nome:el('lote-nome').value,distribuicao:p.distribuicao,animacoes:el('lote-animacoes').checked,revisar:el('lote-revisar').checked,...(p.enc.id?{encarte:p.enc.id,indices:state.ordem.slice(0,state.pedido.dados[p.lista.id].length)}:{})}});
     if(r.revisar){aviso(`${r.videos.length} vídeos preparados para revisão.`,7000);await mostrar('pedidos');if(r.lote)await abrirVisaoLote(r.lote);return;}
     const falhos=r.videos.filter(v=>!v.render);
     aviso(falhos.length?`${r.videos.length-falhos.length} vídeos na fila; ${falhos.length} precisam de revisão.`:`${plural(r.videos.length,'vídeo enviado','vídeos enviados')} para a fila de geração.`,7000);
     await mostrar(falhos.length?'pedidos':'fila');
     if(falhos.length&&r.lote)await abrirVisaoLote(r.lote);
+    const ids=r.videos.filter(v=>v.render).map(v=>v.render);
+    if(destino&&ids.length){
+      try{await window.OfertasEntregas.agendar(ids,destino,inicio);aviso('Entrega automática configurada para '+destino.label+'. Os MP4s serão salvos ao terminar.',10000);}
+      catch(e){falha(new Error('Os vídeos estão na fila, mas a entrega não foi configurada: '+e.message+'. Use Exportar vídeos para pasta para tentar novamente.'));}
+    }
+
   }catch(e){falha(e);}finally{state.gerandoLote=false;if(state.tela==='videos')desenharLote();}
 }
 

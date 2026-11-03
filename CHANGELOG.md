@@ -1,5 +1,11 @@
 # Histórico de versões
 
+## 1.13.8 — Modo escuro e entrega automática — 03/11/2026
+
+- Tema escuro em toda a interface, incluindo acesso, com alternância e preferência salva neste navegador. Artes, templates e mídias conservam as cores originais.
+- A etapa 3 de Ofertas permite escolher a pasta de saída e o número inicial antes da geração; os MP4s são entregues automaticamente ao terminar.
+- A entrega continua disponível para vídeos já gerados, com nomes VT 1.mp4, VT 2.mp4 e preservação de arquivos existentes.
+
 ## 1.13.7 — Exportação de Ofertas e imagens em timelines — 30/10/2026
 
 - Imagens e vídeos podem ser importados em sequência ou em uma timeline por arquivo, com envio de todas à fila.
