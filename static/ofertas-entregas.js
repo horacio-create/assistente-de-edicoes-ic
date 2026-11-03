@@ -25,8 +25,17 @@
   dialog.addEventListener('cancel',e=>{if(configurando)e.preventDefault();});
   el('inicio').oninput=nomes;el('videos').onchange=nomes;
   for(const [acao,checked] of [['todos',true],['nenhum',false]])el(acao).onclick=()=>{el('videos').querySelectorAll('input').forEach(n=>n.checked=checked);nomes();};
+  async function escolherDestino(){
+    const label=await chooseFolder();return label?{label,target:browserTargets.get(label)}:null;
+  }
+  async function agendar(ids,destino,inicio=1){
+    if(!destino)throw Error('Escolha a pasta de saída.');
+    const r=await api('/exportacoes',{ids,inicio,navegador:!!destino.target,pasta:destino.target?'':destino.label,rotulo:destino.label});
+    if(destino.target)destinos.set(r.id,destino.target);
+    await atualizar();return r;
+  }
   el('escolher').onclick=async()=>{
-    try{const label=await chooseFolder();if(!label)return;const target=browserTargets.get(label);pasta={label,target};el('pasta').textContent=label;
+    try{const destino=await escolherDestino();if(!destino)return;pasta=destino;const {label,target}=destino;el('pasta').textContent=label;
       el('ajuda').textContent=target?'Mantenha esta aba aberta para gravar os vídeos neste computador quando ficarem prontos. Arquivos existentes não serão substituídos.':'Os vídeos serão gravados automaticamente nesta pasta, mesmo se você fechar a aba. Se houver nomes existentes, a numeração continua no próximo livre.';
     }catch(e){el('erro').textContent=e.message;}
   };
@@ -42,8 +51,7 @@
       const ids=selecionados();if(!ids.length)throw Error('Selecione ao menos um vídeo.');if(!pasta)throw Error('Escolha a pasta de saída.');
       const inicio=Number(el('inicio').value);if(!Number.isInteger(inicio)||inicio<1||inicio>99999)throw Error('Confira a numeração inicial.');
       configurando=true;el('exportar').disabled=true;
-      const r=await api('/exportacoes',{ids,inicio,navegador:!!pasta.target,pasta:pasta.target?'':pasta.label,rotulo:pasta.label});
-      if(pasta.target)destinos.set(r.id,pasta.target);
+      await agendar(ids,pasta,inicio);
       dialog.close();await atualizar();toast('Exportação configurada. Os vídeos serão entregues conforme ficarem prontos.');
     }catch(e){el('erro').textContent=e.message;}finally{configurando=false;el('exportar').disabled=false;}
   };
@@ -74,5 +82,5 @@
       for(const j of jobs)if(j.navegador&&destinos.has(j.id)&&j.itens.some(i=>i.estado==='disponivel'))entregar(j,destinos.get(j.id)).catch(e=>toast(e.message));
     }catch{/* A próxima consulta tenta novamente sem interromper a fila de geração. */}
   }
-  window.OfertasEntregas={abrir,atualizar};
+  window.OfertasEntregas={abrir,atualizar,escolherDestino,agendar};
 })();
