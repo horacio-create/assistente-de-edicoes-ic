@@ -36,6 +36,26 @@ class VariantesDaMesmaOfertaTests(unittest.TestCase):
         finally:
             doc.close()
 
+    def test_embalagens_estreitas_com_titulo_comum_sao_uma_oferta(self):
+        from modules.ofertas.encarte import extrair
+        with pymupdf.open() as doc:
+            pg=doc.new_page(width=300,height=300)
+            for i,cor in enumerate(['red','yellow','red','yellow']):
+                im=Image.new('RGBA',(24,82),cor)
+                im.putpixel((0,0),(0,0,0,0))
+                png=io.BytesIO();im.save(png,'PNG')
+                pg.insert_image(pymupdf.Rect(100+i*24.1,100,124+i*24.1,182),stream=png.getvalue())
+            pg.insert_text((100,78),'Mortadela Gostosinha',fontsize=9)
+            pg.insert_text((100,94),'Bovina Ou Frango 1Kg',fontsize=9)
+            pg.insert_text((100,200),'10,99',fontsize=10)
+            pg.insert_text((150,205),'8,99',fontsize=15)
+            itens=extrair(doc.tobytes())
+        self.assertEqual(len(itens),1)
+        self.assertEqual(itens[0]['nome'],'Mortadela Gostosinha Bovina Ou Frango 1Kg')
+        self.assertEqual((itens[0]['de'],itens[0]['por']),('10,99','8,99'))
+        foto=Image.open(io.BytesIO(itens[0]['png']))
+        self.assertGreater(foto.width,foto.height)
+
     def test_caixas_transparentes_sem_titulo_comum_nao_bastam_para_unir(self):
         doc, recortes, _ = self.exemplo()
         try:

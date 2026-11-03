@@ -35,7 +35,7 @@ def _agrupar(recortes, doc, titulos=None):
     def titulo(rec):
         r = rec[0]
         candidatos = [(i, b) for i, b in enumerate(blocos)
-                      if r.x0 <= (b['rect'].x0 + b['rect'].x1) / 2 <= r.x1
+                      if min(r.x1,b['rect'].x1)-max(r.x0,b['rect'].x0) > r.width*.15
                       and -8 <= r.y0 - b['rect'].y1 <= min(65, r.height * .75)]
         return min(candidatos, key=lambda x: _dist(r, (x[1]['rect'].tl+x[1]['rect'].br)/2, False))[0] if candidatos else None
     ancoras = {id(rec): titulo(rec) for rec in recortes}
@@ -63,7 +63,11 @@ def _agrupar(recortes, doc, titulos=None):
             # centrado dentro das duas caixas, confirma que pertencem à oferta.
             if ancoras[id(a)] is not None and ancoras[id(a)] == ancoras[id(b)]: return True
         perto = pymupdf.Rect(ra.x0 - ra.width * .15, ra.y0 - ra.height * .15, ra.x1 + ra.width * .15, ra.y1 + ra.height * .15)
-        return a[1] == b[1] and perto.intersects(rb)
+        # Embalagens estreitas lado a lado podem ter xrefs distintos (sabores).
+        # Mesmo título acima + alinhamento + distância mínima confirma o conjunto.
+        mesmo_titulo = ancoras[id(a)] is not None and ancoras[id(a)] == ancoras[id(b)]
+        lado_a_lado = abs(ra.y0-rb.y0) < min(ra.height,rb.height)*.2 and max(ra.x0,rb.x0)-min(ra.x1,rb.x1) < min(ra.width,rb.width)*.2
+        return (a[1] == b[1] and perto.intersects(rb)) or (mesmo_titulo and lado_a_lado)
     grupo = list(range(len(recortes)))
     def raiz(i):
         while grupo[i] != i: i = grupo[i]
@@ -248,7 +252,7 @@ def _extrair_documento(doc):
                     if t and s['size'] >= 5 and len(t) <= 60 and not RUIDO.match(t):
                         spans.append((pymupdf.Rect(s['bbox']), t, s['size']))
         # sem transparência = fundo, logo de cartão etc. (ficam de fora em _recortes)
-        recortes = [x for x in _recortes(page) if x[0].width >= 25 and x[0].height >= 25 and x[0].get_area() <= area * 0.3]
+        recortes = [x for x in _recortes(page) if x[0].width >= 12 and x[0].height >= 25 and x[0].get_area() <= area * 0.3]
         textos = [s for s in spans if LETRAS.search(s[1])]
         grupos = [{'rect': g, 'spans': [], 'precos': [], 'unidades': []} for g in _agrupar(recortes, doc, textos)]
         if not grupos: continue
