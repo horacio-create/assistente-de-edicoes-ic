@@ -1,5 +1,10 @@
 # Histórico de versões
 
+## 1.13.9 — Produtos com embalagens estreitas — 03/11/2026
+
+- A leitura de encartes conserva embalagens estreitas e reúne variantes lado a lado pelo título, alinhamento e proximidade.
+- Corrige a oferta de Mortadela Gostosinha no Carnes.pdf, preservando a foto completa, descrição e os preços normal e do clube.
+
 ## 1.13.8 — Modo escuro e entrega automática — 03/11/2026
 
 - Tema escuro em toda a interface, incluindo acesso, com alternância e preferência salva neste navegador. Artes, templates e mídias conservam as cores originais.
