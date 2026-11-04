@@ -45,7 +45,7 @@ class ExportCompatibilityTests(unittest.TestCase):
             self.assert_exported(queued, result)
             self.assertEqual(result['job']['meta']['exportQueue'], [])
             self.assertEqual(api('/api/entrega', method='GET', query={'token':[queue_token]}),
-                             [f'VT {index:02} - Supermercado - Ofertas 07 a 09.10.mp4' for index in range(1,7)])
+                             [f'VT {index} - Supermercado - Ofertas 07 a 09.10.mp4' for index in range(1,7)])
             for index, item in enumerate(queued['files']):
                 pixel = videos.frame(Path(item['path']), .5).getpixel((160,90))
                 self.assertGreater(pixel[0 if index % 2 == 0 else 2], 200)
