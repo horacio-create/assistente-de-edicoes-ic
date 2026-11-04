@@ -1,5 +1,9 @@
 # Histórico de versões
 
+## 1.13.10 — Publicação das melhorias — 04/11/2026
+
+- Atualiza o teste de exportação pelo navegador para a numeração sem zero à esquerda (VT 1, VT 2), removendo a falha que impedia publicar as versões 1.13.7 a 1.13.9.
+
 ## 1.13.9 — Produtos com embalagens estreitas — 03/11/2026
 
 - A leitura de encartes conserva embalagens estreitas e reúne variantes lado a lado pelo título, alinhamento e proximidade.
