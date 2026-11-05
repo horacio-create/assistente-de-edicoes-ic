@@ -904,7 +904,7 @@ function preencherItem(lista, alvo, it) {
   if (subs.imagem) alvo.imagem = 'biblioteca:' + it.imagem;
   if (subs.por) alvo.por = it.por;
   if (subs.de) alvo.de = it.de;
-  for(const campo of ['equivalenciatexto','equivalenciapreco','equivalenciaunidade','promopreco','promotexto','promocores'])if(subs[campo])alvo[campo]=it[campo]||'';
+  for(const campo of ['equivalenciatexto','equivalenciapreco','equivalenciaunidade','promopreco','promotexto','promocores','promounidade'])if(subs[campo])alvo[campo]=it[campo]||'';
   // mesma regra do servidor (preencher_lista): tags do encarte (+18, marca, tamanhos); vazio = sem tag
   for (let k = 1; k <= 4; k++) {
     if (subs['tag' + k]) alvo['tag' + k] = it['tag' + k] ? 'biblioteca:' + it['tag' + k] : '';

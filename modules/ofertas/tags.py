@@ -14,6 +14,7 @@ import pymupdf
 MAX_TAGS = 4
 ALCOOL = re.compile(r'cerveja|vinho|whisk|aguardente|alco[oó]lica|vodka|\bgin\b|licor|cacha[cç]a|espumante|chopp?\b|rum\b|conhaque|sak[eê]', re.I)
 BALAO = re.compile(r'^(?:Nest[ae]|Ness[ae])(?:\s+Promo)?$', re.I)
+UNIDADE_BALAO = re.compile(r'^(?:cada|kg|un|unid\.?|pct|\d+\s?(?:g|ml|l))$', re.I)
 TAMANHOS = re.compile(r'^(?:RN|P|M|G|XG|XXG|XXXG|EG|EXG)$')
 
 
@@ -57,8 +58,9 @@ def _mais_proximo(itens, alvo, pagina):
     return min(perto, key=lambda it: abs(centro(it['area']) - c))
 
 
-def _cores_balao(page, texto, legenda, preco):
-    """Cores do balão no PDF -> "fundo;texto;preço" em hexadecimal (ex.: "#bd1c1e;#ffffff;#ece31a"):
+def _cores_balao(page, texto, legenda, preco, detalhe=None):
+    """Cores do balão no PDF -> "fundo;texto;preço;detalhe" em hexadecimal (ex.: "#bd1c1e;#ffffff;#ece31a;#ffffff");
+    detalhe = cor do "R$" e da unidade (sem eles no PDF, fica fora e o template usa a cor do preço):
     a tag promocional do template fica com as cores do encarte. Sem a forma do balão: "" (cores do template)."""
     c = (texto.tl + texto.br) / 2
     formas = [d for d in page.get_drawings() if d.get('fill') and d['rect'].contains(c)
@@ -69,13 +71,17 @@ def _cores_balao(page, texto, legenda, preco):
     spans = [(pymupdf.Rect(sp['bbox']), sp['color']) for b in page.get_text('dict')['blocks']
              for l in b.get('lines', []) for sp in l['spans'] if sp['text'].strip()]
     def cor(r):
-        sp = max(spans, key=lambda s: (s[0] & r).get_area(), default=None)
+        # o trecho que mais coincide com a caixa, em proporção do próprio tamanho: o "R$" pequeno
+        # fica dentro da caixa do número grande, e a cor do número não pode vencer
+        sp = max(spans, key=lambda s: (s[0] & r).get_area() / max(s[0].get_area(), r.get_area(), 1e-6), default=None)
         return '#%06x' % sp[1] if sp and (sp[0] & r).get_area() > 0 else ''
     hexa = '#' + ''.join('%02x' % round(v * 255) for v in fundo[:3])
     textos = [cor(r) for r in legenda]
     cor_texto = max(set(textos), key=textos.count) if textos else ''
     cor_preco = cor(preco)
-    return ';'.join([hexa, cor_texto, cor_preco]) if cor_texto and cor_preco else ''
+    if not (cor_texto and cor_preco): return ''
+    cor_detalhe = cor(detalhe) if detalhe else ''
+    return ';'.join([hexa, cor_texto, cor_preco] + ([cor_detalhe] if cor_detalhe else []))
 
 
 def completar(page, itens):
@@ -100,7 +106,12 @@ def completar(page, itens):
         if it.get('promopreco') and it['promopreco'] != preco[1]: continue  # já tem outro balão
         it['promopreco'] = preco[1]
         it['promotexto'] = it.get('promotexto') or legenda
-        cores = _cores_balao(page, rect, [l[0] for l in textos], preco[0])
+        # unidade do balão ("cada", "KG"), logo abaixo/ao lado do preço
+        unidades = [l for l in linhas if regiao.contains((l[0].tl + l[0].br) / 2) and UNIDADE_BALAO.match(l[1]) and l[0].y0 >= preco[0].y0]
+        unidade = min(unidades, key=lambda l: abs(l[0].x0 - preco[0].x1) + abs(l[0].y0 - preco[0].y1), default=None)
+        if unidade: it['promounidade'] = unidade[1].lower() if unidade[1].lower() == 'cada' else unidade[1].upper()
+        moeda = next((l[0] for l in linhas if regiao.contains((l[0].tl + l[0].br) / 2) and l[1] == 'R$'), None)
+        cores = _cores_balao(page, rect, [l[0] for l in textos], preco[0], moeda or (unidade[0] if unidade else None))
         if cores: it['promocores'] = cores
     # Tabela de tamanhos das fraldas ("TAM P M G XG…") é texto vetorial: recorta a área renderizada
     for rect, texto, _ in linhas:

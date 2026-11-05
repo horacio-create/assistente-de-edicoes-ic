@@ -133,7 +133,15 @@
           "max": 40,
           "opcional": true,
           "oculto": true,
-          "ajuda": "Fundo;texto;preço em hexadecimal, lidos do encarte. Vazio: cores do template."
+          "ajuda": "Fundo;texto;preço;R$ e unidade, em hexadecimal, lidos do encarte. Vazio: cores do template."
+        },
+        {
+          "id": "promounidade",
+          "tipo": "texto",
+          "rotulo": "Unidade da tag promocional",
+          "max": 12,
+          "opcional": true,
+          "ajuda": "Ex.: cada, KG. Vazio: sem unidade."
         },
         {
           "id": "tag1",

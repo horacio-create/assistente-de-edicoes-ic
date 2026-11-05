@@ -503,7 +503,7 @@ def preencher_lista(lista, destino, itens):
         if 'imagem' in subs: alvo['imagem'] = 'biblioteca:' + it['imagem']
         if 'por' in subs: alvo['por'] = it['por']
         if 'de' in subs: alvo['de'] = it['de']
-        for campo in ('equivalenciatexto','equivalenciapreco','equivalenciaunidade','promopreco','promotexto','promocores'):
+        for campo in ('equivalenciatexto','equivalenciapreco','equivalenciaunidade','promopreco','promotexto','promocores','promounidade'):
             if campo in subs: alvo[campo] = it.get(campo,'')
         for n in range(1, 5):  # tags do encarte (+18, marca, tamanhos); vazio = sem tag
             if f'tag{n}' in subs: alvo[f'tag{n}'] = 'biblioteca:' + it[f'tag{n}'] if it.get(f'tag{n}') else ''
