@@ -5,6 +5,7 @@ import pymupdf
 
 def extrair_grade(page,doc,selos,objetos,imagens,spans,caracteres,precos_selo,numero):
     from .encarte import _foto,_unidade,avisos,_complemento,_tokens_preco
+    from .encarte_selos import _foto_sem_transparencia
     centro=lambda r:(r.tl+r.br)/2
     alturas=sorted(s[0].height for s in selos)
     altura=alturas[len(alturas)//2]
@@ -60,6 +61,18 @@ def extrair_grade(page,doc,selos,objetos,imagens,spans,caracteres,precos_selo,nu
         if op:
             distancia,i=min(op)
             if distancia<4:fotos[i].append(im)
+    # Cópias encostadas da mesma imagem (4 garrafas de whisky em fila) são um produto só: as mais
+    # distantes do selo ficavam de fora. Só entram cópias que não foram para outra oferta.
+    soltas=[im for im in objetos if not any(im in p for p in fotos.values())
+            and not any(f.contains(centro(im[0])) and centro(im[0]).y>fim for f,fim in fundos_compostos)]
+    mudou=True
+    while mudou:
+        mudou=False
+        for im in soltas[:]:
+            for i,p in fotos.items():
+                if any(im[1]==o[1] and abs(im[0].y0-o[0].y0)<min(im[0].height,o[0].height)*.25
+                       and max(im[0].x0,o[0].x0)-min(im[0].x1,o[0].x1)<max(im[0].width,o[0].width)*.6 for o in p):
+                    p.append(im);soltas.remove(im);mudou=True;break
     ids_selos={s[1] for s in selos}
     resultado=[]
     for i,selo in enumerate(selos):
@@ -82,8 +95,12 @@ def extrair_grade(page,doc,selos,objetos,imagens,spans,caracteres,precos_selo,nu
         por,de=principal[1],normal[1] if normal else ''
         notas=avisos(nome,por,de,unidade)
         area=pymupdf.Rect(r)|titulo['rect']
+        com_fundo=not partes or not any(im[2] for im in partes)  # foto sai com o fundo da arte: tirar na importação
         if partes:
-            png=_foto(doc,partes)
+            # painel sem transparência com título e preços dentro (ex.: bandeja sobre fogo): só o lado da foto
+            png=_foto_sem_transparencia(page,partes,[(titulo['rect'],nome,0)],r,normal) if not any(im[2] for im in partes) else None
+            if png:notas.append('Foto com o fundo do encarte: o PDF não traz o produto recortado')
+            else:png=_foto(doc,partes)
             for im in partes:area|=im[0]
         else:
             # Algumas artes trazem produto e fundo unidos em uma única imagem.
@@ -104,5 +121,6 @@ def extrair_grade(page,doc,selos,objetos,imagens,spans,caracteres,precos_selo,nu
         extra,caixa_extra=_complemento(spans,principal[0])
         if caixa_extra:area|=caixa_extra
         resultado.append({'nome':nome,'por':por,'de':de,'unidade':unidade,**extra,
-                          'avisos':notas,'pagina':page.number+1,'area':[round(v,1) for v in area],'png':png})
+                          'avisos':notas,'pagina':page.number+1,'area':[round(v,1) for v in area],'png':png,
+                          **({'removerfundo':True} if com_fundo else {})})
     return sorted(resultado,key=lambda it:(round(it['area'][1]/70),it['area'][0]))

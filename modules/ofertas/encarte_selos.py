@@ -88,6 +88,12 @@ def extrair_pagina(page, doc):
     objetos = [im for im in imagens if im[1] not in ids_selos
                and im[0].x1 <= page.rect.width + 2 and im[0].width > 12 and im[0].height > 12
                and im[0].get_area() < page.rect.get_area() * .25]
+    # Fundo decorativo sem transparência (faixa de flores, painel de fogo) atrás de um produto recortado:
+    # entrava junto na foto. Com a foto transparente por cima, o fundo sai.
+    def fundo_de_produto(im):
+        return not im[2] and any(o[2] and o[0].get_area() < im[0].get_area() * .7
+                                 and (im[0] & o[0]).get_area() > o[0].get_area() * .8 for o in objetos)
+    objetos = [im for im in objetos if not fundo_de_produto(im)]
     if len(selos)>=25:
         from .encarte_grade_mista import extrair_grade
         fotos_grade=[im for im in objetos if not (im[0].width>largura*1.7
@@ -212,8 +218,29 @@ def extrair_pagina(page, doc):
                                      and re.search(r'[A-Za-z]',s[1]) and '$' not in s[1]]
                     promocao = {'promopreco':valor_promo[1], 'promotexto':' '.join(s[1] for s in sorted(legenda_promo,key=lambda s:(s[0].y0,s[0].x0)))}
                     area_oferta |= caixa
+            lista_avisos = avisos(nome, por, de, unidade)
+            png = _foto_sem_transparencia(page, partes, titulos, r, normal) if not any(im[2] for im in partes) else None
+            if png: lista_avisos.append('Foto com o fundo do encarte: o PDF não traz o produto recortado')
             resultado.append({'nome': nome, 'por': por, 'de': de, 'unidade': unidade, **complemento, **promocao,
-                              'avisos': avisos(nome, por, de, unidade), 'pagina': page.number+1,
-                              'area': [round(v, 1) for v in area_oferta], 'png': _foto(doc, partes)})
+                              'avisos': lista_avisos, 'pagina': page.number+1,
+                              'area': [round(v, 1) for v in area_oferta], 'png': png or _foto(doc, partes), **({'removerfundo': True} if not any(im[2] for im in partes) else {})})
         anterior = fundo
     return resultado
+
+
+def _foto_sem_transparencia(page, partes, titulos, selo, normal):
+    """Produto que só existe dentro de um painel sem transparência (ex.: bandeja sobre fogo, com título e
+    preços no mesmo painel): recorta só o lado da foto, sem o título nem o selo. -> PNG ou None."""
+    caixa = pymupdf.Rect(partes[0][0])
+    for im in partes[1:]: caixa |= im[0]
+    textos = [selo] + [t[0] for t in titulos] + ([normal[0]] if normal else [])
+    dentro = [t for t in textos if caixa.intersects(t)]
+    if not dentro: return None
+    esquerda, direita = min(t.x0 for t in dentro), max(t.x1 for t in dentro)
+    # textos do lado direito -> foto à esquerda deles, e vice-versa
+    if esquerda - caixa.x0 >= caixa.x1 - direita:
+        foto = pymupdf.Rect(caixa.x0, caixa.y0, esquerda - 2, caixa.y1)
+    else:
+        foto = pymupdf.Rect(direita + 2, caixa.y0, caixa.x1, caixa.y1)
+    if foto.width < caixa.width * .3: return None  # textos por cima da foto: melhor o painel inteiro
+    return page.get_pixmap(matrix=pymupdf.Matrix(4, 4), clip=foto).tobytes('png')
