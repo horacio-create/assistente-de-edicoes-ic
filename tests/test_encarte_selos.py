@@ -205,9 +205,10 @@ class TagsDoProdutoTests(unittest.TestCase):
                 pg.insert_text((x+40, 60), nome, fontsize=10)
                 pg.insert_text((x+160, 253), '4,19', fontsize=24)
                 pg.insert_text((x+80, 252), '4,59', fontsize=17)
-            if com_balao:
-                for y, t in [(120, 'Nesta'), (127, 'Embalagem'), (134, '1L Sai Por:')]: pg.insert_text((205, y), t, fontsize=6)
-                pg.insert_text((205, 152), '1', fontsize=16); pg.insert_text((216, 146), ',59', fontsize=9)
+            if com_balao:  # balão vermelho, texto branco, preço amarelo (como nos encartes da Uniforça)
+                pg.draw_circle((222, 136), 26, color=None, fill=(189/255, 28/255, 30/255))
+                for y, t in [(120, 'Nesta'), (127, 'Embalagem'), (134, '1L Sai Por:')]: pg.insert_text((205, y), t, fontsize=6, color=(1, 1, 1))
+                pg.insert_text((205, 152), '1', fontsize=16, color=(236/255, 227/255, 26/255)); pg.insert_text((216, 146), ',59', fontsize=9, color=(236/255, 227/255, 26/255))
             return extrair(doc.tobytes())
 
     def test_mais18_sai_da_foto_e_vira_tag(self):
@@ -226,6 +227,7 @@ class TagsDoProdutoTests(unittest.TestCase):
     def test_balao_nesta_embalagem_vira_tag_promocional(self):
         itens = self._pagina('Agua Sanitaria Verde 5L', com_balao=True)
         self.assertEqual((itens[0].get('promopreco'), itens[0].get('promotexto')), ('1,59', 'Nesta Embalagem 1L Sai Por:'))
+        self.assertEqual(itens[0].get('promocores'), '#bd1c1e;#ffffff;#ece31a')  # cores do balão no PDF
         self.assertNotIn('promopreco', itens[1])
         self.assertEqual((itens[0]['por'], itens[0]['de']), ('4,19', '4,59'))  # o balão não troca os preços
 
@@ -241,3 +243,14 @@ class TagsDoProdutoTests(unittest.TestCase):
         destino = [{}]
         ofertas.preencher_lista(lista, destino, [{'nome': 'X', 'imagem': 'i', 'por': '1,00', 'de': '', 'tag1': 'img-a', 'tag1nome': 'Maiores de 18'}])
         self.assertEqual(destino[0], {'nome': 'X', 'tag1': 'biblioteca:img-a', 'tag1nome': 'Maiores de 18', 'tag2': '', 'tag2nome': ''})
+
+
+class CapacidadeTests(unittest.TestCase):
+    def test_editor_comporta_o_encarte_e_cada_video_mantem_15_cartelas(self):
+        from modules.ofertas import plano_lote, tamanhos_dos_videos, por_video
+        lista = {'id': 'produtos', 'min': 1, 'itens': 150, 'porVideo': 30, 'grupo': {'tamanho': 2, 'incompleto': True, 'finalTres': True}}
+        self.assertEqual(por_video(lista), 30)
+        self.assertEqual(plano_lote(44, lista, distribuicao='sequencia'), [30, 14])  # padrão: 15 cartelas por vídeo
+        self.assertEqual(sum(plano_lote(140, lista)), 140)
+        with self.assertRaises(ValueError): tamanhos_dos_videos(44, lista, 16)  # 16 cartelas não cabem num vídeo
+        self.assertEqual(por_video({'itens': 30}), 30)  # template antigo, sem porVideo

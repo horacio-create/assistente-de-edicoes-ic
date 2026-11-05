@@ -503,7 +503,7 @@ def preencher_lista(lista, destino, itens):
         if 'imagem' in subs: alvo['imagem'] = 'biblioteca:' + it['imagem']
         if 'por' in subs: alvo['por'] = it['por']
         if 'de' in subs: alvo['de'] = it['de']
-        for campo in ('equivalenciatexto','equivalenciapreco','equivalenciaunidade','promopreco','promotexto'):
+        for campo in ('equivalenciatexto','equivalenciapreco','equivalenciaunidade','promopreco','promotexto','promocores'):
             if campo in subs: alvo[campo] = it.get(campo,'')
         for n in range(1, 5):  # tags do encarte (+18, marca, tamanhos); vazio = sem tag
             if f'tag{n}' in subs: alvo[f'tag{n}'] = 'biblioteca:' + it[f'tag{n}'] if it.get(f'tag{n}') else ''
@@ -522,13 +522,18 @@ def enfileirar(pedido):
     FILA.set()
     return ident
 
+def por_video(lista):
+    """Máximo de produtos num vídeo. "itens" é quanto o editor comporta (o encarte inteiro); "porVideo",
+    quanto cabe num vídeo de 15s. Templates antigos, sem "porVideo": os dois são iguais."""
+    return min(lista.get('porVideo') or lista['itens'], lista['itens'])
+
 def tamanhos_dos_videos(n, lista, cartelas=None, distribuicao='equilibrar'):
     """Quantos produtos vão em cada vídeo do lote. `cartelas` = máximo de cartelas (grupos) por vídeo,
     escolhido pelo usuário (padrão: o máximo do template). Os vídeos são equilibrados (11 cartelas, até 5
     por vídeo: 4 + 4 + 3, e não 5 + 5 + 1) e nenhum fica abaixo do mínimo do template; o que faltar é
     completado com os primeiros produtos. Lista fixa: todos com `itens` (21 / 6 = 4 vídeos de 6)."""
     passo = (lista.get('grupo') or {}).get('tamanho') or 1
-    gmin, gmax = -(-(lista.get('min') or lista['itens']) // passo), lista['itens'] // passo  # min 1 com cartela de 2: 1 cartela
+    gmin, gmax = -(-(lista.get('min') or por_video(lista)) // passo), por_video(lista) // passo  # min 1 com cartela de 2: 1 cartela
     cartelas = gmax if cartelas is None else int(cartelas)
     if not gmin <= cartelas <= gmax: raise ValueError(f'Escolha de {gmin} a {gmax} cartelas por vídeo.')
     grupos = -(-n // passo)
@@ -558,11 +563,11 @@ def plano_lote(n, lista, cartelas=None, impar='repetir', distribuicao='equilibra
         else:
             grupos.append(n % passo if impar in ('sozinho', 'tres') else passo)
     # O trio ocupa um produto a mais: limita o número de pares para caber na capacidade do template.
-    limite = lista['itens'] // passo
+    limite = por_video(lista) // passo
     if cartelas is not None and not 1 <= int(cartelas) <= limite:
         raise ValueError(f'Escolha de 1 a {limite} cartelas por vídeo.')
     if impar == 'tres' and n % 2 and n >= 3:
-        limite = (lista['itens'] - 1) // passo
+        limite = (por_video(lista) - 1) // passo
     escolhidas = limite if cartelas is None else min(int(cartelas), limite)
     slots = tamanhos_dos_videos(len(grupos) * passo, lista, escolhidas, distribuicao)
     tamanhos, inicio = [], 0
@@ -894,6 +899,9 @@ def api(method, path, query, raw, content_type=''):
         if pedido['revision'] != value['revision']: raise Conflict('Salve o pedido antes de gerar.')
         prep = preparar(pedido['template'], pedido['dados'])
         if prep['erros']: return {'ok': False, 'validacao': prep['detalhes'], 'erros': prep['erros']}
+        lista = next((c for c in esquema(pedido['template'])['campos'] if c['tipo'] == 'lista'), None)
+        if lista and len(pedido['dados'].get(lista['id']) or []) > por_video(lista):
+            raise ValueError(f'Mais de {por_video(lista)} produtos não cabem num vídeo: use "Gerar vídeos" para dividir.')
         return {'ok': True, 'render': enfileirar(pedido)}
     if path == '/render-cancelar':
         with LOCK, connect() as db:

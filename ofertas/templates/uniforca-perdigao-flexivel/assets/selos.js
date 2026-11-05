@@ -38,7 +38,7 @@
     extra.querySelector('.equivalencia-unidade').textContent=unidade||'kg';
     produto.querySelector('.selo').appendChild(extra);
   }
-  function promocao(produto, valor, texto) {
+  function promocao(produto, valor, texto, cores) {
     produto.querySelector('.tag-promo')?.remove();
     const m=/^(\d{1,4}),(\d{2})$/.exec(String(valor||'').trim().replace('.',','));
     if(!m)return;
@@ -47,6 +47,11 @@
     tag.querySelector('.tag-promo-texto').textContent=texto||'Nessa Promo';
     tag.querySelector('.tag-promo-int').textContent=m[1];
     tag.querySelector('.tag-promo-cent').textContent=','+m[2];
+    // cores do balão no encarte ("fundo;texto;preço"); vazio = cores do template
+    const [fundo,corTexto,corPreco]=String(cores||'').split(';').map(c=>/^#[0-9a-f]{6}$/i.test(c.trim())?c.trim():'');
+    if(fundo)tag.style.setProperty('--promo-fundo',fundo);
+    if(corTexto)tag.style.setProperty('--promo-texto',corTexto);
+    if(corPreco)tag.style.setProperty('--promo-preco',corPreco);
     tag.style.setProperty('--promo-inteiro',(m[1].length>2?38:m[1].length>1?52:60)+'px');
     produto.querySelector('.foto-box').appendChild(tag);
   }

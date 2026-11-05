@@ -456,7 +456,9 @@ async function mudarQuantidade(def, mudar, rolarAteNovo = false) {
 }
 // quantos produtos vão em cada vídeo do "Gerar todos" (mesma regra de tamanhos_dos_videos no servidor)
 const passoDe = (lista) => lista.grupo?.tamanho || 1;
-const limitesCartelas = (lista) => [Math.ceil((lista.min ?? lista.itens) / passoDe(lista)), lista.itens / passoDe(lista)];
+// "itens" = quanto o editor comporta (o encarte inteiro); "porVideo" = quanto cabe num vídeo (mesma regra de por_video no servidor)
+const porVideo = (lista) => Math.min(lista.porVideo || lista.itens, lista.itens);
+const limitesCartelas = (lista) => [Math.ceil(Math.min(lista.min ?? lista.itens, porVideo(lista)) / passoDe(lista)), porVideo(lista) / passoDe(lista)];
 function tamanhosCartelas(n, passo = 2, tres = false) {
   const grupos = Array(Math.floor(n / passo)).fill(passo);
   if (n % passo) {
@@ -902,7 +904,7 @@ function preencherItem(lista, alvo, it) {
   if (subs.imagem) alvo.imagem = 'biblioteca:' + it.imagem;
   if (subs.por) alvo.por = it.por;
   if (subs.de) alvo.de = it.de;
-  for(const campo of ['equivalenciatexto','equivalenciapreco','equivalenciaunidade','promopreco','promotexto'])if(subs[campo])alvo[campo]=it[campo]||'';
+  for(const campo of ['equivalenciatexto','equivalenciapreco','equivalenciaunidade','promopreco','promotexto','promocores'])if(subs[campo])alvo[campo]=it[campo]||'';
   // mesma regra do servidor (preencher_lista): tags do encarte (+18, marca, tamanhos); vazio = sem tag
   for (let k = 1; k <= 4; k++) {
     if (subs['tag' + k]) alvo['tag' + k] = it['tag' + k] ? 'biblioteca:' + it['tag' + k] : '';
@@ -1074,7 +1076,7 @@ function planoLote() {
   const impar = document.querySelector('input[name=of-lote-impar]:checked').value;
   const total = enc.itens.length, sobra = passo > 1 ? total % passo : 0;
   const n = impar === 'fora' && sobra && total > passo ? total - sobra : total;
-  const limite = impar === 'tres' && sobra && n >= 3 ? Math.floor((lista.itens - 1) / passo) : gmax;
+  const limite = impar === 'tres' && sobra && n >= 3 ? Math.floor((porVideo(lista) - 1) / passo) : gmax;
   const cartelas = Math.min(limite, Math.max(gmin, Math.round(Number(el('lote-cartelas').value) || limite)));
   const distribuicao = el('lote-distribuicao').value;
   const grupos = tamanhosCartelas(n, passo, impar === 'tres');

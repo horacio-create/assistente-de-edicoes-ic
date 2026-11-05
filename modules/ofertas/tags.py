@@ -57,6 +57,27 @@ def _mais_proximo(itens, alvo, pagina):
     return min(perto, key=lambda it: abs(centro(it['area']) - c))
 
 
+def _cores_balao(page, texto, legenda, preco):
+    """Cores do balão no PDF -> "fundo;texto;preço" em hexadecimal (ex.: "#bd1c1e;#ffffff;#ece31a"):
+    a tag promocional do template fica com as cores do encarte. Sem a forma do balão: "" (cores do template)."""
+    c = (texto.tl + texto.br) / 2
+    formas = [d for d in page.get_drawings() if d.get('fill') and d['rect'].contains(c)
+              and d['rect'].width < page.rect.width * .25 and d['rect'].height > texto.height * 2
+              and .6 < d['rect'].width / max(d['rect'].height, 1) < 1.7]
+    if not formas: return ''
+    fundo = min(formas, key=lambda d: d['rect'].get_area())['fill']
+    spans = [(pymupdf.Rect(sp['bbox']), sp['color']) for b in page.get_text('dict')['blocks']
+             for l in b.get('lines', []) for sp in l['spans'] if sp['text'].strip()]
+    def cor(r):
+        sp = max(spans, key=lambda s: (s[0] & r).get_area(), default=None)
+        return '#%06x' % sp[1] if sp and (sp[0] & r).get_area() > 0 else ''
+    hexa = '#' + ''.join('%02x' % round(v * 255) for v in fundo[:3])
+    textos = [cor(r) for r in legenda]
+    cor_texto = max(set(textos), key=textos.count) if textos else ''
+    cor_preco = cor(preco)
+    return ';'.join([hexa, cor_texto, cor_preco]) if cor_texto and cor_preco else ''
+
+
 def completar(page, itens):
     """Tags que estão no desenho da página (não em imagens): balões de embalagem e tabela de tamanhos."""
     from .encarte import _tokens_preco
@@ -75,8 +96,12 @@ def completar(page, itens):
         if not precos: continue
         preco = min(precos, key=lambda p: p[0].y0 - fim)
         it = _mais_proximo(itens, regiao, pagina)
-        if not it or it.get('promopreco') or preco[1] in (it.get('por'), it.get('de')): continue
-        it['promopreco'], it['promotexto'] = preco[1], legenda
+        if not it or preco[1] in (it.get('por'), it.get('de')): continue
+        if it.get('promopreco') and it['promopreco'] != preco[1]: continue  # já tem outro balão
+        it['promopreco'] = preco[1]
+        it['promotexto'] = it.get('promotexto') or legenda
+        cores = _cores_balao(page, rect, [l[0] for l in textos], preco[0])
+        if cores: it['promocores'] = cores
     # Tabela de tamanhos das fraldas ("TAM P M G XG…") é texto vetorial: recorta a área renderizada
     for rect, texto, _ in linhas:
         if texto.upper() != 'TAM': continue
