@@ -365,13 +365,27 @@ def ler_encarte(ident):
                     temp.write_text(json.dumps(prep, ensure_ascii=False), 'utf-8')
                     os.replace(temp, informacao)
             itens = extrair(pdf.read_bytes())
-            result = [item | {'imagem': salvar_imagem(item.pop('png'), item['nome'], f'encarte: {nome}')['id']} for item in itens]
+            tirar_fundos(itens)
+            result =[item | {'imagem': salvar_imagem(item.pop('png'), item['nome'], f'encarte: {nome}')['id']} for item in itens]
             with connect() as db:
                 db.execute("UPDATE ofertas_encartes SET status='pronto', terminado=?, itens=? WHERE id=?", (now(), json.dumps(result, ensure_ascii=False), ident))
                 registrar(db, 'Encarte importado', nome, dono, produtos=len(result))
         except Exception as exc:
             with connect() as db:
                 db.execute("UPDATE ofertas_encartes SET status='falhou', terminado=?, erro=? WHERE id=?", (now(), f'Não foi possível ler {nome}: {exc}', ident))
+
+
+def tirar_fundos(itens):
+    """Produtos que o encarte só traz junto com o fundo (leitor marca 'removerfundo'): tira o fundo com o
+    modelo de recorte. Se falhar, fica a foto com fundo e o aviso para conferir."""
+    for item in itens:
+        if not item.pop('removerfundo', False): continue
+        try:
+            from .recorte_objetos import isolar
+            item['png'] = isolar(item['png'])
+            item['avisos'] = [a for a in item['avisos'] if 'fundo' not in a]
+        except Exception:
+            pass
 
 def arquivo_encarte(ident):
     """-> (caminho, 'pdf' | 'imagem'). Encartes em PNG/JPG são guardados como PNG."""

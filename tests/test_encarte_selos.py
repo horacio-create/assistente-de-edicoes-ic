@@ -144,3 +144,46 @@ class FundosSemTransparenciaTests(unittest.TestCase):
         self.assertIsNotNone(png_foto)
         with Image.open(io.BytesIO(png_foto)) as im:
             self.assertLess(im.width / im.height, (160 - 10) / 160 + .05)  # só o lado esquerdo do painel
+
+
+class CopiasEFundosTests(unittest.TestCase):
+    def test_grade_densa_junta_copias_da_mesma_foto_longe_do_selo(self):
+        """4 garrafas iguais em fila num destaque: as mais distantes do selo também são do produto."""
+        from modules.ofertas.encarte import extrair
+        with pymupdf.open() as doc:
+            pg = doc.new_page(width=900, height=1300)
+            selo = png('red', (100, 58), True)
+            for n in range(25):  # grade densa (>= 25 selos) com fotos simples
+                x, y = 20 + (n % 5) * 175, 20 + (n // 5) * 200
+                pg.insert_image(pymupdf.Rect(x, y+30, x+60, y+120), stream=png('green', (60, 90)))
+                pg.insert_image(pymupdf.Rect(x+60, y+130, x+160, y+188), stream=selo)
+                pg.insert_text((x, y+20), f'Produto {n} Verde', fontsize=9)
+                pg.insert_text((x+70, y+175), '3,29', fontsize=22)
+            y = 1050  # destaque: 4 garrafas iguais à esquerda do selo
+            garrafa = png('blue', (40, 140))
+            xref = pg.insert_image(pymupdf.Rect(20, y, 60, y+140), stream=garrafa)
+            for x in (65, 110, 155): pg.insert_image(pymupdf.Rect(x, y, x+40, y+140), xref=xref)
+            pg.insert_text((260, y+20), 'Whisky Azul 1L', fontsize=9)
+            pg.insert_image(pymupdf.Rect(260, y+70, 360, y+128), stream=selo)
+            pg.insert_text((270, y+115), '46,99', fontsize=22)
+            itens = extrair(doc.tobytes())
+        whisky = next(it for it in itens if it['nome'].startswith('Whisky'))
+        with Image.open(io.BytesIO(whisky['png'])) as im:
+            self.assertGreater(im.width / im.height, 1.0)  # as 4 garrafas (cada uma é 40x140)
+
+    def test_tirar_fundos_usa_recorte_e_tira_aviso_ou_mantem_foto(self):
+        from unittest import mock
+        import modules.ofertas as ofertas
+        from modules.ofertas import recorte_objetos
+        itens = [{'png': b'a', 'avisos': ['Foto com o fundo do encarte: x', 'Sem preço normal'], 'removerfundo': True},
+                 {'png': b'b', 'avisos': ['Foto com o fundo do encarte: x'], 'removerfundo': True},
+                 {'png': b'c', 'avisos': []}]
+        def isolar(png):
+            if png == b'b': raise ValueError('Separação incerta')
+            return b'sem-fundo'
+        with mock.patch.object(recorte_objetos, 'isolar', isolar):
+            ofertas.tirar_fundos(itens)
+        self.assertEqual((itens[0]['png'], itens[0]['avisos']), (b'sem-fundo', ['Sem preço normal']))
+        self.assertEqual((itens[1]['png'], len(itens[1]['avisos'])), (b'b', 1))
+        self.assertEqual(itens[2]['png'], b'c')
+        self.assertFalse(any('removerfundo' in it for it in itens))

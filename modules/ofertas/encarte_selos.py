@@ -223,7 +223,7 @@ def extrair_pagina(page, doc):
             if png: lista_avisos.append('Foto com o fundo do encarte: o PDF não traz o produto recortado')
             resultado.append({'nome': nome, 'por': por, 'de': de, 'unidade': unidade, **complemento, **promocao,
                               'avisos': lista_avisos, 'pagina': page.number+1,
-                              'area': [round(v, 1) for v in area_oferta], 'png': png or _foto(doc, partes)})
+                              'area': [round(v, 1) for v in area_oferta], 'png': png or _foto(doc, partes), **({'removerfundo': True} if not any(im[2] for im in partes) else {})})
         anterior = fundo
     return resultado
 
