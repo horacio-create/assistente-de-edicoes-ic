@@ -25,7 +25,8 @@
       "tipo": "lista",
       "rotulo": "Produtos",
       "rotuloItem": "Produto",
-      "itens": 30,
+      "itens": 150,
+      "porVideo": 30,
       "grupo": {
         "tamanho": 2,
         "rotulo": "Cartela",
@@ -124,6 +125,91 @@
           "opcional": true,
           "max": 100,
           "ajuda": "Ex.: Nessa Promo 500g saem por:"
+        },
+        {
+          "id": "promocores",
+          "tipo": "texto",
+          "rotulo": "Cores da tag promocional",
+          "max": 40,
+          "opcional": true,
+          "oculto": true,
+          "ajuda": "Fundo;texto;preço;R$ e unidade, em hexadecimal, lidos do encarte. Vazio: cores do template."
+        },
+        {
+          "id": "promounidade",
+          "tipo": "texto",
+          "rotulo": "Unidade da tag promocional",
+          "max": 12,
+          "opcional": true,
+          "ajuda": "Ex.: cada, KG. Vazio: sem unidade."
+        },
+        {
+          "id": "tag1",
+          "tipo": "imagem",
+          "rotulo": "Tag 1",
+          "opcional": true,
+          "grupoTags": true,
+          "ajuda": "Selo que acompanha o produto (+18, marca, tamanhos). Vazio: sem tag."
+        },
+        {
+          "id": "tag1nome",
+          "tipo": "texto",
+          "rotulo": "Nome da tag 1",
+          "max": 60,
+          "opcional": true,
+          "oculto": true,
+          "grupoTags": true
+        },
+        {
+          "id": "tag2",
+          "tipo": "imagem",
+          "rotulo": "Tag 2",
+          "opcional": true,
+          "grupoTags": true,
+          "ajuda": "Selo que acompanha o produto (+18, marca, tamanhos). Vazio: sem tag."
+        },
+        {
+          "id": "tag2nome",
+          "tipo": "texto",
+          "rotulo": "Nome da tag 2",
+          "max": 60,
+          "opcional": true,
+          "oculto": true,
+          "grupoTags": true
+        },
+        {
+          "id": "tag3",
+          "tipo": "imagem",
+          "rotulo": "Tag 3",
+          "opcional": true,
+          "grupoTags": true,
+          "ajuda": "Selo que acompanha o produto (+18, marca, tamanhos). Vazio: sem tag."
+        },
+        {
+          "id": "tag3nome",
+          "tipo": "texto",
+          "rotulo": "Nome da tag 3",
+          "max": 60,
+          "opcional": true,
+          "oculto": true,
+          "grupoTags": true
+        },
+        {
+          "id": "tag4",
+          "tipo": "imagem",
+          "rotulo": "Tag 4",
+          "opcional": true,
+          "grupoTags": true,
+          "ajuda": "Selo que acompanha o produto (+18, marca, tamanhos). Vazio: sem tag."
+        },
+        {
+          "id": "tag4nome",
+          "tipo": "texto",
+          "rotulo": "Nome da tag 4",
+          "max": 60,
+          "opcional": true,
+          "oculto": true,
+          "grupoTags": true
         }
       ],
       "min": 1

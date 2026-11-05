@@ -178,6 +178,9 @@ export function validarTemplate(dir) {
     if (c.tipo === "lista") {
       if (!Number.isInteger(c.itens) || c.itens < 1) erros.push(`${onde}: "itens" deve ser um inteiro ≥ 1.`);
       if (c.grupo && c.itens % c.grupo.tamanho) erros.push(`${onde}: "itens" (${c.itens}) não é múltiplo de grupo.tamanho (${c.grupo.tamanho}).`);
+      // "porVideo" (opcional): quantos itens cabem num vídeo; "itens" passa a ser quanto o editor comporta
+      if (c.porVideo !== undefined && (!Number.isInteger(c.porVideo) || c.porVideo < 1 || c.porVideo > c.itens || c.porVideo % passoLista(c)))
+        erros.push(`${onde}: "porVideo" deve ser um inteiro entre 1 e "itens" (${c.itens}), múltiplo do passo (${passoLista(c)}).`);
       if (c.min !== undefined) {
         if (!Number.isInteger(c.min) || c.min < 1 || c.min > c.itens) erros.push(`${onde}: "min" deve ser um inteiro entre 1 e "itens" (${c.itens}).`);
         else if (c.min % passoLista(c)) erros.push(`${onde}: "min" (${c.min}) não é múltiplo do passo (${passoLista(c)}).`);

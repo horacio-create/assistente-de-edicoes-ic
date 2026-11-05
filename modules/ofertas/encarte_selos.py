@@ -13,6 +13,7 @@ from PIL import Image
 
 def extrair_pagina(page, doc):
     from .encarte import _pixmap, _foto, _unidade, avisos
+    from .tags import separar as separar_tags
 
     mascaras = {im[0]: im[1] for im in page.get_images(full=True)}
     imagens = []
@@ -219,11 +220,13 @@ def extrair_pagina(page, doc):
                     promocao = {'promopreco':valor_promo[1], 'promotexto':' '.join(s[1] for s in sorted(legenda_promo,key=lambda s:(s[0].y0,s[0].x0)))}
                     area_oferta |= caixa
             lista_avisos = avisos(nome, por, de, unidade)
+            partes, tags = separar_tags(doc, partes, nome)  # +18, logo da marca: tags, não a foto
             png = _foto_sem_transparencia(page, partes, titulos, r, normal) if not any(im[2] for im in partes) else None
             if png: lista_avisos.append('Foto com o fundo do encarte: o PDF não traz o produto recortado')
             resultado.append({'nome': nome, 'por': por, 'de': de, 'unidade': unidade, **complemento, **promocao,
                               'avisos': lista_avisos, 'pagina': page.number+1,
-                              'area': [round(v, 1) for v in area_oferta], 'png': png or _foto(doc, partes), **({'removerfundo': True} if not any(im[2] for im in partes) else {})})
+                              'area': [round(v, 1) for v in area_oferta], 'png': png or _foto(doc, partes), 'tags': tags,
+                              **({'removerfundo': True} if not any(im[2] for im in partes) else {})})
         anterior = fundo
     return resultado
 

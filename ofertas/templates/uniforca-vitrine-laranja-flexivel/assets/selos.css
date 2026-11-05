@@ -42,10 +42,13 @@
 .equivalencia-unidade{font-size:8px;letter-spacing:0;margin-top:2px;text-transform:lowercase}
 
 /* Tag opcional de equivalência promocional, independente do selo principal. */
-.tag-promo{position:absolute;right:0;top:0;width:150px;height:150px;border-radius:50%;background:#ffeb00;color:#e60000;font-family:Montserrat,sans-serif;font-weight:900;z-index:3;display:flex;flex-direction:column;justify-content:center;align-items:center;box-sizing:border-box;padding:18px 10px;gap:4px}
-.tag-promo-texto{color:#111;font-weight:700;font-size:15px;line-height:1.1;text-align:center;white-space:pre-line;overflow-wrap:anywhere}
+.tag-promo{position:absolute;right:0;top:0;width:150px;height:150px;border-radius:50%;background:var(--promo-fundo,#ffeb00);color:var(--promo-preco,#e60000);font-family:Montserrat,sans-serif;font-weight:900;z-index:3;display:flex;flex-direction:column;justify-content:center;align-items:center;box-sizing:border-box;padding:18px 10px;gap:4px}
+.tag-promo-texto{color:var(--promo-texto,#111);font-weight:700;font-size:15px;line-height:1.1;text-align:center;white-space:pre-line;overflow-wrap:anywhere}
 .tag-promo-preco{display:flex;align-items:flex-start;position:relative;line-height:1;white-space:nowrap}
-.tag-promo-moeda{position:absolute;left:-16px;top:20px;font-size:8px}
+.tag-promo-moeda{position:absolute;right:100%;margin-right:3px;top:calc(var(--promo-inteiro,48px)*.22);font-size:max(11px,calc(var(--promo-inteiro,48px)*.2));color:var(--promo-detalhe,currentColor)}
+.tag-promo-fim{display:flex;flex-direction:column;align-items:center}
+.tag-promo-un{font-size:max(10px,calc(var(--promo-inteiro,48px)*.2));color:var(--promo-detalhe,currentColor);line-height:1;margin-top:-2px}
+.tag-promo-un:empty{display:none}
 .tag-promo-int{font-size:var(--promo-inteiro,48px)}
 .tag-promo-cent{font-size:calc(var(--promo-inteiro,48px)*.49);padding-top:5px}
 

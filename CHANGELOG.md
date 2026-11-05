@@ -1,5 +1,13 @@
 # Histórico de versões
 
+## 1.14.0 — Tags dos produtos e recortes do encarte — 05/11/2026
+
+- Recortes de fotos mais confiáveis na importação do encarte: fundos sem transparência ficam fora da foto, cópias da mesma imagem lado a lado formam um produto só e, quando o PDF não traz o produto recortado, o fundo é removido automaticamente (com aviso se a separação for incerta).
+- Tags do produto: aviso +18, logos de marca e tabela de tamanhos das fraldas são recortados do encarte como até 4 tags editáveis por cartela.
+- Balões "Nesta Embalagem … Sai Por" saem com as cores do encarte, o "R$" e a unidade (cada/KG).
+- O editor comporta até 150 produtos, o encarte inteiro; cada vídeo continua com no máximo 30.
+- Novo template "Uniforça 3 Dias + Baratos", com as datas da oferta editáveis.
+
 ## 1.13.10 — Publicação das melhorias — 04/11/2026
 
 - Atualiza o teste de exportação pelo navegador para a numeração sem zero à esquerda (VT 1, VT 2), removendo a falha que impedia publicar as versões 1.13.7 a 1.13.9.

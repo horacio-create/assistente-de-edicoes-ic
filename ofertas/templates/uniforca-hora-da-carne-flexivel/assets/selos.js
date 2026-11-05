@@ -38,15 +38,22 @@
     extra.querySelector('.equivalencia-unidade').textContent=unidade||'kg';
     produto.querySelector('.selo').appendChild(extra);
   }
-  function promocao(produto, valor, texto) {
+  function promocao(produto, valor, texto, cores, unidade) {
     produto.querySelector('.tag-promo')?.remove();
     const m=/^(\d{1,4}),(\d{2})$/.exec(String(valor||'').trim().replace('.',','));
     if(!m)return;
     const tag=document.createElement('div');tag.className='tag-promo';
-    tag.innerHTML='<div class="tag-promo-texto"></div><div class="tag-promo-preco"><span class="tag-promo-moeda">R$</span><span class="tag-promo-int"></span><span class="tag-promo-cent"></span></div>';
+    tag.innerHTML='<div class="tag-promo-texto"></div><div class="tag-promo-preco"><span class="tag-promo-moeda">R$</span><span class="tag-promo-int"></span><span class="tag-promo-fim"><span class="tag-promo-cent"></span><span class="tag-promo-un"></span></span></div>';
     tag.querySelector('.tag-promo-texto').textContent=texto||'Nessa Promo';
     tag.querySelector('.tag-promo-int').textContent=m[1];
     tag.querySelector('.tag-promo-cent').textContent=','+m[2];
+    tag.querySelector('.tag-promo-un').textContent=String(unidade||'').trim().slice(0,12);
+    // cores do balão no encarte ("fundo;texto;preço"); vazio = cores do template
+    const [fundo,corTexto,corPreco,corDetalhe]=String(cores||'').split(';').map(c=>/^#[0-9a-f]{6}$/i.test(c.trim())?c.trim():'');
+    if(fundo)tag.style.setProperty('--promo-fundo',fundo);
+    if(corTexto)tag.style.setProperty('--promo-texto',corTexto);
+    if(corPreco)tag.style.setProperty('--promo-preco',corPreco);
+    if(corDetalhe)tag.style.setProperty('--promo-detalhe',corDetalhe);
     tag.style.setProperty('--promo-inteiro',(m[1].length>2?38:m[1].length>1?52:60)+'px');
     produto.querySelector('.foto-box').appendChild(tag);
   }
