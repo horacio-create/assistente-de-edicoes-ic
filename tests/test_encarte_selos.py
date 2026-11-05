@@ -102,3 +102,45 @@ class SelosComTextoVetorialTests(unittest.TestCase):
             with Image.open(io.BytesIO(it['png'])) as im:
                 cores={c[:3] for c in im.convert('RGBA').get_flattened_data() if c[3]>128}
             self.assertEqual(cores,{(0,128,0)})
+
+
+def opaco(cor, tamanho):
+    """Imagem sem transparência (sem smask no PDF), como um fundo decorativo."""
+    out = io.BytesIO()
+    Image.new('RGB', tamanho, cor).save(out, 'PNG')
+    return out.getvalue()
+
+
+class FundosSemTransparenciaTests(unittest.TestCase):
+    def test_faixa_de_fundo_atras_do_produto_nao_entra_na_foto(self):
+        from modules.ofertas.encarte import extrair
+        with pymupdf.open() as doc:
+            pg = doc.new_page(width=600, height=320)
+            for x in (0, 300):
+                pg.insert_image(pymupdf.Rect(x+10, 70, x+290, 205), stream=opaco('pink', (280, 135)))
+                pg.insert_image(pymupdf.Rect(x+60, 80, x+160, 200), stream=png('green'))
+                pg.insert_image(pymupdf.Rect(x+150, 210, x+250, 268), stream=png('red', (100, 58), True))
+                pg.insert_text((x+40, 60), 'Produto Verde 150ml', fontsize=10)
+                pg.insert_text((x+160, 253), '7,99', fontsize=24)
+                pg.insert_text((x+80, 252), '10,99', fontsize=17)
+            itens = extrair(doc.tobytes())
+        self.assertEqual(len(itens), 2)
+        for it in itens:
+            with Image.open(io.BytesIO(it['png'])) as im:
+                cores = {c[:3] for c in im.convert('RGBA').get_flattened_data() if c[3] > 128}
+            self.assertEqual(cores, {(0, 128, 0)})
+            self.assertFalse(any('fundo' in a for a in it['avisos']))
+
+    def test_painel_com_produto_titulo_e_preco_recorta_so_a_foto(self):
+        from modules.ofertas.encarte_selos import _foto_sem_transparencia
+        with pymupdf.open() as doc:
+            pg = doc.new_page(width=600, height=320)
+            painel = pymupdf.Rect(10, 40, 290, 200)
+            pg.insert_image(painel, stream=opaco('orange', (280, 160)))
+            pg.insert_text((170, 70), 'Produto Laranja', fontsize=10)
+            selo = pymupdf.Rect(160, 130, 280, 190)
+            partes = [(painel, 0, 0, None)]
+            png_foto = _foto_sem_transparencia(pg, partes, [(pymupdf.Rect(170, 62, 260, 72), 'Produto Laranja', 10)], selo, None)
+        self.assertIsNotNone(png_foto)
+        with Image.open(io.BytesIO(png_foto)) as im:
+            self.assertLess(im.width / im.height, (160 - 10) / 160 + .05)  # só o lado esquerdo do painel

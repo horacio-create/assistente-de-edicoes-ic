@@ -5,6 +5,7 @@ import pymupdf
 
 def extrair_grade(page,doc,selos,objetos,imagens,spans,caracteres,precos_selo,numero):
     from .encarte import _foto,_unidade,avisos,_complemento,_tokens_preco
+    from .encarte_selos import _foto_sem_transparencia
     centro=lambda r:(r.tl+r.br)/2
     alturas=sorted(s[0].height for s in selos)
     altura=alturas[len(alturas)//2]
@@ -83,7 +84,10 @@ def extrair_grade(page,doc,selos,objetos,imagens,spans,caracteres,precos_selo,nu
         notas=avisos(nome,por,de,unidade)
         area=pymupdf.Rect(r)|titulo['rect']
         if partes:
-            png=_foto(doc,partes)
+            # painel sem transparência com título e preços dentro (ex.: bandeja sobre fogo): só o lado da foto
+            png=_foto_sem_transparencia(page,partes,[(titulo['rect'],nome,0)],r,normal) if not any(im[2] for im in partes) else None
+            if png:notas.append('Foto com o fundo do encarte: o PDF não traz o produto recortado')
+            else:png=_foto(doc,partes)
             for im in partes:area|=im[0]
         else:
             # Algumas artes trazem produto e fundo unidos em uma única imagem.
