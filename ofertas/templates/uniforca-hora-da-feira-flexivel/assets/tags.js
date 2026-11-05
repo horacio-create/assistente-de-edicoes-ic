@@ -15,7 +15,7 @@
       tag.dataset.tag = k;
       tag.dataset.nome = nome;
       // até 4 tags empilhadas no canto superior direito, sem cobrir o centro da foto
-      tag.style.cssText = 'position:absolute;right:0;top:' + (ordem * 25) + '%;width:24%;height:23%;z-index:3;display:flex;align-items:center;justify-content:center;pointer-events:none';
+      tag.style.cssText = 'position:absolute;right:0;top:' + (ordem * 25) + '%;width:24%;height:23%;z-index:3;display:flex;align-items:center;justify-content:center';
       const img = document.createElement('img');
       img.src = src;
       img.alt = nome;
