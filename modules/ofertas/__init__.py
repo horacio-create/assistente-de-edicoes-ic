@@ -366,6 +366,7 @@ def ler_encarte(ident):
                     os.replace(temp, informacao)
             itens = extrair(pdf.read_bytes())
             tirar_fundos(itens)
+            salvar_tags(itens, nome)
             result =[item | {'imagem': salvar_imagem(item.pop('png'), item['nome'], f'encarte: {nome}')['id']} for item in itens]
             with connect() as db:
                 db.execute("UPDATE ofertas_encartes SET status='pronto', terminado=?, itens=? WHERE id=?", (now(), json.dumps(result, ensure_ascii=False), ident))
@@ -374,6 +375,15 @@ def ler_encarte(ident):
             with connect() as db:
                 db.execute("UPDATE ofertas_encartes SET status='falhou', terminado=?, erro=? WHERE id=?", (now(), f'Não foi possível ler {nome}: {exc}', ident))
 
+
+TAG = 'tag'  # origem das imagens de tag (+18, marca, tamanhos): não aparecem na Biblioteca
+
+def salvar_tags(itens, nome):
+    """Tags recortadas do encarte -> tag1..tag4 (id da imagem) e tag1nome..tag4nome (tipo) no produto."""
+    for item in itens:
+        for n, tag in enumerate(item.pop('tags', [])[:4], 1):
+            item[f'tag{n}'] = salvar_imagem(tag['png'], tag['tipo'], f'{TAG}: {nome}')['id']
+            item[f'tag{n}nome'] = tag['tipo']
 
 def tirar_fundos(itens):
     """Produtos que o encarte só traz junto com o fundo (leitor marca 'removerfundo'): tira o fundo com o
@@ -495,6 +505,9 @@ def preencher_lista(lista, destino, itens):
         if 'de' in subs: alvo['de'] = it['de']
         for campo in ('equivalenciatexto','equivalenciapreco','equivalenciaunidade','promopreco','promotexto'):
             if campo in subs: alvo[campo] = it.get(campo,'')
+        for n in range(1, 5):  # tags do encarte (+18, marca, tamanhos); vazio = sem tag
+            if f'tag{n}' in subs: alvo[f'tag{n}'] = 'biblioteca:' + it[f'tag{n}'] if it.get(f'tag{n}') else ''
+            if f'tag{n}nome' in subs: alvo[f'tag{n}nome'] = it.get(f'tag{n}nome', '')
         if 'unidade' in subs and it.get('unidade') in (subs['unidade'].get('opcoes') or []): alvo['unidade'] = it['unidade']
 
 def enfileirar(pedido):

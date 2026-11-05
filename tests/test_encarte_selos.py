@@ -187,3 +187,57 @@ class CopiasEFundosTests(unittest.TestCase):
         self.assertEqual((itens[1]['png'], len(itens[1]['avisos'])), (b'b', 1))
         self.assertEqual(itens[2]['png'], b'c')
         self.assertFalse(any('removerfundo' in it for it in itens))
+
+
+class TagsDoProdutoTests(unittest.TestCase):
+    def _pagina(self, nome, com_balao=False):
+        from modules.ofertas.encarte import extrair
+        with pymupdf.open() as doc:
+            pg = doc.new_page(width=600, height=320)
+            for x in (0, 300):
+                pg.insert_image(pymupdf.Rect(x+40, 80, x+140, 200), stream=png('green'))
+                # +18: círculo branco com mão vermelha, pequeno, colado na foto
+                selo18 = Image.new('RGBA', (60, 60), (0, 0, 0, 0))
+                d = ImageDraw.Draw(selo18); d.ellipse((0, 0, 59, 59), fill='white', outline='red', width=5); d.rectangle((20, 15, 40, 40), fill='red')
+                out = io.BytesIO(); selo18.save(out, 'PNG')
+                pg.insert_image(pymupdf.Rect(x+120, 70, x+150, 100), stream=out.getvalue())
+                pg.insert_image(pymupdf.Rect(x+150, 210, x+250, 268), stream=png('red', (100, 58), True))
+                pg.insert_text((x+40, 60), nome, fontsize=10)
+                pg.insert_text((x+160, 253), '4,19', fontsize=24)
+                pg.insert_text((x+80, 252), '4,59', fontsize=17)
+            if com_balao:
+                for y, t in [(120, 'Nesta'), (127, 'Embalagem'), (134, '1L Sai Por:')]: pg.insert_text((205, y), t, fontsize=6)
+                pg.insert_text((205, 152), '1', fontsize=16); pg.insert_text((216, 146), ',59', fontsize=9)
+            return extrair(doc.tobytes())
+
+    def test_mais18_sai_da_foto_e_vira_tag(self):
+        itens = self._pagina('Cerveja Verde Lata 350ml')
+        self.assertEqual(len(itens), 2)
+        for it in itens:
+            self.assertEqual([t['tipo'] for t in it['tags']], ['Maiores de 18'])
+            with Image.open(io.BytesIO(it['png'])) as im:
+                cores = {c[:3] for c in im.convert('RGBA').get_flattened_data() if c[3] > 128}
+            self.assertEqual(cores, {(0, 128, 0)})  # só o produto, sem o selo
+
+    def test_imagem_pequena_em_produto_sem_alcool_e_marca(self):
+        itens = self._pagina('Linguica Verde Kg')
+        self.assertEqual([t['tipo'] for t in itens[0]['tags']], ['Marca'])
+
+    def test_balao_nesta_embalagem_vira_tag_promocional(self):
+        itens = self._pagina('Agua Sanitaria Verde 5L', com_balao=True)
+        self.assertEqual((itens[0].get('promopreco'), itens[0].get('promotexto')), ('1,59', 'Nesta Embalagem 1L Sai Por:'))
+        self.assertNotIn('promopreco', itens[1])
+        self.assertEqual((itens[0]['por'], itens[0]['de']), ('4,19', '4,59'))  # o balão não troca os preços
+
+    def test_salvar_tags_vira_campos_do_produto(self):
+        from unittest import mock
+        import modules.ofertas as ofertas
+        itens = [{'tags': [{'png': b'a', 'tipo': 'Maiores de 18'}, {'png': b'b', 'tipo': 'Marca'}]}, {'tags': []}]
+        with mock.patch.object(ofertas, 'salvar_imagem', lambda raw, nome, origem: {'id': 'img-' + raw.decode()}):
+            ofertas.salvar_tags(itens, 'encarte.pdf')
+        self.assertEqual(itens[0], {'tag1': 'img-a', 'tag1nome': 'Maiores de 18', 'tag2': 'img-b', 'tag2nome': 'Marca'})
+        self.assertEqual(itens[1], {})
+        lista = {'campos': [{'id': 'nome'}, {'id': 'tag1'}, {'id': 'tag1nome'}, {'id': 'tag2'}, {'id': 'tag2nome'}]}
+        destino = [{}]
+        ofertas.preencher_lista(lista, destino, [{'nome': 'X', 'imagem': 'i', 'por': '1,00', 'de': '', 'tag1': 'img-a', 'tag1nome': 'Maiores de 18'}])
+        self.assertEqual(destino[0], {'nome': 'X', 'tag1': 'biblioteca:img-a', 'tag1nome': 'Maiores de 18', 'tag2': '', 'tag2nome': ''})

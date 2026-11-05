@@ -238,7 +238,7 @@ def _extrair_documento(doc):
         from .encarte_selos import extrair_pagina
         ofertas_por_selos = extrair_pagina(page, doc)
         if ofertas_por_selos is not None:
-            itens.extend(ofertas_por_selos)
+            itens.extend(completar_tags(page, ofertas_por_selos))
             continue
         area = page.rect.width * page.rect.height
         spans, unidades, legendas, todos_spans = [], [], [], []
@@ -277,8 +277,20 @@ def _extrair_documento(doc):
             if area_complemento: area_oferta |= area_complemento
             itens.append({'nome': nome, 'por': por, 'de': de, 'unidade': unidade, **complemento, 'avisos': avisos(nome, por, de, unidade),
                           'pagina': page.number + 1, 'area': [round(v, 1) for v in area_oferta],
-                          'png': _foto(doc, [x for x in recortes if g['rect'].contains(x[0])])})
+                          **_foto_e_tags(doc, [x for x in recortes if g['rect'].contains(x[0])], nome)})
+        completar_tags(page, itens)
     return itens
+
+
+def _foto_e_tags(doc, partes, nome):
+    from .tags import separar
+    fotos, tags = separar(doc, partes, nome)
+    return {'png': _foto(doc, fotos), 'tags': tags}
+
+
+def completar_tags(page, itens):
+    from .tags import completar
+    return completar(page, itens)
 
 
 # ---------- conferência e marcação manual ----------

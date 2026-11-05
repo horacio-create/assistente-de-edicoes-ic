@@ -1,6 +1,6 @@
 /* Os mesmos elementos e ajustes são usados na conferência e na exportação. */
 (function(global) {
-  const valido = /^(titulo|produto|precos|selo|normal|selo-titulo|(?:de|clube)-(?:int|cent)-\d{1,2}|complemento|complemento-texto|complemento-preco|complemento-unidade|seta|tag-promo|tag-promo-texto|tag-promo-preco|clube-virgula|(?:de|clube)-(?:unidade|moeda))$/;
+  const valido = /^(titulo|produto|precos|selo|normal|selo-titulo|(?:de|clube)-(?:int|cent)-\d{1,2}|complemento|complemento-texto|complemento-preco|complemento-unidade|seta|tag-[1-4]|tag-promo|tag-promo-texto|tag-promo-preco|clube-virgula|(?:de|clube)-(?:unidade|moeda))$/;
   const escalaMaxima=id=>id==='produto'?12:4;
   const caixasAlpha=new WeakMap();
   function caixaImagem(caixa,largura,altura,alpha={x0:0,y0:0,x1:1,y1:1},posicao='50% 50%') {
@@ -59,7 +59,7 @@
     }
     envolver(p.querySelector('.nome'),'ajuste-titulo','titulo','Título');
     const foto=envolver(p.querySelector('.foto-box'),'ajuste-produto','produto','Imagem do produto',true);
-    foto.style.cssText+=';width:100%;height:100%;align-items:center;justify-content:center';
+    foto.style.cssText+=';width:100%;height:100%;align-items:center;justify-content:center;position:relative';
     const precos=envolver(p.querySelector('.precos'),'ajuste-precos','precos','Todos os preços');
     precos.style.cssText+=';position:absolute;inset:0';
     const selo=envolver(p.querySelector('.selo'),'ajuste-selo','selo','Selo completo');
@@ -81,6 +81,7 @@
     marcar(p.querySelector('.equivalencia-texto'),'complemento-texto','Complemento · texto','caractere');
     marcar(p.querySelector('.equivalencia-preco'),'complemento-preco','Complemento · valor','caractere');
     marcar(p.querySelector('.equivalencia-unidade'),'complemento-unidade','Complemento · unidade','caractere');
+    p.querySelectorAll('.tag-produto').forEach(tag=>marcar(tag,'tag-'+tag.dataset.tag,'Tag · '+tag.dataset.nome));
     marcar(p.querySelector('.seta'),'seta','Seta');
     marcar(p.querySelector('.tag-promo'),'tag-promo','Tag promocional');
     marcar(p.querySelector('.tag-promo-texto'),'tag-promo-texto','Tag · texto','caractere');

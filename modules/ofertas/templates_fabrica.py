@@ -50,6 +50,8 @@ def atualizar(base, publicados):
                             ('titulos-20261022.json', 'antes-quebra-titulos-20261022'),
                             ('selo-original-20261022.json', 'antes-selo-original-20261022'),
                             ('selecao-textos-20261022.json', 'antes-selecao-textos-20261022'),
-                            ('complementos-20261023.json', 'antes-complementos-20261023')]:
+                            ('complementos-20261023.json', 'antes-complementos-20261023'),
+                            # por último: depois das anteriores, o template já está na versão que esta espera
+                            ('tags-produtos-20261105.json', 'antes-tags-produtos-20261105')]:
         resultados.extend(_atualizar_manifesto(base, publicados, arquivo, backup))
     return resultados

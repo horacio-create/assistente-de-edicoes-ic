@@ -6,6 +6,7 @@ import pymupdf
 def extrair_grade(page,doc,selos,objetos,imagens,spans,caracteres,precos_selo,numero):
     from .encarte import _foto,_unidade,avisos,_complemento,_tokens_preco
     from .encarte_selos import _foto_sem_transparencia
+    from .tags import separar as separar_tags
     centro=lambda r:(r.tl+r.br)/2
     alturas=sorted(s[0].height for s in selos)
     altura=alturas[len(alturas)//2]
@@ -73,6 +74,14 @@ def extrair_grade(page,doc,selos,objetos,imagens,spans,caracteres,precos_selo,nu
                 if any(im[1]==o[1] and abs(im[0].y0-o[0].y0)<min(im[0].height,o[0].height)*.25
                        and max(im[0].x0,o[0].x0)-min(im[0].x1,o[0].x1)<max(im[0].width,o[0].width)*.6 for o in p):
                     p.append(im);soltas.remove(im);mudou=True;break
+    # Imagem pequena solta dentro de um painel de uma oferta só (o +18 no canto do destaque do whisky):
+    # é dessa oferta e vira tag. Só junta a quem já tem foto, para a tag nunca virar a foto do produto.
+    for im in soltas:
+        for painel in imagens:
+            if painel[2] or painel[1] in ids_selos or not painel[0].contains(im[0]) or im[0].get_area()>painel[0].get_area()*.1:continue
+            dentro=[i for i,s in enumerate(selos) if painel[0].contains(centro(s[0]))]
+            if len(dentro)==1 and fotos[dentro[0]]:
+                fotos[dentro[0]].append(im);break
     ids_selos={s[1] for s in selos}
     resultado=[]
     for i,selo in enumerate(selos):
@@ -95,6 +104,7 @@ def extrair_grade(page,doc,selos,objetos,imagens,spans,caracteres,precos_selo,nu
         por,de=principal[1],normal[1] if normal else ''
         notas=avisos(nome,por,de,unidade)
         area=pymupdf.Rect(r)|titulo['rect']
+        partes,tags=separar_tags(doc,partes,nome)  # +18, logo da marca: tags, não a foto
         com_fundo=not partes or not any(im[2] for im in partes)  # foto sai com o fundo da arte: tirar na importação
         if partes:
             # painel sem transparência com título e preços dentro (ex.: bandeja sobre fogo): só o lado da foto
@@ -121,6 +131,6 @@ def extrair_grade(page,doc,selos,objetos,imagens,spans,caracteres,precos_selo,nu
         extra,caixa_extra=_complemento(spans,principal[0])
         if caixa_extra:area|=caixa_extra
         resultado.append({'nome':nome,'por':por,'de':de,'unidade':unidade,**extra,
-                          'avisos':notas,'pagina':page.number+1,'area':[round(v,1) for v in area],'png':png,
+                          'avisos':notas,'pagina':page.number+1,'area':[round(v,1) for v in area],'png':png,'tags':tags,
                           **({'removerfundo':True} if com_fundo else {})})
     return sorted(resultado,key=lambda it:(round(it['area'][1]/70),it['area'][0]))

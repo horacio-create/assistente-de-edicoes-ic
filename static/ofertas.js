@@ -249,6 +249,17 @@ function campo(def, caminho, idVar) {
     const abrir = () => abrirImagens(caminho, item ? `${item.rotuloItem || item.rotulo} ${caminho[1] + 1} · ${def.rotulo}` : def.rotulo);
     div.querySelector('.trocar').onclick = abrir;
     div.querySelector('.miniatura').onclick = abrir;
+    if (def.grupoTags) { // tag do produto: vazia = espaço para adicionar uma; preenchida = pode remover
+      const nome = valor([...caminho.slice(0, -1), def.id + 'nome']);
+      div.querySelector('label').textContent = nome || def.rotulo;
+      if (!v) { div.querySelector('.miniatura').hidden = true; div.querySelector('.trocar').textContent = 'Adicionar tag…'; div.querySelector('.acoes small').textContent = 'Sem tag'; }
+      else {
+        const tirar = document.createElement('button');
+        tirar.type = 'button'; tirar.className = 'text-button'; tirar.textContent = 'Remover tag';
+        tirar.onclick = () => { definir(caminho, ''); definir([...caminho.slice(0, -1), def.id + 'nome'], ''); montarFormulario(); };
+        div.querySelector('.acoes').append(tirar);
+      }
+    }
     const semFundo = div.querySelector('.sem-fundo');
     if (semFundo) semFundo.onclick = async () => {
       semFundo.disabled = true;
@@ -378,8 +389,19 @@ async function montarFormulario() {
           card.querySelector('.item-titulo').append(trocar);
         }
         let par = null;
+        // tags do produto num grupo próprio: as que existem + um espaço vazio para adicionar outra
+        const tags = document.createElement('details');
+        tags.className = 'tags-produto';
+        tags.innerHTML = '<summary>Tags do produto</summary><p class="help">Selos que acompanham o produto (+18, marca, tamanhos). Na cartela, selecione a tag para mover e redimensionar.</p>';
+        let vazia = false;
         for (const sub of def.campos) {
           if (sub.oculto) continue;
+          if (sub.grupoTags) {
+            const tem = !!valor([def.id, i, sub.id]);
+            if (!tem) { if (vazia) continue; vazia = true; } else tags.open = true;
+            tags.append(campo(sub, [def.id, i, sub.id], `${def.id}_${i + 1}_${sub.id}`));
+            continue;
+          }
           const c = campo(sub, [def.id, i, sub.id], `${def.id}_${i + 1}_${sub.id}`);
           if (sub.tipo === 'preco') { // preços lado a lado
             if (!par) { par = document.createElement('div'); par.className = 'dupla'; card.append(par); }
@@ -387,6 +409,7 @@ async function montarFormulario() {
             if (par.children.length === 2) par = null;
           } else { par = null; card.append(c); }
         }
+        if (tags.querySelector('.campo')) card.append(tags);
         grupo.append(card);
       }
       form.append(grupo);
@@ -880,6 +903,11 @@ function preencherItem(lista, alvo, it) {
   if (subs.por) alvo.por = it.por;
   if (subs.de) alvo.de = it.de;
   for(const campo of ['equivalenciatexto','equivalenciapreco','equivalenciaunidade','promopreco','promotexto'])if(subs[campo])alvo[campo]=it[campo]||'';
+  // mesma regra do servidor (preencher_lista): tags do encarte (+18, marca, tamanhos); vazio = sem tag
+  for (let k = 1; k <= 4; k++) {
+    if (subs['tag' + k]) alvo['tag' + k] = it['tag' + k] ? 'biblioteca:' + it['tag' + k] : '';
+    if (subs['tag' + k + 'nome']) alvo['tag' + k + 'nome'] = it['tag' + k + 'nome'] || '';
+  }
   if (subs.unidade && subs.unidade.opcoes?.includes(it.unidade)) alvo.unidade = it.unidade;
 }
 

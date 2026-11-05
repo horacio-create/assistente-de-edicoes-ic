@@ -124,6 +124,74 @@
           "opcional": true,
           "max": 100,
           "ajuda": "Ex.: Nessa Promo 500g saem por:"
+        },
+        {
+          "id": "tag1",
+          "tipo": "imagem",
+          "rotulo": "Tag 1",
+          "opcional": true,
+          "grupoTags": true,
+          "ajuda": "Selo que acompanha o produto (+18, marca, tamanhos). Vazio: sem tag."
+        },
+        {
+          "id": "tag1nome",
+          "tipo": "texto",
+          "rotulo": "Nome da tag 1",
+          "max": 60,
+          "opcional": true,
+          "oculto": true,
+          "grupoTags": true
+        },
+        {
+          "id": "tag2",
+          "tipo": "imagem",
+          "rotulo": "Tag 2",
+          "opcional": true,
+          "grupoTags": true,
+          "ajuda": "Selo que acompanha o produto (+18, marca, tamanhos). Vazio: sem tag."
+        },
+        {
+          "id": "tag2nome",
+          "tipo": "texto",
+          "rotulo": "Nome da tag 2",
+          "max": 60,
+          "opcional": true,
+          "oculto": true,
+          "grupoTags": true
+        },
+        {
+          "id": "tag3",
+          "tipo": "imagem",
+          "rotulo": "Tag 3",
+          "opcional": true,
+          "grupoTags": true,
+          "ajuda": "Selo que acompanha o produto (+18, marca, tamanhos). Vazio: sem tag."
+        },
+        {
+          "id": "tag3nome",
+          "tipo": "texto",
+          "rotulo": "Nome da tag 3",
+          "max": 60,
+          "opcional": true,
+          "oculto": true,
+          "grupoTags": true
+        },
+        {
+          "id": "tag4",
+          "tipo": "imagem",
+          "rotulo": "Tag 4",
+          "opcional": true,
+          "grupoTags": true,
+          "ajuda": "Selo que acompanha o produto (+18, marca, tamanhos). Vazio: sem tag."
+        },
+        {
+          "id": "tag4nome",
+          "tipo": "texto",
+          "rotulo": "Nome da tag 4",
+          "max": 60,
+          "opcional": true,
+          "oculto": true,
+          "grupoTags": true
         }
       ],
       "min": 1
