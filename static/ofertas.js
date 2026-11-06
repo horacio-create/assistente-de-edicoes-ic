@@ -732,7 +732,7 @@ async function carregarEncartes() {
 async function enviarEncarte(arquivo) {
   if (!arquivo) return;
   const pdf = /\.pdf$/i.test(arquivo.name);
-  if (arquivo.size > (pdf ? 200 : 100) * 1024 * 1024) return aviso(pdf ? 'O limite para encartes PDF é 200 MB por arquivo.' : 'O limite para imagens é 100 MB por arquivo.', 6500);
+  if (arquivo.size > (pdf ? 300 : 100) * 1024 * 1024) return aviso(pdf ? 'O limite para encartes PDF é 300 MB por arquivo.' : 'O limite para imagens é 100 MB por arquivo.', 6500);
   const t = IndoorTarefas.criar(arquivo.name, 'Enviando…').progresso(0);
   try {
     const r = await enviarArquivo('/encarte?nome=' + encodeURIComponent(arquivo.name) + '&comprimir=' + (el('encarte-comprimir').checked ? '1' : '0'), arquivo, t, 'Preparando e lendo encarte…');
@@ -747,8 +747,8 @@ function selecionarEncartes(arquivos) {
   if (!arquivos.length) return;
   if (arquivos.some((f) => !/\.(pdf|png|jpe?g)$/i.test(f.name))) return aviso('Selecione apenas encartes PDF, PNG ou JPG.');
   if (arquivos.length > 20) return aviso('Selecione até 20 encartes por conjunto.');
-  if (arquivos.length > 1 && arquivos.reduce((n, f) => n + f.size, 0) > 200 * 1024 * 1024 - 65536) return aviso('O conjunto deve ter até 200 MB.');
-  if (arquivos.some((f) => f.size > (/\.pdf$/i.test(f.name) ? 200 : 100) * 1024 * 1024)) return aviso('Limite por arquivo: PDF 200 MB; imagens 100 MB.');
+  if (arquivos.length > 1 && arquivos.reduce((n, f) => n + f.size, 0) > 300 * 1024 * 1024 - 65536) return aviso('O conjunto deve ter até 300 MB.');
+  if (arquivos.some((f) => f.size > (/\.pdf$/i.test(f.name) ? 300 : 100) * 1024 * 1024)) return aviso('Limite por arquivo: PDF 300 MB; imagens 100 MB.');
   arquivosConjunto = [...arquivos];
   if (arquivos.length === 1) { arquivosConjunto = []; desenharImportacao(); return enviarEncarte(arquivos[0]); }
   desenharImportacao();

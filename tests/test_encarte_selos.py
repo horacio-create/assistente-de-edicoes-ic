@@ -254,3 +254,28 @@ class CapacidadeTests(unittest.TestCase):
         self.assertEqual(sum(plano_lote(140, lista)), 140)
         with self.assertRaises(ValueError): tamanhos_dos_videos(44, lista, 16)  # 16 cartelas não cabem num vídeo
         self.assertEqual(por_video({'itens': 30}), 30)  # template antigo, sem porVideo
+
+
+class TagComTextoPorCimaTests(unittest.TestCase):
+    def test_tabela_de_tamanhos_sai_com_os_numeros_de_cada_fralda(self):
+        # a moldura da tabela é a mesma imagem em todas as fraldas; os números são texto do PDF por cima
+        from modules.ofertas.tags import completar
+        moldura = io.BytesIO(); Image.new('RGB', (60, 60), 'white').save(moldura, 'PNG')
+        with pymupdf.open() as doc:
+            pg = doc.new_page(width=400, height=200)
+            itens = []
+            for x, numeros in ((20, ('M 18', 'G 16')), (220, ('M 52', 'G 44'))):
+                r = pymupdf.Rect(x, 20, x + 120, 140)
+                pg.insert_image(r, stream=moldura.getvalue())
+                for k, t in enumerate(numeros): pg.insert_text((x + 10, 50 + k * 30), t, fontsize=14)
+                itens.append({'nome': 'Fralda', 'pagina': 1, 'area': [x, 0, x + 150, 190],
+                              'tags': [{'png': moldura.getvalue(), 'tipo': 'Tamanhos e quantidades', 'rect': pymupdf.Rect(r)}]})
+            sem_texto = {'png': b'logo', 'tipo': 'Marca', 'rect': pymupdf.Rect(300, 150, 320, 170)}
+            itens[1]['tags'].append(sem_texto)
+            completar(pg, itens)
+        a, b = itens[0]['tags'][0], itens[1]['tags'][0]
+        self.assertNotIn('rect', a)
+        self.assertNotEqual(a['png'], moldura.getvalue())
+        self.assertNotEqual(a['png'], b['png'])  # cada fralda com a própria tabela
+        self.assertEqual(sem_texto['png'], b'logo')  # sem texto por cima: imagem original
+        self.assertNotIn('rect', sem_texto)

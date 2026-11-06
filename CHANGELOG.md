@@ -1,5 +1,10 @@
 # Histórico de versões
 
+## 1.14.1 — Encartes maiores e tabela de tamanhos das fraldas — 06/11/2026
+
+- Encartes PDF de até 300 MB (antes 200 MB), para arquivos com fotos em alta resolução como o Ofertas Bebê.
+- A tabela de tamanhos de cada fralda sai com os próprios números (tamanho, quantidade e preço por unidade), em vez da moldura vazia repetida.
+
 ## 1.14.0 — Tags dos produtos e recortes do encarte — 05/11/2026
 
 - Recortes de fotos mais confiáveis na importação do encarte: fundos sem transparência ficam fora da foto, cópias da mesma imagem lado a lado formam um produto só e, quando o PDF não traz o produto recortado, o fundo é removido automaticamente (com aviso se a separação for incerta).

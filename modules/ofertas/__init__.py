@@ -1082,7 +1082,7 @@ def handle(environ):
             if metodo == 'POST' and environ.get('HTTP_X_INDOOR') != '1': raise ValueError('Requisição inválida.')
             tamanho = int(environ.get('CONTENT_LENGTH') or 0)
             limite = MAX_PDF if path in ('/api/ofertas/encarte', '/api/ofertas/encartes-importar') else MAX_UPLOAD
-            if tamanho > limite: raise ValueError('Limite de 200 MB por encarte PDF.' if limite == MAX_PDF else 'Limite de 100 MB por arquivo.')
+            if tamanho > limite: raise ValueError('Limite de 300 MB por encarte PDF.' if limite == MAX_PDF else 'Limite de 100 MB por arquivo.')
             corpo = environ['wsgi.input'].read(tamanho)
             resultado = api(metodo, path[len('/api/ofertas'):], parse_qs(environ.get('QUERY_STRING', '')), corpo, environ.get('CONTENT_TYPE', ''))
             data = json.dumps(resultado, ensure_ascii=False).encode()

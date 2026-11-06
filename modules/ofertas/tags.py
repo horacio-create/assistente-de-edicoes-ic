@@ -41,7 +41,7 @@ def _tag_imagem(doc, parte, nome):
     if ALCOOL.search(nome) and branco > .18 and vermelho > .06: tipo = 'Maiores de 18'
     elif re.search(r'fralda', nome, re.I): tipo = 'Tamanhos e quantidades'
     else: tipo = 'Marca'
-    return {'png': png, 'tipo': tipo}
+    return {'png': png, 'tipo': tipo, 'rect': pymupdf.Rect(parte[0])}  # rect: para conferir texto por cima (completar)
 
 
 def _linhas(page):
@@ -89,6 +89,14 @@ def completar(page, itens):
     from .encarte import _tokens_preco
     linhas = _linhas(page)
     pagina = page.number + 1
+    # Tag com texto do PDF por cima (tabela de tamanhos das fraldas: a moldura é uma imagem repetida em
+    # todas as fraldas e os números são texto): recorta a página renderizada, senão saem tabelas vazias e iguais
+    for it in itens:
+        for tag in it.get('tags', []):
+            rect = tag.pop('rect', None)
+            if rect is None or it.get('pagina') != pagina: continue
+            if sum(rect.contains((l[0].tl + l[0].br) / 2) for l in linhas) >= 2:
+                tag['png'] = page.get_pixmap(matrix=pymupdf.Matrix(6, 6), clip=rect, alpha=False).tobytes('png')
     # Balão "Nesta Embalagem 1L Sai Por: R$ 1,59": texto em até 4 linhas logo abaixo de "Nesta" e o preço ao lado/abaixo
     for rect, texto, tam in linhas:
         if not BALAO.match(texto): continue

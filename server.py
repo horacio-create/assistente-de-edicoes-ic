@@ -946,5 +946,5 @@ if __name__ == '__main__':
     proxy = os.environ.get('INDOOR_TRUSTED_PROXY')
     # INDOOR_THREADS: requisições atendidas ao mesmo tempo; precisa sobrar além das vagas de trabalho pesado (prévias,
     # importações), senão elas ocupam todas e até o acompanhamento do progresso espera na fila do waitress
-    serve(app, host=os.environ.get('INDOOR_HOST','0.0.0.0'), port=port, threads=int(os.environ.get('INDOOR_THREADS', '6')), max_request_body_size=MAX_UPLOAD, channel_timeout=300,
+    serve(app, host=os.environ.get('INDOOR_HOST','0.0.0.0'), port=port, threads=int(os.environ.get('INDOOR_THREADS', '6')), max_request_body_size=max(MAX_UPLOAD, ofertas.MAX_PDF + 1024 * 1024), channel_timeout=300,
           **({'trusted_proxy': proxy, 'trusted_proxy_headers': {'x-forwarded-proto'}} if proxy else {}))
