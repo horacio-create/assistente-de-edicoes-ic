@@ -4,6 +4,8 @@
 
 - Encartes PDF de até 300 MB (antes 200 MB), para arquivos com fotos em alta resolução como o Ofertas Bebê.
 - A tabela de tamanhos de cada fralda sai com os próprios números (tamanho, quantidade e preço por unidade), em vez da moldura vazia repetida.
+- Tags movidas ou redimensionadas no editor (como a tabela de tamanhos) não bloqueiam mais a geração com "ajustes visuais inválidos".
+- Nova opção "Gerar mesmo com avisos" na etapa de geração: ajustes, tags e textos com problema voltam ao padrão do template; produto sem preço continua impedindo o vídeo.
 
 ## 1.14.0 — Tags dos produtos e recortes do encarte — 05/11/2026
 

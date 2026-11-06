@@ -279,3 +279,20 @@ class TagComTextoPorCimaTests(unittest.TestCase):
         self.assertNotEqual(a['png'], b['png'])  # cada fralda com a própria tabela
         self.assertEqual(sem_texto['png'], b'logo')  # sem texto por cima: imagem original
         self.assertNotIn('rect', sem_texto)
+
+
+class GerarMesmoComAvisosTests(unittest.TestCase):
+    def test_campos_opcionais_voltam_ao_padrao_e_obrigatorios_continuam(self):
+        from modules.ofertas import contornar_avisos
+        lista = {'id': 'produtos', 'campos': [
+            {'id': 'nome', 'tipo': 'texto', 'max': 10}, {'id': 'por', 'tipo': 'preco'},
+            {'id': 'edicao', 'tipo': 'texto', 'opcional': True}, {'id': 'tag1', 'tipo': 'imagem', 'opcional': True}]}
+        dados = {'produtos': [{'nome': 'Fralda', 'por': '1,00', 'edicao': '{"x":1}', 'tag1': 'sumiu.png'},
+                              {'nome': 'Nome comprido demais', 'por': '', 'edicao': '', 'tag1': ''}]}
+        detalhes = [{'campo': 'produtos_1_edicao'}, {'campo': 'produtos_1_tag1'}, {'campo': 'produtos_2_nome'},
+                    {'campo': 'produtos_2_por'}, {'campo': 'produtos_9_edicao'}, {'campo': None}]
+        self.assertEqual(contornar_avisos(lista, dados, detalhes), 3)
+        um, dois = dados['produtos']
+        self.assertEqual((um['edicao'], um['tag1']), ('', ''))
+        self.assertEqual(dois['nome'], 'Nome compr')
+        self.assertEqual(dois['por'], '')  # sem preço: continua impedindo o vídeo

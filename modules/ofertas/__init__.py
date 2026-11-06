@@ -578,6 +578,21 @@ def plano_lote(n, lista, cartelas=None, impar='repetir', distribuicao='equilibra
         inicio += qtd
     return tamanhos
 
+def contornar_avisos(lista, dados, detalhes):
+    """Gerar mesmo com avisos: campo opcional inválido de um produto (ajustes visuais, tag, balão…) volta ao
+    padrão do template e texto longo demais é cortado. Campos obrigatórios (nome, preço, imagem) continuam
+    impedindo o vídeo. -> quantos campos mudaram."""
+    subs, itens, mudou = {c['id']: c for c in lista.get('campos', [])}, dados.get(lista['id']) or [], 0
+    for d in detalhes:
+        m = re.fullmatch(re.escape(lista['id']) + r'_(\d+)_([a-z0-9]+)', str(d.get('campo') or ''))
+        if not m or not 0 < int(m[1]) <= len(itens) or m[2] not in subs: continue
+        campo, item = subs[m[2]], itens[int(m[1]) - 1]
+        valor = str(item.get(campo['id']) or '')
+        if campo.get('opcional'): item[campo['id']] = ''; mudou += 1
+        elif campo['tipo'] == 'texto' and campo.get('max') and len(valor.strip()) > campo['max']:
+            item[campo['id']] = valor.strip()[:campo['max']].rstrip(); mudou += 1
+    return mudou
+
 def gerar_todos(value):
     """Todos os produtos do encarte em vídeos (ver tamanhos_dos_videos). `impar`: com número ímpar de produtos
     a última cartela fica incompleta; "repetir" completa com o primeiro produto, "fora" deixa o último de fora e
@@ -629,6 +644,8 @@ def gerar_todos(value):
         raise ValueError('Estilo de selo inválido para este template.')
     revisar = value.get('revisar', False)
     if not isinstance(revisar, bool): raise ValueError('A opção de revisão deve estar ativada ou desativada.')
+    forcar = value.get('forcar', False)  # "gerar mesmo com avisos"
+    if not isinstance(forcar, bool): raise ValueError('A opção de gerar com avisos deve estar ativada ou desativada.')
     total = len(tamanhos)
     base = str(value.get('nome') or '').strip()[:150] or Path(row['nome']).stem  # nome escolhido no lote; " (n)" vem depois
     videos = []
@@ -651,9 +668,12 @@ def gerar_todos(value):
         # revision 1: não é um rascunho intocado (o "Novo vídeo" reaproveita/apaga os de revision 0)
         titulo = f'{base} ({g + 1})' if total > 1 else base
         pedido = {'id': uid(), 'template': schema['id'], 'titulo': titulo, 'dados': dados, 'revision': 1}
-        erros = preparar(schema['id'], dados)['erros']
+        pronto = preparar(schema['id'], dados)
+        if forcar and pronto['erros'] and contornar_avisos(lista, dados, pronto.get('detalhes') or []):
+            pronto = preparar(schema['id'], dados)
+        erros = pronto['erros']
         planejados.append((pedido, indices_origem, erros))
-    if origem_pedido and not revisar:
+    if origem_pedido and not revisar and not forcar:
         falhas = [f'Vídeo {i+1}: {"; ".join(erros[:3])}' for i, (_, _, erros) in enumerate(planejados) if erros]
         if falhas: raise ValueError('Confira antes de gerar. ' + ' · '.join(falhas))
     for pedido, indices_origem, erros in planejados:

@@ -29,3 +29,12 @@ test('campos novos opcionais usam padrões para pedidos antigos', () => {
   assert.equal(pronto.variaveis.animacoes, true);
   assert.equal(pronto.variaveis.ultimacartela, 'sozinho');
 });
+test('ajustes visuais aceitam as tags do produto (tabela de tamanhos movida no editor)', () => {
+  const bebe = fileURLToPath(new URL('../templates/uniforca-momento-do-bebe-flexivel', import.meta.url));
+  const {template} = validarTemplate(bebe);
+  const dados = dadosPadrao(template);
+  dados.produtos[0].edicao = JSON.stringify({elementos: {'tag-1': {x: 12, y: -8, escala: 1.4}, produto: {x: 0, y: 0, escala: 1}}});
+  assert.deepEqual(prepararDados(template, dados, bebe).erros, []);
+  dados.produtos[0].edicao = JSON.stringify({elementos: {'tag-5': {x: 0, y: 0, escala: 1}}});
+  assert.match(prepararDados(template, dados, bebe).erros.join(' '), /ajustes visuais inválidos/);
+});
