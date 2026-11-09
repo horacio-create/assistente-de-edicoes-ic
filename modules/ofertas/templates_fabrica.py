@@ -17,7 +17,7 @@ def _atualizar_manifesto(base, publicados, arquivo, backup):
     for ident, arquivos in json.loads(manifest.read_text('utf-8')).items():
         origem, destino = base / 'templates' / ident, publicados / ident
         if not destino.is_dir() or origem.resolve() == destino.resolve(): continue
-        if ident not in ('uniforca-hora-da-carne-flexivel', 'uniforca-hora-da-feira-flexivel', 'uniforca-momento-do-bebe-flexivel', 'uniforca-sadia-flexivel', 'uniforca-perdigao-flexivel', 'uniforca-vitrine-laranja-flexivel', 'uniforca-vitrine-nestle-flexivel', 'uniforca-vitrine-itambe-flexivel'): continue
+        if ident not in ('uniforca-hora-da-carne-flexivel', 'uniforca-hora-da-feira-flexivel', 'uniforca-momento-do-bebe-flexivel', 'uniforca-sadia-flexivel', 'uniforca-perdigao-flexivel', 'uniforca-vitrine-laranja-flexivel', 'uniforca-vitrine-nestle-flexivel', 'uniforca-vitrine-itambe-flexivel', 'uniforca-casa-limpa-flexivel'): continue
         # Mudanças de conteúdo do designer impedem a atualização do conjunto; capa personalizada é mantida.
         seguros = all(resumo(destino / nome) in (info['antes'], info['depois'], *info.get('intermediarios', []))
                       for nome, info in arquivos.items() if nome != 'capa.png')
@@ -52,6 +52,7 @@ def atualizar(base, publicados):
                             ('selecao-textos-20261022.json', 'antes-selecao-textos-20261022'),
                             ('complementos-20261023.json', 'antes-complementos-20261023'),
                             # por último: depois das anteriores, o template já está na versão que esta espera
-                            ('tags-produtos-20261105.json', 'antes-tags-produtos-20261105')]:
+                            ('tags-produtos-20261105.json', 'antes-tags-produtos-20261105'),
+                            ('nome-montserrat-20261109.json', 'antes-nome-montserrat-20261109')]:
         resultados.extend(_atualizar_manifesto(base, publicados, arquivo, backup))
     return resultados

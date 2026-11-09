@@ -1,0 +1,16 @@
+{
+  "uniforca-casa-limpa-flexivel": {
+    "index.html": {
+      "antes": "e2313dc4ef751d557997776ca14255fe8fa56263e38bc1f5d476533dbab2e956",
+      "depois": "eaeecb1a07e6a7cc52eaf0f9ec0a4fc36c965f2c96eaaf3bd9c2c56b6b88f5d2"
+    },
+    "assets/layout.js": {
+      "antes": "2b05ad25b169841e8f0ecb6401dba59a8a526806bab23c66b405556b469bcb0c",
+      "depois": "91a39c107eebbd81cb62d8e6f5192cbf847020caed847e27ac9815ee96e04f1e"
+    },
+    "capa.png": {
+      "antes": "af3f1d3aedff54248a733ef33a780a4c61d49f168be7dbc5fa140f0c36537b24",
+      "depois": "0d6d37f0b487c6031f9f2f98f18a691d1f06c62b92609cc6171dfaeccc0ceb19"
+    }
+  }
+}

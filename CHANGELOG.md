@@ -5,6 +5,7 @@
 - Encartes enviados como imagem (PNG/JPG) e PDFs que são só uma foto da página passam a ter os produtos lidos automaticamente: OCR local encontra cada oferta pelo selo "Clube de Desconto", sugere nome, preço normal, preço do clube e unidade, e recorta a foto do produto sem o fundo.
 - O recorte combina a remoção de fundo por IA com a separação pelas cores do fundo da arte, o que funciona até com produto da mesma cor do fundo (bandejas amarelas sobre fundo amarelo) e remove a sombra do produto.
 - Cada produto lido da imagem vem com o aviso para conferir nome, preços e recorte; se a leitura falhar, o encarte continua disponível para marcar as ofertas à mão.
+- Template Casa Limpa: nomes dos produtos em Montserrat, como na arte do encarte, com mais espaço entre letras e linhas.
 
 ## 1.14.1 — Encartes maiores, gerar com avisos e template Casa Limpa — 06/11/2026
 
