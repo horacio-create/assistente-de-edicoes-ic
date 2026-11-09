@@ -7,6 +7,7 @@
 - Tags movidas ou redimensionadas no editor (como a tabela de tamanhos) não bloqueiam mais a geração com "ajustes visuais inválidos".
 - Nova opção "Gerar mesmo com avisos" na etapa de geração: ajustes, tags e textos com problema voltam ao padrão do template; produto sem preço continua impedindo o vídeo.
 - Novo template "Casa Limpa Economia em Dobro (Ypê)", com a data da oferta editável na faixa laranja.
+- Novo template "Super Oferta Tijuca Alimentos", com a área amarela dos produtos 10% maior e a data editável na faixa escura.
 
 ## 1.14.0 — Tags dos produtos e recortes do encarte — 05/11/2026
 
