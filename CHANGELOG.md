@@ -1,5 +1,11 @@
 # Histórico de versões
 
+## 1.15.1 — Equivalência por quilo nos encartes em imagem e template Super Oferta Tijuca — 09/11/2026
+
+- O leitor de encartes em imagem também lê a equivalência por quilo do selo ("No Clube de Desconto o preço do Kg sai por: R$ 42,99"), desenhada pelo selo editável do template, como nos encartes em PDF.
+- Preços com um único dígito grande (ex.: R$ 4,29) passam a ser lidos também em PNG; a leitura ficou mais rápida (12 a 20 s por encarte).
+- Novo template "Super Oferta Tijuca Alimentos", com a área amarela dos produtos 10% maior, a data editável na faixa escura e os nomes em Montserrat, como na arte.
+
 ## 1.15.0 — Encartes em imagem — 09/11/2026
 
 - Encartes enviados como imagem (PNG/JPG) e PDFs que são só uma foto da página passam a ter os produtos lidos automaticamente: OCR local encontra cada oferta pelo selo "Clube de Desconto", sugere nome, preço normal, preço do clube e unidade, e recorta a foto do produto sem o fundo.
