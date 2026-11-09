@@ -1,6 +1,8 @@
 /* Mesma regra do Encarte Studio: faixas de título, imagem e preço,
    escala comum dos preços e margens proporcionais ao quadro. */
 (function (global) {
+  // altura da linha do nome (CSS --linha-nome; 1.12 nos templates sem a variável): conta as linhas que cabem
+  const linhaNome = (p) => parseFloat(getComputedStyle(p.querySelector('.nome')).getPropertyValue('--linha-nome')) || 1.12;
   function distribuir(altura, titulo, preco, animacoes) {
     const margem = Math.max(16, altura * .035);
     const intervalo = animacoes ? 38 : 18;
@@ -24,7 +26,7 @@
     });
     const cabeEmDuasLinhas = () => {
       produtos.forEach(p => { p.querySelector('.nome').style.fontSize = fonte + 'px'; });
-      return produtos.every(p => p.querySelector('.nome').offsetHeight <= fonte * 1.12 * 2 + 2);
+      return produtos.every(p => p.querySelector('.nome').offsetHeight <= fonte * linhaNome(p) * 2 + 2);
     };
     while (!cabeEmDuasLinhas() && fonte > 26) fonte--;
     // Textos excepcionalmente extensos ganham mais linhas; nunca são cortados.
@@ -88,7 +90,7 @@
     });
     const cabeEmTresLinhas = () => {
       produtos.forEach(p => {p.querySelector('.nome').style.fontSize=fonte+'px';});
-      return produtos.every(p => p.querySelector('.nome').offsetHeight <= fonte*1.12*3+2);
+      return produtos.every(p => p.querySelector('.nome').offsetHeight <= fonte*linhaNome(p)*3+2);
     };
     while (!cabeEmTresLinhas() && fonte>26) fonte--;
     const tituloAltura = Math.max(...produtos.map(p=>p.querySelector('.nome').offsetHeight));

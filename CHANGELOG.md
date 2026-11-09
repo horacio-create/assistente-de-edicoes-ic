@@ -2,7 +2,7 @@
 
 ## 1.14.2 — Template Super Oferta Tijuca — 09/11/2026
 
-- Novo template "Super Oferta Tijuca Alimentos", com a área amarela dos produtos 10% maior e a data editável na faixa escura.
+- Novo template "Super Oferta Tijuca Alimentos", com a área amarela dos produtos 10% maior, a data editável na faixa escura e os nomes em Montserrat, como na arte.
 
 ## 1.14.1 — Encartes maiores, gerar com avisos e template Casa Limpa — 06/11/2026
 
