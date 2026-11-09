@@ -36,6 +36,19 @@ def _modelo():
     return _sessao
 
 
+def mascara(im):
+    """Imagem PIL -> máscara do produto (0 a 1, no tamanho da imagem). Usada pelo leitor de encartes em
+    imagem, que soma esta máscara à da "varinha" (encarte_imagem.recortar_foto)."""
+    import numpy as np
+    with LOCK:
+        sessao = _modelo()
+        arr = np.asarray(im.convert('RGB').resize((320, 320), Image.Resampling.LANCZOS), dtype=np.float32) / 255
+        arr = (arr - np.array([.485, .456, .406], dtype=np.float32)) / np.array([.229, .224, .225], dtype=np.float32)
+        m = sessao.run(None, {sessao.get_inputs()[0].name: arr.transpose(2, 0, 1)[None]})[0][0, 0]
+    m = (m - m.min()) / max(1e-6, float(m.max() - m.min()))
+    return np.asarray(Image.fromarray(np.uint8(m * 255)).resize(im.size, Image.Resampling.LANCZOS)) / 255
+
+
 def isolar(png):
     """PNG com fundo -> PNG transparente recortado no produto. ValueError se a separação não convencer."""
     import numpy as np

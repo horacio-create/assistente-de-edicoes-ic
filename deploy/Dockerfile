@@ -17,7 +17,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 WORKDIR /app
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+# o import confere no build as bibliotecas de sistema do OpenCV (leitor de encartes em imagem)
+RUN pip install --no-cache-dir -r requirements.txt \
+ && python -c "import cv2, rapidocr"
 
 # usuário sem privilégios; o Chrome do HyperFrames fica no cache dele
 RUN useradd -m -u 10001 indoor && mkdir -p /dados /exportacoes && chown -R indoor /app /dados /exportacoes
