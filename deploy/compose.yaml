@@ -41,7 +41,7 @@ services:
     restart: unless-stopped
     depends_on: [assistente]
     environment:
-      INDOOR_UPLOAD_MAX: "210MB"          # corpo máximo aceito (Caddyfile); vídeos de até 200 MB
+      INDOOR_UPLOAD_MAX: "320MB"          # corpo máximo aceito (Caddyfile); encartes PDF de até 300 MB
     ports:
       - "80:80"
       - "443:443"

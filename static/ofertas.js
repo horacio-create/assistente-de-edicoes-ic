@@ -732,7 +732,7 @@ async function carregarEncartes() {
 async function enviarEncarte(arquivo) {
   if (!arquivo) return;
   const pdf = /\.pdf$/i.test(arquivo.name);
-  if (arquivo.size > (pdf ? 200 : 100) * 1024 * 1024) return aviso(pdf ? 'O limite para encartes PDF é 200 MB por arquivo.' : 'O limite para imagens é 100 MB por arquivo.', 6500);
+  if (arquivo.size > (pdf ? 300 : 100) * 1024 * 1024) return aviso(pdf ? 'O limite para encartes PDF é 300 MB por arquivo.' : 'O limite para imagens é 100 MB por arquivo.', 6500);
   const t = IndoorTarefas.criar(arquivo.name, 'Enviando…').progresso(0);
   try {
     const r = await enviarArquivo('/encarte?nome=' + encodeURIComponent(arquivo.name) + '&comprimir=' + (el('encarte-comprimir').checked ? '1' : '0'), arquivo, t, 'Preparando e lendo encarte…');
@@ -747,8 +747,8 @@ function selecionarEncartes(arquivos) {
   if (!arquivos.length) return;
   if (arquivos.some((f) => !/\.(pdf|png|jpe?g)$/i.test(f.name))) return aviso('Selecione apenas encartes PDF, PNG ou JPG.');
   if (arquivos.length > 20) return aviso('Selecione até 20 encartes por conjunto.');
-  if (arquivos.length > 1 && arquivos.reduce((n, f) => n + f.size, 0) > 200 * 1024 * 1024 - 65536) return aviso('O conjunto deve ter até 200 MB.');
-  if (arquivos.some((f) => f.size > (/\.pdf$/i.test(f.name) ? 200 : 100) * 1024 * 1024)) return aviso('Limite por arquivo: PDF 200 MB; imagens 100 MB.');
+  if (arquivos.length > 1 && arquivos.reduce((n, f) => n + f.size, 0) > 300 * 1024 * 1024 - 65536) return aviso('O conjunto deve ter até 300 MB.');
+  if (arquivos.some((f) => f.size > (/\.pdf$/i.test(f.name) ? 300 : 100) * 1024 * 1024)) return aviso('Limite por arquivo: PDF 300 MB; imagens 100 MB.');
   arquivosConjunto = [...arquivos];
   if (arquivos.length === 1) { arquivosConjunto = []; desenharImportacao(); return enviarEncarte(arquivos[0]); }
   desenharImportacao();
@@ -1100,6 +1100,7 @@ function iniciarLoteInline() {
     el('lote-nome').value=el('titulo').value;
     el('lote-distribuicao').value='sequencia';
     el('lote-revisar').checked=false;
+    el('lote-forcar').checked=false;
   }
   const lista=listaPrincipal(),sozinho=Boolean(lista.grupo?.incompleto);
   el('lote-sozinho').hidden=!sozinho;el('lote-tres').hidden=!lista.grupo?.finalTres;
@@ -1149,13 +1150,15 @@ function desenharLote() {
   const base=el('lote-nome').value.trim()||state.pedido.titulo;
   el('lote-nomes').textContent=p.tamanhos.length>1?`${base} (1) até ${base} (${p.tamanhos.length})`:base;
   el('gerar').textContent=`${el('lote-revisar').checked?'Preparar para revisão:':'Gerar'} ${plural(p.tamanhos.length,'vídeo','vídeos')}`;
-  el('gerar').disabled=Boolean(state.gerandoLote)||!p.enc.itens.length||(!el('lote-revisar').checked&&state.validacao.length>0);
+  el('lote-forcar-campo').hidden=!pendencias.length;
+  const forcar=pendencias.length>0&&el('lote-forcar').checked;
+  el('gerar').disabled=Boolean(state.gerandoLote)||!p.enc.itens.length||(!el('lote-revisar').checked&&!forcar&&state.validacao.length>0);
 }
 for(const id of ['lote-cartelas','lote-nome'])el(id).addEventListener('input',()=>{
   if(id==='lote-nome'){el('titulo').value=el(id).value;el('video-titulo').value=el(id).value;agendarSalvar();}
   desenharLote();
 });
-for(const id of ['lote-cartelas','lote-distribuicao','lote-revisar'])el(id).addEventListener('change',desenharLote);
+for(const id of ['lote-cartelas','lote-distribuicao','lote-revisar','lote-forcar'])el(id).addEventListener('change',desenharLote);
 el('lote-animacoes').addEventListener('change',()=>{if('animacoes' in state.pedido.dados)definir(['animacoes'],el('lote-animacoes').checked);desenharLote();});
 document.querySelectorAll('input[name=of-lote-impar]').forEach(r=>r.addEventListener('change',()=>{
   if('ultimacartela' in state.pedido.dados)definir(['ultimacartela'],r.value==='tres'?'tres':'sozinho');desenharLote();
@@ -1178,7 +1181,7 @@ async function gerarPlanoVideos() {
     const p=planoLote();
     const destino=destinoVideos,inicio=Number(el('destino-inicio').value);
     if(destino&&(!Number.isInteger(inicio)||inicio<1||inicio>99999))throw new Error('Confira a numeração inicial dos MP4s.');
-    const r=await api('/pedido-gerar-videos',{body:{id:state.pedido.id,revision:state.pedido.revision,cartelas:p.cartelas,impar:p.impar,nome:el('lote-nome').value,distribuicao:p.distribuicao,animacoes:el('lote-animacoes').checked,revisar:el('lote-revisar').checked,...(p.enc.id?{encarte:p.enc.id,indices:state.ordem.slice(0,state.pedido.dados[p.lista.id].length)}:{})}});
+    const r=await api('/pedido-gerar-videos',{body:{id:state.pedido.id,revision:state.pedido.revision,cartelas:p.cartelas,impar:p.impar,nome:el('lote-nome').value,distribuicao:p.distribuicao,animacoes:el('lote-animacoes').checked,revisar:el('lote-revisar').checked,forcar:!el('lote-forcar-campo').hidden&&el('lote-forcar').checked,...(p.enc.id?{encarte:p.enc.id,indices:state.ordem.slice(0,state.pedido.dados[p.lista.id].length)}:{})}});
     if(r.revisar){aviso(`${r.videos.length} vídeos preparados para revisão.`,7000);await mostrar('pedidos');if(r.lote)await abrirVisaoLote(r.lote);return;}
     const falhos=r.videos.filter(v=>!v.render);
     aviso(falhos.length?`${r.videos.length-falhos.length} vídeos na fila; ${falhos.length} precisam de revisão.`:`${plural(r.videos.length,'vídeo enviado','vídeos enviados')} para a fila de geração.`,7000);

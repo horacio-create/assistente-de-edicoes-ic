@@ -1,5 +1,13 @@
 # Histórico de versões
 
+## 1.14.1 — Encartes maiores, gerar com avisos e template Casa Limpa — 06/11/2026
+
+- Encartes PDF de até 300 MB (antes 200 MB), para arquivos com fotos em alta resolução como o Ofertas Bebê.
+- A tabela de tamanhos de cada fralda sai com os próprios números (tamanho, quantidade e preço por unidade), em vez da moldura vazia repetida.
+- Tags movidas ou redimensionadas no editor (como a tabela de tamanhos) não bloqueiam mais a geração com "ajustes visuais inválidos".
+- Nova opção "Gerar mesmo com avisos" na etapa de geração: ajustes, tags e textos com problema voltam ao padrão do template; produto sem preço continua impedindo o vídeo.
+- Novo template "Casa Limpa Economia em Dobro (Ypê)", com a data da oferta editável na faixa laranja.
+
 ## 1.14.0 — Tags dos produtos e recortes do encarte — 05/11/2026
 
 - Recortes de fotos mais confiáveis na importação do encarte: fundos sem transparência ficam fora da foto, cópias da mesma imagem lado a lado formam um produto só e, quando o PDF não traz o produto recortado, o fundo é removido automaticamente (com aviso se a separação for incerta).

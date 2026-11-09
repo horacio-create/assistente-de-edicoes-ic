@@ -17,7 +17,7 @@ MAX_PAGINAS_CONJUNTO = 100
 
 def receber(raw, content_type):
     if '\r' in content_type or '\n' in content_type or len(raw) > MAX_PDF:
-        raise ValueError('O conjunto deve ter até 200 MB.')
+        raise ValueError('O conjunto deve ter até 300 MB.')
     if not content_type.lower().startswith('multipart/form-data;'):
         raise ValueError('Envie os encartes como arquivos separados no mesmo envio.')
     mensagem = BytesParser(policy=policy.default).parsebytes(

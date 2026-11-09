@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pymupdf
 
-MAX_PDF = 200 * 1024 * 1024
+MAX_PDF = 300 * 1024 * 1024  # PDFs de encarte com fotos em alta (ex.: Ofertas Bebê, 217 MB)
 MAX_PAGINAS = 20
 
 
@@ -34,7 +34,7 @@ def preparar_pdf(arquivo):
     arquivo = Path(arquivo)
     tamanho = arquivo.stat().st_size
     if tamanho > MAX_PDF:
-        raise ValueError('O limite para encartes PDF é 200 MB por arquivo.')
+        raise ValueError('O limite para encartes PDF é 300 MB por arquivo.')
     resultado = {'original': tamanho, 'final': tamanho, 'reduzido': False,
                  'mensagem': 'O PDF já está compacto. Original mantido.'}
     copia = arquivo.with_suffix('.preparando.pdf')
