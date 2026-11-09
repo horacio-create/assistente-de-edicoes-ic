@@ -73,8 +73,8 @@ def _motor(rec):
 def _ler(img, rec='latino', escala=1):
     """-> [{'x0','y0','x1','y1','h','t'}] em pixels de `img` (antes da escala)."""
     buf = io.BytesIO(); img.save(buf, 'PNG')
-    r = _motor(rec)(buf.getvalue())
-    if r is None or r.boxes is None: return []
+    r = _motor(rec)(buf.getvalue(), use_det=True, use_cls=False, use_rec=True)  # explícito: a leitura direta muda o padrão
+    if r is None or getattr(r, 'boxes', None) is None: return []
     out = []
     for box, t in zip(r.boxes, r.txts):
         xs = [float(p[0]) / escala for p in box]; ys = [float(p[1]) / escala for p in box]
@@ -86,19 +86,35 @@ def _textos(img, rec='numeros'):
     return [c['t'] for c in _ler(img, rec)]
 
 
-def _preco(img):
-    """-> (valor "12,99", textos lidos) de um recorte: leituras com margem branca, em cinza, metade e dobro,
-    até duas concordarem. A margem branca é essencial: sem ela o detector não acha os números grandes do selo."""
-    variantes = [lambda: ImageOps.expand(img, 40, fill=(255, 255, 255)),
-                 lambda: ImageOps.expand(ImageOps.autocontrast(img.convert('L')), 40, fill=255).convert('RGB'),
-                 lambda: ImageOps.expand(img.resize((img.width * 2, img.height * 2)), 60, fill=(255, 255, 255)),
-                 lambda: ImageOps.expand(img.resize((max(1, img.width // 2), max(1, img.height // 2))), 30, fill=(255, 255, 255))]
+def _linha(img):
+    """Leitura direta de um recorte como UMA linha de texto (sem o detector). Acerta números grandes e
+    isolados que o detector perde: o "4" do selo do queijo saía "Z,29" ou só ",29"."""
+    buf = io.BytesIO(); img.save(buf, 'PNG')
+    r = _motor('numeros')(buf.getvalue(), use_det=False, use_cls=False, use_rec=True)
+    return ' '.join(str(t) for t in (r.txts or [])) if r is not None else ''
+
+
+def _preco(img, linha=None):
+    """-> (valor "12,99", textos lidos) de um recorte. Leituras diretas da linha do preço (`linha`, sem o R$
+    de cima e o que vem embaixo) e com detector (margem branca, cinza, dobro, metade) até duas concordarem.
+    A margem branca é essencial para o detector: sem ela ele não acha os números grandes do selo."""
+    alvo = linha or img
+    variantes = [lambda: ('linha', alvo),
+                 lambda: ('linha', ImageOps.autocontrast(alvo.convert('L')).convert('RGB')),
+                 lambda: ('det', ImageOps.expand(img, 40, fill=(255, 255, 255))),
+                 lambda: ('det', ImageOps.expand(ImageOps.autocontrast(img.convert('L')), 40, fill=255).convert('RGB')),
+                 lambda: ('det', ImageOps.expand(img.resize((img.width * 2, img.height * 2)), 60, fill=(255, 255, 255))),
+                 lambda: ('det', ImageOps.expand(img.resize((max(1, img.width // 2), max(1, img.height // 2))), 30, fill=(255, 255, 255)))]
     votos, fracos, lidos = Counter(), Counter(), []
     for v in variantes:
-        texto = ' '.join(_textos(v())); lidos.append(texto)
+        modo, imagem = v()
+        texto = _linha(imagem) if modo == 'linha' else ' '.join(_textos(imagem))
+        lidos.append(texto)
         for m in re.finditer(r'(?<![\d,.])(\d{1,3})\s*[,.]\s*(\d{2})(?!\d)', texto): votos[f'{m[1]},{m[2]}'] += 1
-        # centavos elevados com a vírgula minúscula: o OCR lê "12" e "99" separados
+        # centavos elevados com a vírgula minúscula: o OCR lê "12 99" ou, na leitura direta, "1899"
         for m in re.finditer(r'(?<![\d,.])(\d{1,3})\s+(\d{2})(?![\d,.])', texto): fracos[f'{m[1]},{m[2]}'] += 1
+        if modo == 'linha':
+            for m in re.finditer(r'(?<![\d,.])(\d{1,3})(\d{2})(?![\d,.]|\s?g\b)', texto): fracos[f'{m[1]},{m[2]}'] += 1
         if votos and votos.most_common(1)[0][1] >= 2: break
     escolha = votos or fracos
     return (escolha.most_common(1)[0][0] if escolha else ''), ' '.join(lidos)
@@ -242,15 +258,33 @@ def ler_pagina(img, pagina=1, fator=1.0):
             selo = (a['x0'] - 6, a['y0'] - 4, a['x1'] + 16, a['y1'] + h * 5.6)
             normal = (max(esq, a['x0'] - h * 7.5), a['y1'] - h * .2, a['x0'] + 2, a['y1'] + h * 4.8)
             corte = lambda r: img.crop(tuple(int(max(0, min(lim, v))) for v, lim in zip(r, (W, H, W, H))))
-            por, lido_por = _preco(corte((a['x0'] - 5, a['y1'], a['x1'] + 15, a['y1'] + h * 5.5)))
-            de, lido_de = _preco(corte((normal[0], a['y1'] + h * .5, a['x0'] + 2, a['y1'] + h * 4.6)))
-            unidade = _unidade(lido_por + ' ' + lido_de)
+            por, lido_por = _preco(corte((a['x0'] - 5, a['y1'], a['x1'] + 15, a['y1'] + h * 5.5)),
+                                   corte((a['x0'] - 5, a['y1'], a['x1'] + 15, a['y1'] + h * 4.4)))
+            regiao_de = corte((normal[0], a['y1'] + h * .5, a['x0'] + 2, a['y1'] + h * 4.6))
+            de, lido_de = _preco(regiao_de, regiao_de)
+            # unidade ("cada", "kg", "100g"): textos da página na linha dos preços, mais o que os recortes leram
+            na_linha = [c['t'] for c in caixas if normal[0] - h <= c['x0'] and c['x1'] <= a['x1'] + h * 2
+                        and a['y1'] <= c['y0'] <= a['y1'] + h * 5]
+            unidade = _unidade(' '.join(na_linha) + ' ' + lido_por + ' ' + lido_de)
+            # equivalência por quilo na parte de baixo do selo ("No Clube de Desconto o preço do Kg sai por: 42,99")
+            extra = {}
+            chamadas = [c for c in caixas if re.search(r'clube\s*de', c['t'], re.I)
+                        and a['y1'] + h * 2.5 < c['y0'] < a['y1'] + h * 8 and a['x0'] - h * 2 <= c['x0'] <= a['x1']
+                        and not any(abs(c['x0'] - b['x0']) < 2 and abs(c['y0'] - b['y0']) < 2 for b in ancoras)]
+            if chamadas:
+                c = min(chamadas, key=lambda c: c['y0'])
+                regiao = corte((c['x1'] - 4, c['y0'] - h * .8, selo[2] + 20, c['y0'] + h * 2.8))
+                valor, _ = _preco(regiao, regiao)
+                if valor and valor not in (por, de):
+                    extra = {'equivalenciatexto': 'No Clube de Desconto o preço do Kg sai por:', 'equivalenciapreco': valor,
+                             'equivalenciaunidade': 'kg'}
+                    selo = (selo[0], selo[1], selo[2], max(selo[3], c['y0'] + h * 2.8))
             # a foto pode descer ao lado do selo (queijo): vai até a linha dos preços
             foto = [int(esq + 4), int(fim_titulo + 6), int(dir_ - 4), int(min(H, a['y1'] + h * 4.2))]
             if foto[3] - foto[1] < 30 or foto[2] - foto[0] < 30: continue
             png = recortar_foto(img.crop(foto), [(x0 - foto[0], y0 - foto[1], x1 - foto[0], y1 - foto[1]) for x0, y0, x1, y1 in (selo, normal)])
             area = [min(foto[0], normal[0]), min(foto[1], fim_titulo - h * 3 if bloco else foto[1]), max(foto[2], selo[2]), max(foto[3], selo[3])]
-            itens.append({'nome': nome, 'por': por, 'de': de, 'unidade': unidade, 'pagina': pagina, 'png': png,
+            itens.append({'nome': nome, 'por': por, 'de': de, 'unidade': unidade, **extra, 'pagina': pagina, 'png': png,
                           'area': [round(v / fator, 1) for v in area], 'avisos': [AVISO] + avisos(nome, por, de, unidade)})
     return itens
 
