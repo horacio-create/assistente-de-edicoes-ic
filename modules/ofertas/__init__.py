@@ -365,6 +365,7 @@ def ler_encarte(ident):
                     temp.write_text(json.dumps(prep, ensure_ascii=False), 'utf-8')
                     os.replace(temp, informacao)
             itens = extrair(pdf.read_bytes())
+            itens = ler_paginas_imagem(pdf.read_bytes(), itens)
             tirar_fundos(itens)
             salvar_tags(itens, nome)
             result =[item | {'imagem': salvar_imagem(item.pop('png'), item['nome'], f'encarte: {nome}')['id']} for item in itens]
@@ -374,6 +375,44 @@ def ler_encarte(ident):
         except Exception as exc:
             with connect() as db:
                 db.execute("UPDATE ofertas_encartes SET status='falhou', terminado=?, erro=? WHERE id=?", (now(), f'Não foi possível ler {nome}: {exc}', ident))
+
+
+def ler_paginas_imagem(pdf_bytes, itens):
+    """Páginas do PDF que são só uma imagem (encarte exportado como foto) e não deram produto no leitor do
+    PDF passam pelo leitor de imagem (OCR + recorte). Falhou: ficam como antes, para marcar à mão."""
+    import pymupdf
+    try:
+        from modules.ofertas.encarte_imagem import paginas_so_imagem, ler_pagina, ativo
+        if not ativo(): return itens
+        with pymupdf.open(stream=pdf_bytes, filetype='pdf') as doc:
+            lidas = {it['pagina'] for it in itens}
+            novos = []
+            for numero, (img, fator) in paginas_so_imagem(doc).items():
+                if numero not in lidas: novos += ler_pagina(img, numero, fator)
+    except Exception as exc:  # sem OCR/modelos: o encarte continua importado, como antes
+        print(f'[ofertas] leitura de página em imagem falhou: {exc}', flush=True)
+        return itens
+    return sorted(itens + novos, key=lambda it: it['pagina']) if novos else itens
+
+
+def ler_encarte_imagem(ident):
+    """Encarte enviado como PNG/JPG: lê as ofertas da imagem em segundo plano. Falhou: fica pronto sem
+    produtos, para marcar à mão (como antes)."""
+    from PIL import Image
+    with LEITURA:
+        with connect() as db: nome, dono = db.execute('SELECT nome, owner FROM ofertas_encartes WHERE id=?', (ident,)).fetchone()
+        result = []
+        try:
+            from modules.ofertas.encarte_imagem import ler_pagina, ativo
+            itens = []
+            if ativo():
+                with Image.open(PASTA / 'encartes' / f'{ident}.png') as im: itens = ler_pagina(im, 1, 1.0)
+            result = [item | {'imagem': salvar_imagem(item.pop('png'), item['nome'], f'encarte: {nome}')['id']} for item in itens]
+        except Exception as exc:
+            print(f'[ofertas] leitura do encarte em imagem falhou: {exc}', flush=True)
+        with connect() as db:
+            db.execute("UPDATE ofertas_encartes SET status='pronto', terminado=?, itens=? WHERE id=?", (now(), json.dumps(result, ensure_ascii=False), ident))
+            registrar(db, 'Encarte importado', nome, dono, produtos=len(result))
 
 
 TAG = 'tag'  # origem das imagens de tag (+18, marca, tamanhos): não aparecem na Biblioteca
@@ -956,7 +995,7 @@ def api(method, path, query, raw, content_type=''):
         ident = uid()
         if not raw.startswith(b'%PDF'):
             if len(raw) > MAX_UPLOAD: raise ValueError('Limite de 100 MB por imagem.')
-            # PNG/JPG: sem camada de texto para ler; as ofertas são marcadas à mão na página
+            # PNG/JPG: sem camada de texto; o leitor de imagem (OCR + recorte) acha as ofertas em segundo plano
             from PIL import Image, ImageOps
             try:
                 im = Image.open(io.BytesIO(raw))
@@ -965,9 +1004,9 @@ def api(method, path, query, raw, content_type=''):
             except ValueError: raise
             except Exception: raise ValueError(f'{nome} não é um PDF, PNG ou JPG.') from None
             with connect() as db:
-                db.execute("INSERT INTO ofertas_encartes(id,nome,status,criado,terminado,owner) VALUES(?,?,'pronto',?,?,?)", (ident, nome, now(), now(), owner()))
-                registrar(db, 'Encarte importado', nome, produtos=0)
-            return {'id': ident, 'nome': nome, 'status': 'pronto'}
+                db.execute("INSERT INTO ofertas_encartes(id,nome,status,criado,owner) VALUES(?,?,'lendo',?,?)", (ident, nome, now(), owner()))
+            threading.Thread(target=ler_encarte_imagem, args=(ident,), daemon=True).start()
+            return {'id': ident, 'nome': nome, 'status': 'lendo'}
         (PASTA / 'encartes' / f'{ident}.pdf').write_bytes(raw)
         prep = {'estado': 'aguardando' if q('comprimir') != '0' else 'desativado',
                 'original': len(raw), 'final': len(raw), 'reduzido': False,

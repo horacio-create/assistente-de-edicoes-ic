@@ -14,6 +14,7 @@ SANDBOX = tempfile.TemporaryDirectory(prefix='indoor-ofertas-')
 TMP = Path(SANDBOX.name)
 os.environ['INDOOR_DATA'] = str(TMP / 'data')
 os.environ['OFERTAS_TEMPLATES'] = str(TMP / 'templates')
+os.environ['INDOOR_OCR'] = '0'  # sem baixar os modelos de OCR: o leitor de imagem tem testes próprios
 RAIZ = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(RAIZ))
 from PIL import Image  # noqa: E402
@@ -443,7 +444,8 @@ class FluxoTests(unittest.TestCase):
     def test_encarte_em_imagem_e_marcado_a_mao(self):
         foto = io.BytesIO(); Image.new('RGB', (800, 600), 'white').save(foto, 'JPEG')
         _, r = json_de('POST', '/api/ofertas/encarte?nome=encarte.jpg', raw=foto.getvalue())
-        self.assertEqual(r['status'], 'pronto')  # imagem não tem texto para ler: vai direto para a marcação
+        self.assertEqual(r['status'], 'lendo')  # o leitor de imagem procura as ofertas em segundo plano
+        self.assertEqual(self.esperar_encarte(r['id'])['itens'], [])  # sem ofertas reconhecidas: marcação à mão
         self.assertEqual(json_de('GET', f"/api/ofertas/encarte-paginas?id={r['id']}")[1], [[800, 600]])
         _, m = json_de('POST', '/api/ofertas/encarte-recortar', {'id': r['id'], 'pagina': 1, 'area': [0.1, 0.1, 0.4, 0.5]})
         self.assertEqual((m['item']['area'], m['item']['nome']), ([80, 60, 320, 300], ''))
