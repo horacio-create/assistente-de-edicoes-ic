@@ -1,5 +1,9 @@
 # Histórico de versões
 
+## 1.15.2 — Template Dia dos Supermercados — 11/11/2026
+
+- Novo template "Dia dos Supermercados", com a data editável no selo azul abaixo do título e os nomes em Montserrat, como na arte.
+
 ## 1.15.1 — Equivalência por quilo nos encartes em imagem e template Super Oferta Tijuca — 09/11/2026
 
 - O leitor de encartes em imagem também lê a equivalência por quilo do selo ("No Clube de Desconto o preço do Kg sai por: R$ 42,99"), desenhada pelo selo editável do template, como nos encartes em PDF.

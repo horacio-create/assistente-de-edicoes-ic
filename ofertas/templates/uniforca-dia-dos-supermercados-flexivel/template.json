@@ -1,0 +1,234 @@
+{
+  "contrato": 1,
+  "id": "uniforca-dia-dos-supermercados-flexivel",
+  "nome": "Dia dos Supermercados — Rede Uniforça",
+  "cliente": "Rede Uniforça",
+  "descricao": "Dia dos Supermercados (12 de novembro): data editável no selo azul, cartelas flexíveis, editor completo e vídeos 1280×720 com ou sem animações.",
+  "capaEm": 2.6,
+  "campos": [
+    {
+      "id": "validade",
+      "tipo": "texto",
+      "rotulo": "Data da oferta",
+      "ajuda": "Ex.: 12 de novembro. Aparece como está no selo azul, abaixo de \"Dia dos Supermercados\".",
+      "max": 22
+    },
+    {
+      "id": "estiloselo",
+      "tipo": "opcoes",
+      "rotulo": "Estilo dos selos do projeto",
+      "opcional": true,
+      "ajuda": "Padrão do template ou outro estilo. O vermelho usa Montserrat Black nos títulos e preços."
+    },
+    {
+      "id": "produtos",
+      "tipo": "lista",
+      "rotulo": "Produtos",
+      "rotuloItem": "Produto",
+      "itens": 150,
+      "porVideo": 30,
+      "grupo": {
+        "tamanho": 2,
+        "rotulo": "Cartela",
+        "incompleto": true,
+        "finalTres": true
+      },
+      "campos": [
+        {
+          "id": "nome",
+          "tipo": "texto",
+          "rotulo": "Nome",
+          "max": 150
+        },
+        {
+          "id": "estiloselo",
+          "tipo": "opcoes",
+          "rotulo": "Selo deste produto",
+          "opcional": true,
+          "ajuda": "Deixe no padrão do projeto para manter todos iguais."
+        },
+        {
+          "id": "imagem",
+          "tipo": "imagem",
+          "rotulo": "Imagem",
+          "ajuda": "PNG com fundo transparente."
+        },
+        {
+          "id": "de",
+          "tipo": "preco",
+          "rotulo": "Preço normal",
+          "opcional": true,
+          "ajuda": "Vazio = mostra só o selo."
+        },
+        {
+          "id": "por",
+          "tipo": "preco",
+          "rotulo": "Preço Clube de Desconto"
+        },
+        {
+          "id": "unidade",
+          "tipo": "opcoes",
+          "rotulo": "Unidade"
+        },
+        {
+          "id": "tamanho",
+          "tipo": "numero",
+          "rotulo": "Tamanho da imagem",
+          "min": 0.3,
+          "max": 1,
+          "passo": 0.05,
+          "ajuda": "Ajuste a proporção da imagem dentro da área do produto."
+        },
+        {
+          "id": "edicao",
+          "tipo": "texto",
+          "rotulo": "Ajustes visuais",
+          "opcional": true,
+          "oculto": true,
+          "max": 20000,
+          "formato": "ajustesVisuais"
+        },
+        {
+          "id": "equivalenciapreco",
+          "tipo": "preco",
+          "rotulo": "Valor equivalente no complemento",
+          "opcional": true,
+          "ajuda": "Preencha somente quando a oferta tiver a extensão inferior. Vazio: sem complemento."
+        },
+        {
+          "id": "equivalenciaunidade",
+          "tipo": "texto",
+          "rotulo": "Unidade do valor equivalente",
+          "opcional": true,
+          "max": 12,
+          "ajuda": "Ex.: kg. É a unidade do valor extra, não a unidade do preço principal."
+        },
+        {
+          "id": "equivalenciatexto",
+          "tipo": "texto",
+          "rotulo": "Texto do complemento do selo",
+          "opcional": true,
+          "max": 100,
+          "ajuda": "Ex.: No Clube de Desconto o preço do kg sai por:"
+        },
+        {
+          "id": "promopreco",
+          "tipo": "preco",
+          "rotulo": "Valor da tag promocional",
+          "opcional": true,
+          "ajuda": "Vazio: sem tag circular. Valor extra, separado dos preços normal e clube."
+        },
+        {
+          "id": "promotexto",
+          "tipo": "texto",
+          "rotulo": "Texto da tag promocional",
+          "opcional": true,
+          "max": 100,
+          "ajuda": "Ex.: Nessa Promo 500g saem por:"
+        },
+        {
+          "id": "promocores",
+          "tipo": "texto",
+          "rotulo": "Cores da tag promocional",
+          "max": 40,
+          "opcional": true,
+          "oculto": true,
+          "ajuda": "Fundo;texto;preço;R$ e unidade, em hexadecimal, lidos do encarte. Vazio: cores do template."
+        },
+        {
+          "id": "promounidade",
+          "tipo": "texto",
+          "rotulo": "Unidade da tag promocional",
+          "max": 12,
+          "opcional": true,
+          "ajuda": "Ex.: cada, KG. Vazio: sem unidade."
+        },
+        {
+          "id": "tag1",
+          "tipo": "imagem",
+          "rotulo": "Tag 1",
+          "opcional": true,
+          "grupoTags": true,
+          "ajuda": "Selo que acompanha o produto (+18, marca, tamanhos). Vazio: sem tag."
+        },
+        {
+          "id": "tag1nome",
+          "tipo": "texto",
+          "rotulo": "Nome da tag 1",
+          "max": 60,
+          "opcional": true,
+          "oculto": true,
+          "grupoTags": true
+        },
+        {
+          "id": "tag2",
+          "tipo": "imagem",
+          "rotulo": "Tag 2",
+          "opcional": true,
+          "grupoTags": true,
+          "ajuda": "Selo que acompanha o produto (+18, marca, tamanhos). Vazio: sem tag."
+        },
+        {
+          "id": "tag2nome",
+          "tipo": "texto",
+          "rotulo": "Nome da tag 2",
+          "max": 60,
+          "opcional": true,
+          "oculto": true,
+          "grupoTags": true
+        },
+        {
+          "id": "tag3",
+          "tipo": "imagem",
+          "rotulo": "Tag 3",
+          "opcional": true,
+          "grupoTags": true,
+          "ajuda": "Selo que acompanha o produto (+18, marca, tamanhos). Vazio: sem tag."
+        },
+        {
+          "id": "tag3nome",
+          "tipo": "texto",
+          "rotulo": "Nome da tag 3",
+          "max": 60,
+          "opcional": true,
+          "oculto": true,
+          "grupoTags": true
+        },
+        {
+          "id": "tag4",
+          "tipo": "imagem",
+          "rotulo": "Tag 4",
+          "opcional": true,
+          "grupoTags": true,
+          "ajuda": "Selo que acompanha o produto (+18, marca, tamanhos). Vazio: sem tag."
+        },
+        {
+          "id": "tag4nome",
+          "tipo": "texto",
+          "rotulo": "Nome da tag 4",
+          "max": 60,
+          "opcional": true,
+          "oculto": true,
+          "grupoTags": true
+        }
+      ],
+      "min": 1
+    },
+    {
+      "id": "animacoes",
+      "tipo": "booleano",
+      "rotulo": "Ativar animações",
+      "opcional": true,
+      "ajuda": "Desative para slides estáticos, com troca direta de cartela e sem movimentos."
+    },
+    {
+      "id": "ultimacartela",
+      "tipo": "opcoes",
+      "rotulo": "Quando sobrar um produto",
+      "opcional": true,
+      "ajuda": "Um produto fica centralizado. Três reúne os últimos três produtos na mesma cartela; com apenas um produto ele fica sozinho."
+    }
+  ],
+  "editorCartelas": true,
+  "seloPadrao": "amarelo"
+}
