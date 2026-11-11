@@ -57,5 +57,20 @@
     tag.style.setProperty('--promo-inteiro',(m[1].length>2?38:m[1].length>1?52:60)+'px');
     produto.querySelector('.foto-box').appendChild(tag);
   }
-  window.SelosOfertas = {resolver, aplicar, complemento, promocao};
+  // Cores do nome e do preço normal escolhidas no projeto (vazio: as cores da arte do template).
+  function cores(v) {
+    const cor = c => /^#[0-9a-f]{6}$/i.test(String(c || '')) ? c : '';
+    const nome = cor(v && v.cornome), preco = cor(v && v.corpreco);
+    let css = '';
+    if (nome) css += `.produto .nome{color:${nome}!important}`;
+    if (preco) css += `.produto .de,.produto .de .rs,.produto .de .int,.produto .de .cent,.produto .de .un{color:${preco}!important}`;
+    let estilo = document.getElementById('cores-projeto');
+    if (!css) { if (estilo) estilo.remove(); return; }
+    if (!estilo) { estilo = document.createElement('style'); estilo.id = 'cores-projeto'; document.head.appendChild(estilo); }
+    estilo.textContent = css;
+  }
+  if (typeof document !== 'undefined') document.addEventListener('DOMContentLoaded', () => {
+    try { cores(window.__hyperframes && window.__hyperframes.getVariables()); } catch (e) {}
+  });
+  window.SelosOfertas = {resolver, aplicar, complemento, promocao, cores};
 })();

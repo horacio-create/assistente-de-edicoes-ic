@@ -1,0 +1,198 @@
+{
+  "uniforca-3-dias-baratos-flexivel": {
+    "index.html": {
+      "antes": "3010d6ac321d1860de618a65cff0c93fb47e7bbab9fac53a045dcf6d9598d9a4",
+      "depois": "3a3e388ccfb31f60eb6fa688b8b339a62b13b9c99f6d0160e1155f254a2ffc83"
+    },
+    "template.json": {
+      "antes": "370002f2c500d1b9292cc7e869f64a2fd9bdca156d778ddb5db2b80b4fc5f1fe",
+      "depois": "0fa210801d415be1afdb606df9cf75441010987751ced2162dbb07715d8c2186"
+    },
+    "assets/selos.js": {
+      "antes": "cc6e7d7724c219372e6600a4c36fd57b2d44cf22f8b191c5784907981d2772c2",
+      "depois": "df0313b29e92ddfcae6faa54d1b6eb20ce29698ff88cc23e3039c0a9dee091ba"
+    }
+  },
+  "uniforca-casa-limpa-flexivel": {
+    "index.html": {
+      "antes": "eaeecb1a07e6a7cc52eaf0f9ec0a4fc36c965f2c96eaaf3bd9c2c56b6b88f5d2",
+      "depois": "eb7c308b920b81b3b316b6b76486432004589faf8dbd2e9df53eeeecae9e62ca"
+    },
+    "template.json": {
+      "antes": "601113832842902c2eb5d7b4b5f48b82f664cf3a2a2e3ef66a76b73f91cde4dd",
+      "depois": "b24a217a488b9a5491f516847090cfbdb0b1884781af59f7d846993bf8230802"
+    },
+    "assets/selos.js": {
+      "antes": "cc6e7d7724c219372e6600a4c36fd57b2d44cf22f8b191c5784907981d2772c2",
+      "depois": "df0313b29e92ddfcae6faa54d1b6eb20ce29698ff88cc23e3039c0a9dee091ba"
+    }
+  },
+  "uniforca-dia-dos-supermercados-flexivel": {
+    "index.html": {
+      "antes": "3e83b93a2da814b26bfff92d7eace3dfda183975347d773294e9b5be2733f30a",
+      "depois": "96e6a3750e8c063637c9a75ad424d9d0967177ec6e83e321a88f660d0b05fe15"
+    },
+    "template.json": {
+      "antes": "daa41744bb584142308300306568449e0fa1413045c84a74c70e6c4a5aa756bd",
+      "depois": "f68eadaac0f9607c8d686d74563a0099b033b1c2d9c376dd4e8856eada9c2560"
+    },
+    "assets/selos.js": {
+      "antes": "cc6e7d7724c219372e6600a4c36fd57b2d44cf22f8b191c5784907981d2772c2",
+      "depois": "df0313b29e92ddfcae6faa54d1b6eb20ce29698ff88cc23e3039c0a9dee091ba"
+    }
+  },
+  "uniforca-hora-da-carne-flexivel": {
+    "index.html": {
+      "antes": "07e94915f9bfdf6b568e14e965a9ab9c8e5251aecfc1f521255e1b58ddb088e3",
+      "depois": "9f0f6d0f62eb26494fb94cccabbb742948fcb233518c3702a40394169aa2573a"
+    },
+    "template.json": {
+      "antes": "bd99e88f26d90380edc13fa593ada882baab17aa312247bf3f92c5bcfaad7970",
+      "depois": "621978bf6def8017865188461fed65549cbe3ea89f8d5b7b0264df5a4cb50840"
+    },
+    "assets/selos.js": {
+      "antes": "cc6e7d7724c219372e6600a4c36fd57b2d44cf22f8b191c5784907981d2772c2",
+      "depois": "df0313b29e92ddfcae6faa54d1b6eb20ce29698ff88cc23e3039c0a9dee091ba"
+    }
+  },
+  "uniforca-hora-da-feira-flexivel": {
+    "index.html": {
+      "antes": "e61e84ca78eb717ffb57472ff7dc828d9b694683999ce0f25cb38c59860a496e",
+      "depois": "14d2e911f4ba48d49dc29b4b36e37e973562f6d787c6879ffff8aa7f44218803"
+    },
+    "template.json": {
+      "antes": "e48c1bf79f71914e0820b14b8dc336d2abc5b31386072599912b91d830edd5f3",
+      "depois": "c2bdccde924a472eac1d41ebc285b8518e9477ea11dbfb6aae83fa897945b29c"
+    },
+    "assets/selos.js": {
+      "antes": "cc6e7d7724c219372e6600a4c36fd57b2d44cf22f8b191c5784907981d2772c2",
+      "depois": "df0313b29e92ddfcae6faa54d1b6eb20ce29698ff88cc23e3039c0a9dee091ba"
+    }
+  },
+  "uniforca-mega-oferta-alvoar-flexivel": {
+    "index.html": {
+      "antes": "23a9e5a02ad3a64009ae11e8a8df3794e6fcfb68c1ca80171dcd75dc207ee92a",
+      "depois": "7edaf475d07a610842d25b3da6f8578823291b94894a94542a4ec38f74708ac7"
+    },
+    "template.json": {
+      "antes": "42af33d60eb0edf04ba64cc485f11efec159937973b9ddde4129105ec8f735d4",
+      "depois": "faf1b13fdaf480250c23ff0f64c1f3dcfa3382b9c61f795757e46b374786fabc"
+    },
+    "assets/selos.js": {
+      "antes": "cc6e7d7724c219372e6600a4c36fd57b2d44cf22f8b191c5784907981d2772c2",
+      "depois": "df0313b29e92ddfcae6faa54d1b6eb20ce29698ff88cc23e3039c0a9dee091ba"
+    }
+  },
+  "uniforca-momento-do-bebe-flexivel": {
+    "index.html": {
+      "antes": "b1b316790f8d6712fc48162a187f176e64d587de571f4c54ed9512db2882158d",
+      "depois": "a3c531947fe93b251290b1bef3908a2cbeedbb00a6e0d82dfb58894242af6130"
+    },
+    "template.json": {
+      "antes": "1198c2e74d23729aae9284469e0404ad0d4120177f2a01ece8f33a83bdcaf2b3",
+      "depois": "46c228698cf7fb31341cd08783a29d9062a40ca49e29bf4f38697a472d9d41e9"
+    },
+    "assets/selos.js": {
+      "antes": "cc6e7d7724c219372e6600a4c36fd57b2d44cf22f8b191c5784907981d2772c2",
+      "depois": "df0313b29e92ddfcae6faa54d1b6eb20ce29698ff88cc23e3039c0a9dee091ba"
+    }
+  },
+  "uniforca-ofertas-incriveis-flexivel": {
+    "index.html": {
+      "antes": "2758915c7f7cfa25e6b12272fcee4234385e81c5f6f9009b73779a7a866c7078",
+      "depois": "a02bde281a47d6e6efa209c2122734d53649cf800e2c61070d3698e9910a6bf2"
+    },
+    "template.json": {
+      "antes": "bd8dba03970aa432ff171490464d09ded96a7fe79a25a795993c8eb4c497a0cb",
+      "depois": "c4f2473428b3a70f17ab9906a004bb9d1f067b9d76524ad70d77e955608a54c5"
+    },
+    "assets/selos.js": {
+      "antes": "cc6e7d7724c219372e6600a4c36fd57b2d44cf22f8b191c5784907981d2772c2",
+      "depois": "df0313b29e92ddfcae6faa54d1b6eb20ce29698ff88cc23e3039c0a9dee091ba"
+    }
+  },
+  "uniforca-perdigao-flexivel": {
+    "index.html": {
+      "antes": "22afb6d6e0e78e94eed24177bd5297ed568443b3fed5f3f57d53fcdf5c253a7b",
+      "depois": "0571df401332df601175f5258e14fe9435e5d47ae15df957e35196f00a2b1988"
+    },
+    "template.json": {
+      "antes": "c0c87ed97ea5c043c49f8b26818c2bb10253d63f72ff411ec36b33014dedfac6",
+      "depois": "eb7c81751e25aa438de301ffa5a435acdbb5b174985be71e79dcde9e67491add"
+    },
+    "assets/selos.js": {
+      "antes": "cc6e7d7724c219372e6600a4c36fd57b2d44cf22f8b191c5784907981d2772c2",
+      "depois": "df0313b29e92ddfcae6faa54d1b6eb20ce29698ff88cc23e3039c0a9dee091ba"
+    }
+  },
+  "uniforca-sadia-flexivel": {
+    "index.html": {
+      "antes": "a4ebf2796369286a54afd998be9884b3bf09ca3c40c68674f71de6b3b7757eb1",
+      "depois": "a6347b911e9a527ed8976b97c9049f10d5f7ac9e088abc943e1fce58d5286577"
+    },
+    "template.json": {
+      "antes": "b19dd8a04e928baf230aab55b865741d888f32169e1e7c518c95c9988926ec35",
+      "depois": "f70dedf00ea77ab968c86792137a66dcaf085b7970d2f503624d08d90fecf61f"
+    },
+    "assets/selos.js": {
+      "antes": "cc6e7d7724c219372e6600a4c36fd57b2d44cf22f8b191c5784907981d2772c2",
+      "depois": "df0313b29e92ddfcae6faa54d1b6eb20ce29698ff88cc23e3039c0a9dee091ba"
+    }
+  },
+  "uniforca-super-oferta-tijuca-flexivel": {
+    "index.html": {
+      "antes": "1ccd2a8d9d53d7aacfdfd0a652d705581eb9a3c8e638657d739ecb8a4f8f51a8",
+      "depois": "4a53070ab86daa71addd77581e61ddd2e69b707786282f244f6ca41358557bfb"
+    },
+    "template.json": {
+      "antes": "663fab52cbe4f9673212e389797074d6c882b155d45c89473467f4d7f8ea5908",
+      "depois": "fab7d2e8598fd43521cf689f5f636e9bd13dbd23879d6ea4fefb7a8404075de0"
+    },
+    "assets/selos.js": {
+      "antes": "cc6e7d7724c219372e6600a4c36fd57b2d44cf22f8b191c5784907981d2772c2",
+      "depois": "df0313b29e92ddfcae6faa54d1b6eb20ce29698ff88cc23e3039c0a9dee091ba"
+    }
+  },
+  "uniforca-vitrine-itambe-flexivel": {
+    "index.html": {
+      "antes": "4fd914163b53d70a54f7d0af714ff353da3d95e608d8e9b154fb08d977f821fd",
+      "depois": "b6d387a360eb8ba8ca15ba93f75b2f391f31706b0292885cbd6d487f3620cbb0"
+    },
+    "template.json": {
+      "antes": "aed88f24cc19b9d6e230a4e3b4880396640585649f6c6caf7160bc50fa048ffd",
+      "depois": "d33af935366d113b523f7b1a8b513351ea9b70ce42b836ae4fe715d7178b73d1"
+    },
+    "assets/selos.js": {
+      "antes": "cc6e7d7724c219372e6600a4c36fd57b2d44cf22f8b191c5784907981d2772c2",
+      "depois": "df0313b29e92ddfcae6faa54d1b6eb20ce29698ff88cc23e3039c0a9dee091ba"
+    }
+  },
+  "uniforca-vitrine-laranja-flexivel": {
+    "index.html": {
+      "antes": "db7c71721759366625d7c756156b07600c11a893782e7eb1b598410dbe9dc867",
+      "depois": "1135b08f4e4498cbef4b55b993373b87feb4e9a6a6d26ab3199a5148c0fc1047"
+    },
+    "template.json": {
+      "antes": "5a0b1c0513603b7537710f294760f9c68750eb4d8a3c6c17c3259dbf1a9959ad",
+      "depois": "1f4247d6ec81d53b98803543e79abb69895865508fcc4a84576e6428d06e22d0"
+    },
+    "assets/selos.js": {
+      "antes": "cc6e7d7724c219372e6600a4c36fd57b2d44cf22f8b191c5784907981d2772c2",
+      "depois": "df0313b29e92ddfcae6faa54d1b6eb20ce29698ff88cc23e3039c0a9dee091ba"
+    }
+  },
+  "uniforca-vitrine-nestle-flexivel": {
+    "index.html": {
+      "antes": "dc38fc9cde88645accbed09fe066fc09afe475a15bb8e40f4d555385b68e59ba",
+      "depois": "9a65e97cdf5dab7cd3f3a9857a1bc6e72c069d798b62b29e2d48d1f1140029a8"
+    },
+    "template.json": {
+      "antes": "13a4ce24947dc24ff505d380d0a1e9ba872d69c214f874b0d3df508ba57578f7",
+      "depois": "d8dc133016d9cce23bbf6bf1c32130d7a7a0e1938425c1490ba482623431c7fe"
+    },
+    "assets/selos.js": {
+      "antes": "cc6e7d7724c219372e6600a4c36fd57b2d44cf22f8b191c5784907981d2772c2",
+      "depois": "df0313b29e92ddfcae6faa54d1b6eb20ce29698ff88cc23e3039c0a9dee091ba"
+    }
+  }
+}

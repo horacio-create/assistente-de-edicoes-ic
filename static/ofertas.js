@@ -272,7 +272,7 @@ function campo(def, caminho, idVar) {
   let controle;
   if (def.tipo === 'opcoes') controle = `<select id="${idInput}">${def.opcoes.map((o) => `<option value="${esc(o)}" ${o === v ? 'selected' : ''}>${esc(def.rotulosOpcoes?.[o] || o)}</option>`).join('')}</select>`;
   else if (def.tipo === 'numero') controle = `<div class="value-control"><span class="range-track"><input id="${idInput}" type="range" min="${def.min ?? 0}" max="${def.max ?? 1}" step="${def.passo ?? 0.05}" value="${esc(v)}"></span><span class="number-unit"><input type="number" aria-label="${esc(def.rotulo)}" min="${Math.round((def.min ?? 0) * 100)}" max="${Math.round((def.max ?? 1) * 100)}" step="5" value="${Math.round(Number(v) * 100)}"><span>%</span></span></div>`;
-  else if (def.tipo === 'cor') controle = `<input id="${idInput}" type="color" value="${esc(v)}">`;
+  else if (def.tipo === 'cor') controle = `<div class="of-cor"><input id="${idInput}" type="color" value="${esc(v || def.corPadrao || '#000000')}"><code>${esc((v || def.corPadrao || '').toUpperCase())}</code>${def.opcional ? `<button type="button" class="text-button cor-padrao" ${v ? '' : 'hidden'}>Cor do template</button>` : ''}</div>`;
   else if (def.tipo === 'booleano') controle = `<label class="check"><input id="${idInput}" type="checkbox" ${v ? 'checked' : ''}> ${esc(def.rotulo)}</label>`;
   else if (def.tipo === 'preco') controle = `<div class="preco"><span>R$</span><input id="${idInput}" inputmode="decimal" autocomplete="off" placeholder="0,00" value="${esc(v)}"></div>`;
   else if (tituloProduto) controle = `<textarea id="${idInput}" class="of-titulo-produto" rows="3" autocomplete="off" ${def.max ? `maxlength="${def.max}"` : ''} aria-describedby="${idInput}-dica">${esc(v ?? '')}</textarea><div class="of-quebra-titulo"><small id="${idInput}-dica">Enter define a quebra de linha do título.</small><button type="button" class="text-button quebra-automatica" title="Remove as quebras manuais e ajusta o título ao espaço">Quebra automática</button></div>`;
@@ -286,6 +286,7 @@ function campo(def, caminho, idVar) {
     const input = div.querySelector('input,select,textarea');
     input.addEventListener('input', () => {
       definir(caminho, def.tipo === 'booleano' ? input.checked : input.value);
+      if (def.tipo === 'cor') { div.querySelector('code').textContent = input.value.toUpperCase(); div.querySelector('.cor-padrao')?.removeAttribute('hidden'); }
       const contador = div.querySelector('.contador-texto');
       if (contador) contador.textContent = `${input.value.length}/${def.max}`;
     });
@@ -296,6 +297,16 @@ function campo(def, caminho, idVar) {
       input.value = input.value.replace(/\s*\r?\n\s*/g, ' ');
       input.dispatchEvent(new Event('input', {bubbles:true}));
       input.focus();
+    };
+  }
+  if (def.tipo === 'cor') {
+    const padrao = div.querySelector('.cor-padrao');
+    if (padrao) padrao.onclick = () => {
+      definir(caminho, '');
+      const input = div.querySelector('input');
+      input.value = def.corPadrao || '#000000';
+      div.querySelector('code').textContent = (def.corPadrao || '').toUpperCase();
+      padrao.hidden = true;
     };
   }
   if (def.id === 'estiloselo' && caminho.length === 1) {
@@ -335,7 +346,7 @@ async function montarFormulario() {
   for (const def of [...state.esquema.campos.filter(c => c.tipo !== 'lista'), ...state.esquema.campos.filter(c => c.tipo === 'lista')]) {
     if (def.tipo !== 'lista') {
       if (['animacoes', 'ultimacartela'].includes(def.id)) continue;
-      const destino = def.id === 'estiloselo' ? form : gerais;
+      const destino = def.id === 'estiloselo' || def.tipo === 'cor' ? form : gerais;
       destino.append(campo(def, [def.id], def.id)); continue;
     }
     const qtd = state.pedido.dados[def.id].length;

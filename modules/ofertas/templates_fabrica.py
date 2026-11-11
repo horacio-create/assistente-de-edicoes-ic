@@ -10,14 +10,14 @@ def resumo(arquivo):
     if arquivo.suffix in ('.html', '.js', '.css', '.json', '.md'): dados = dados.replace(b'\r\n', b'\n')
     return hashlib.sha256(dados).hexdigest()
 
-def _atualizar_manifesto(base, publicados, arquivo, backup):
+def _atualizar_manifesto(base, publicados, arquivo, backup, todos=False):
     manifest = base / 'atualizacoes' / arquivo
     if not manifest.is_file(): return []
     resultados = []
     for ident, arquivos in json.loads(manifest.read_text('utf-8')).items():
         origem, destino = base / 'templates' / ident, publicados / ident
         if not destino.is_dir() or origem.resolve() == destino.resolve(): continue
-        if ident not in ('uniforca-hora-da-carne-flexivel', 'uniforca-hora-da-feira-flexivel', 'uniforca-momento-do-bebe-flexivel', 'uniforca-sadia-flexivel', 'uniforca-perdigao-flexivel', 'uniforca-vitrine-laranja-flexivel', 'uniforca-vitrine-nestle-flexivel', 'uniforca-vitrine-itambe-flexivel', 'uniforca-casa-limpa-flexivel'): continue
+        if ident not in ('uniforca-hora-da-carne-flexivel', 'uniforca-hora-da-feira-flexivel', 'uniforca-momento-do-bebe-flexivel', 'uniforca-sadia-flexivel', 'uniforca-perdigao-flexivel', 'uniforca-vitrine-laranja-flexivel', 'uniforca-vitrine-nestle-flexivel', 'uniforca-vitrine-itambe-flexivel', 'uniforca-casa-limpa-flexivel') and not todos: continue
         # Mudanças de conteúdo do designer impedem a atualização do conjunto; capa personalizada é mantida.
         seguros = all(resumo(destino / nome) in (info['antes'], info['depois'], *info.get('intermediarios', []))
                       for nome, info in arquivos.items() if nome != 'capa.png')
@@ -53,6 +53,8 @@ def atualizar(base, publicados):
                             ('complementos-20261023.json', 'antes-complementos-20261023'),
                             # por último: depois das anteriores, o template já está na versão que esta espera
                             ('tags-produtos-20261105.json', 'antes-tags-produtos-20261105'),
-                            ('nome-montserrat-20261109.json', 'antes-nome-montserrat-20261109')]:
-        resultados.extend(_atualizar_manifesto(base, publicados, arquivo, backup))
+                            ('nome-montserrat-20261109.json', 'antes-nome-montserrat-20261109'),
+                            ('cores-textos-20261111.json', 'antes-cores-textos-20261111')]:
+        # cores do nome e do preço: vale para todos os flexíveis de fábrica (os personalizados são preservados)
+        resultados.extend(_atualizar_manifesto(base, publicados, arquivo, backup, todos=arquivo.startswith('cores-textos')))
     return resultados
