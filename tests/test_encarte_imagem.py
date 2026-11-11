@@ -63,6 +63,51 @@ class RecorteDaFotoTests(unittest.TestCase):
         self.assertGreater(alpha[20, out.width // 2], 250)        # topo da bandeja inteiro, apesar da cor parecida com o fundo
 
 
+class PrecosTests(unittest.TestCase):
+    def test_leitura_mais_longa_vence_o_empate_sem_virgula(self):
+        # "104,99" lido sem vírgula: "10499", "1049" e "104" — o OCR perde dígito, não inventa
+        self.assertEqual(ei._melhor({'1,04': 2, '10,49': 2, '104,99': 2}), '104,99')
+        self.assertEqual(ei._melhor({'12,99': 3, '129,90': 1}), '12,99')
+
+    def test_par_de_precos_incoerente_escolhe_candidatos_coerentes(self):
+        self.assertEqual(ei._par_coerente('9,99', '12,99', {}, {}), ('9,99', '12,99'))             # já coerente
+        self.assertEqual(ei._par_coerente('9,99', '112,99', {'9,99': 12}, {'112,99': 11}), ('9,99', '12,99'))  # "1" do R$
+        self.assertEqual(ei._par_coerente('10,49', '149,99', {'10,49': 2, '104,99': 3}, {'149,99': 12}), ('104,99', '149,99'))
+        self.assertEqual(ei._par_coerente('5,00', '90,00', {}, {}), ('5,00', '90,00'))            # sem saída: mantém (aviso)
+
+    def test_textos_do_selo_nao_sao_titulo(self):
+        for t in ('NO CLUBE DE', 'PREÇO SAIPOR:', 'NESSA PROMOÇÃO', 'LEVE 2 POR:', 'cada', 'EMBALAGEM', 'Leve MAIS, pague MENOS'):
+            self.assertTrue(ei.TEXTO_SELO.search(t), t)
+        for t in ('WHISKY CHIVAS REGAL 1LT', 'CAIXA TÉRMICA', 'KIT DESODORANTE AEROSOL'):
+            self.assertFalse(ei.TEXTO_SELO.search(t), t)
+
+
+class SeloDaOfertaTests(unittest.TestCase):
+    def test_rotulo_solto_na_arte_clara_nao_e_oferta(self):
+        img = Image.new('RGB', (400, 100), (245, 245, 250))
+        d = ImageDraw.Draw(img)
+        d.rectangle((210, 20, 390, 50), fill=(210, 70, 35))                       # selo vermelho
+        d.text((220, 28), 'Clube de Desconto', fill='white')
+        d.text((20, 28), 'Clube de Descontos', fill=(20, 40, 120))                 # frase do cabeçalho
+        self.assertTrue(ei._no_selo(img, {'x0': 215, 'y0': 25, 'x1': 330, 'y1': 42}))
+        self.assertFalse(ei._no_selo(img, {'x0': 18, 'y0': 25, 'x1': 135, 'y1': 42}))
+
+
+class BaseRetaTests(unittest.TestCase):
+    def test_produto_atras_do_selo_termina_reto_sem_dente(self):
+        img = Image.new('RGB', (200, 200), 'white')
+        d = ImageDraw.Draw(img)
+        d.rectangle((30, 20, 90, 190), fill=(120, 30, 30))                        # garrafa à esquerda, inteira
+        d.rectangle((110, 20, 170, 190), fill=(30, 90, 30))                       # garrafa que desce atrás do selo
+        selo = (100, 150, 200, 200)
+        with mock.patch('modules.ofertas.recorte_objetos.mascara', lambda im: np.zeros((im.height, im.width))):
+            out = Image.open(io.BytesIO(ei.recortar_foto(img, [selo], base=selo)))
+        alpha = np.asarray(out.getchannel('A'))
+        self.assertLess(out.height, 135)                                         # termina na altura do selo
+        self.assertGreater(alpha[-6, 10], 200)                                   # base reta nas duas garrafas
+        self.assertGreater(alpha[-6, out.width - 10], 200)
+
+
 class PaginasSoImagemTests(unittest.TestCase):
     def test_pdf_que_e_foto_da_pagina(self):
         foto = _png(Image.new('RGB', (1228, 1754), (240, 240, 255)))

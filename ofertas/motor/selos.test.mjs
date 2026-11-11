@@ -55,3 +55,28 @@ test('estilos desconhecidos não entram na exportação', () => {
   dados.estiloselo = 'inexistente';
   assert.ok(prepararDados(t, dados, t.dir).erros.length > 0);
 });
+
+test('cores do nome e do preço normal: escolha do projeto sobrepõe a arte; vazio mantém a arte', () => {
+  const head = {filhos: [], appendChild(e) { this.filhos.push(e); }};
+  const doc = {head, addEventListener() {}, getElementById: id => head.filhos.find(e => e.id === id && !e.removido) || null,
+    createElement: () => ({remove() { this.removido = true; }})};
+  const c = {window: {}, document: doc};
+  vm.runInNewContext(codigo, c);
+  c.window.SelosOfertas.cores({cornome: '#111111', corpreco: '#222222'});
+  const css = doc.getElementById('cores-projeto').textContent;
+  assert.match(css, /\.produto \.nome\{color:#111111!important\}/);
+  assert.match(css, /\.produto \.de \.int,[^{]*\{color:#222222!important\}/);
+  c.window.SelosOfertas.cores({cornome: 'vermelho', corpreco: ''});
+  assert.equal(doc.getElementById('cores-projeto'), null);
+  for (const tema of temas) {
+    const {template:t} = validarTemplate(fileURLToPath(new URL(`../templates/${tema}`, import.meta.url)));
+    const dados = dadosPadrao(t);
+    assert.equal(dados.cornome, '');
+    dados.cornome = '#000000'; dados.corpreco = '#1a1a1a';
+    const pronto = prepararDados(t, dados, t.dir);
+    assert.deepEqual(pronto.erros, []);
+    assert.equal(pronto.variaveis.cornome, '#000000');
+    dados.cornome = 'preto';
+    assert.ok(prepararDados(t, dados, t.dir).erros.length > 0);
+  }
+});

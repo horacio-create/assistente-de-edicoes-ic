@@ -21,6 +21,22 @@
       "ajuda": "Padrão do template ou outro estilo. O vermelho usa Montserrat Black nos títulos e preços."
     },
     {
+      "id": "cornome",
+      "tipo": "cor",
+      "rotulo": "Cor do nome dos produtos",
+      "opcional": true,
+      "corPadrao": "#0d2a5c",
+      "ajuda": "Vale para todas as cartelas. \"Cor do template\" volta à cor original da arte."
+    },
+    {
+      "id": "corpreco",
+      "tipo": "cor",
+      "rotulo": "Cor do preço normal",
+      "opcional": true,
+      "corPadrao": "#202024",
+      "ajuda": "O preço riscado, fora do selo. O preço do selo continua com as cores do selo."
+    },
+    {
       "id": "produtos",
       "tipo": "lista",
       "rotulo": "Produtos",

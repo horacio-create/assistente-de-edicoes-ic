@@ -1,5 +1,11 @@
 # Histórico de versões
 
+## 1.15.3 — Encartes em imagem com selo do Clube e cores do nome e do preço — 11/11/2026
+
+- Leitor de encartes em imagem adaptado a layouts como o da CAPA (selos "Clube de Desconto" com título acima da foto): nomes, preços normal e Clube, unidade e equivalência por quilo corretos, sem o produto falso do cabeçalho e com o banner lido à parte.
+- Recortes mais inteiros: a foto começa logo abaixo do título, frascos brancos não somem, garrafas atrás do selo terminam retas e fotos pequenas são recortadas ampliadas. A página que é só uma imagem é lida nos pixels originais (centavos mais precisos).
+- Templates flexíveis: novos campos "Cor do nome dos produtos" e "Cor do preço normal", valendo para todas as cartelas do projeto, com o botão "Cor do template" para voltar à cor da arte.
+
 ## 1.15.2 — Template Dia dos Supermercados — 11/11/2026
 
 - Novo template "Dia dos Supermercados", com a data editável no selo azul abaixo do título e os nomes em Montserrat, como na arte.
