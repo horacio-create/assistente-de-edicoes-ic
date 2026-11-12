@@ -120,3 +120,8 @@ button:disabled,.secondary:disabled,.audio-action:disabled,.timeline-rail button
 .audio-action[aria-pressed=true]{border-color:#fda188!important}
 /* Miniatura do trecho só clareia o verde (modo "tela"): quadros escuros, como o preto de abertura de um VT, não sujam a cor da faixa. */
 .montage-block:not(.blur-clip) img{mix-blend-mode:screen}
+/* Item ativo do menu igual em todas as ferramentas (fundo discreto + tracinho verde, como em Vídeos). Ofertas,
+   Vetorização, Logo EAP e Molduras tinham regras próprias mais específicas que pintavam o item inteiro com a cor da
+   ferramenta, e o texto branco perdia o contraste. */
+body:not(.sidebar-collapsed) .sidebar .nav.active[data-view],.sidebar-collapsed .sidebar:hover .nav.active[data-view],.sidebar-collapsed .sidebar:focus-within .nav.active[data-view],:root[data-theme="dark"] body:not(.sidebar-collapsed) .sidebar .nav.active[data-view]{background:var(--polish-sidebar-active);color:#fff;box-shadow:none}
+.sidebar .nav.active[data-view]:after,.sidebar-collapsed .sidebar:hover .nav.active[data-view]:after,.sidebar-collapsed .sidebar:focus-within .nav.active[data-view]:after{background:#46d880}

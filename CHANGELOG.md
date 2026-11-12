@@ -1,5 +1,9 @@
 # Histórico de versões
 
+## 1.16.1 — Item ativo do menu igual em todas as ferramentas — 12/11/2026
+
+- O item da ferramenta aberta no menu lateral fica igual em todas as ferramentas (fundo discreto e tracinho verde, como em Vídeos). Em Ofertas, Vetorização M6S, Logo EAP e Molduras de TV ele era pintado inteiro com a cor da ferramenta e o texto perdia o contraste.
+
 ## 1.16.0 — Editor de vídeos, Vetorização M6S, Molduras de TV e acabamento da interface — 12/11/2026
 
 **Editor de vídeos**
