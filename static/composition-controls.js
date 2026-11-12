@@ -6,6 +6,11 @@ let compositionJob=null,compositionSelected=null,compositionCursor=0,composition
 let compositionFinalTime=0,compositionFinalPlaying=false,compositionFinalFrame=0,compositionFinalStart=0;
 let compositionDrag=null,compositionSnap=null,sourceMediaId=null;
 let timelineZoom=1;
+// Tempos de veiculação (s): marcadores fixos na timeline, pontos de encaixe e alvo do botão ≅.
+const VEICULACAO=[15,30];
+// Trecho mostrado em 100%: a duração da timeline e só ela (a régua não sugere um tempo que a timeline não tem),
+// com uma folga mínima para o fim do último trecho não encostar na borda. Sem conteúdo, 15 s.
+function timelineSpan(total=projectDuration()){return total>0?total*1.01:15;}
 const timelineZoomByJob=new Map();
 const sourceSelections=new Map(),compositionPlayers=new Map(),compositionFinalPlayers=new Map();
 // getRandomValues também funciona em conexões HTTP da rede local.
@@ -21,7 +26,16 @@ function trackForMedia(m,preferred=null,create=false){
 }
 const snapFrame=t=>Math.round(Math.max(0,t)*30)/30;
 function project(){return job?.meta?.composition;}
-function projectDuration(p=project()){return Math.max(0,...(p?.clips||[]).map(c=>c.at+c.duration));}
+// Duração do conteúdo (fim do último trecho) e da timeline: o usuário pode deixar a timeline maior, com o fim vazio.
+function contentDuration(p=project()){return Math.max(0,...(p?.clips||[]).map(c=>c.at+c.duration));}
+function projectDuration(p=project()){return Math.max(contentDuration(p),p?.settings?.duracao||0);}
+// Espaços sem imagem nem vídeo na timeline (o áudio sozinho não conta), para avisar antes de exportar.
+function timelineGaps(p=project()){
+ const gaps=[];let end=0;
+ for(const c of (p?.clips||[]).filter(c=>job?.media.find(m=>m.id===c.mediaId)?.kind!=='audio').sort((a,b)=>a.at-b.at)){if(c.at>end+.001)gaps.push([end,c.at]);end=Math.max(end,c.at+c.duration);}
+ if(projectDuration(p)>end+.001)gaps.push([end,projectDuration(p)]);
+ return gaps;
+}
 function projectClip(){return project()?.clips.find(c=>c.id===compositionSelected);}
 function projectMedia(c=projectClip()){return job?.media.find(m=>m.id===c?.mediaId);}
 function projectTrack(c=projectClip()){return project()?.tracks.find(t=>t.id===c?.track);}
@@ -149,7 +163,7 @@ syncEditorKind=function(){
  compositionLegacy.syncEditorKind();library.hidden=editorKind!=='video';document.body.classList.toggle('composition-editor',editorKind==='video');
  if(editorKind==='video'){
   $('files').accept='.mp4,.mov,.m4v,.mkv,.avi,.webm,.wmv,.mpg,.mpeg,.mp3,.wav,.m4a,.aac,.ogg,.oga,.flac,.opus,.wma,.aif,.aiff,.jpg,.jpeg,.png,.webp,.bmp,.tif,.tiff,.pdf';
-  $('empty').querySelector('h2').textContent='Traga seus vídeos, imagens ou áudios.';$('add-files').textContent='Escolher mídias';
+  $('empty').querySelector('h2').textContent='Traga seus vídeos, imagens ou áudios';$('add-files').textContent='Escolher mídias';
   $('empty').querySelector('p:not(.help)').textContent='Adicione vídeos, imagens e áudios à biblioteca para montar seu vídeo.';
   $('empty').querySelector('.help').textContent='Vídeos, imagens, áudios e páginas de PDF · até 200 MB por arquivo';
   document.querySelector('.export-bar > div > span:last-child').textContent='Uma montagem em MP4 · confira o áudio antes de exportar';
@@ -215,7 +229,7 @@ function syncCompositionPosition(){
  $('split-segment').disabled=busy||!c||clipLocked(c)||compositionCursor<c.at+minimum-.001||compositionCursor>c.at+c.duration-minimum+.001;
 }
 function pHasClips(){return !!project()?.clips.length;}
-function timelineBaseScale(){const available=Math.max(350,$('layered-timeline').clientWidth-126);return Math.max(28,available/Math.max(15,projectDuration()));}
+function timelineBaseScale(){const available=Math.max(350,$('layered-timeline').clientWidth-126);return Math.max(6,available/timelineSpan());}
 function timelineScale(){return Math.min(1200,timelineBaseScale()*timelineZoom);}
 function timelineTickStep(scale=timelineScale()){
  const steps=[1/30,2/30,3/30,5/30,10/30,.5,1,2,5,10,15,30,60,120,300,600,1200,1800,3600];
@@ -243,7 +257,7 @@ function zoomTimeline(value,clientX=null){
 }
 function timelinePointer(clientX){const inner=$('layered-inner'),rect=inner.getBoundingClientRect();return snapFrame((clientX-rect.left-126)/timelineScale());}
 function snapToCuts(time,exclude=null){
- const edges=[0,...project().clips.filter(c=>c.id!==exclude).flatMap(c=>[c.at,c.at+c.duration])];
+ const edges=[0,...VEICULACAO,...project().clips.filter(c=>c.id!==exclude).flatMap(c=>[c.at,c.at+c.duration])];
  const closest=edges.reduce((best,e)=>Math.abs(e-time)<Math.abs(best-time)?e:best,edges[0]);
  compositionSnap=Math.abs(closest-time)<=10/timelineScale()?closest:null;return compositionSnap??time;
 }
@@ -264,9 +278,21 @@ function blurLaneRow(track,trackName,clips){
 }
 function renderLayeredTimeline(){
  timelineZoom=Math.max(1,Math.min(timelineZoom,64,Math.max(1,1200/timelineBaseScale())));
- const p=project();if(!p)return;const host=$('layered-timeline'),scrollLeft=host.scrollLeft,scrollTop=host.scrollTop;host.replaceChildren();const inner=document.createElement('div');inner.id='layered-inner';inner.className='layered-inner';inner.style.width=Math.max(host.clientWidth,126+Math.max(15,projectDuration()+2)*timelineScale())+'px';
+ const p=project();if(!p)return;const host=$('layered-timeline'),scrollLeft=host.scrollLeft,scrollTop=host.scrollTop;host.replaceChildren();const inner=document.createElement('div');inner.id='layered-inner';inner.className='layered-inner';inner.style.width=Math.max(host.clientWidth,Math.floor(126+timelineSpan()*timelineScale()))+'px';
+ // em 100% tudo cabe na largura: a barra de rolagem horizontal só aparece com zoom (ou numa janela estreita demais), quando é preciso navegar
+ host.style.overflowX=parseFloat(inner.style.width)>host.clientWidth+1?'auto':'hidden';
  const ruler=document.createElement('div');ruler.className='layered-ruler';ruler.onclick=e=>seekComposition(timelinePointer(e.clientX));
  inner.append(ruler);
+ // espaço sem imagem nem vídeo: hachurado, para o usuário ver antes de exportar
+ for(const [de,ate] of timelineGaps(p)){
+  const vazio=document.createElement('div');vazio.className='timeline-vazio';vazio.style.left=(126+de*timelineScale())+'px';vazio.style.width=((ate-de)*timelineScale())+'px';
+  vazio.title=`Sem informação de ${seconds(de)} a ${seconds(ate)}`;inner.append(vazio);
+ }
+ for(const t of VEICULACAO){
+  if(t>projectDuration(p)+.001)continue;   // o marcador só aparece se a timeline chega a esse tempo
+  const mark=document.createElement('div');mark.className='timeline-veiculacao';mark.style.left=(126+t*timelineScale())+'px';
+  mark.title=`${t} s: tempo de veiculação`;const label=document.createElement('span');label.textContent=t+' s';mark.append(label);inner.append(mark);
+ }
  $('timeline-reset-zoom').textContent=Math.round(timelineZoom*100)+'%';
  const newRow=document.createElement('div');newRow.className='new-track-drop';newRow.dataset.newTrack='true';newRow.textContent='↑ Arraste um trecho ou mídia aqui para criar uma nova faixa';wireSourceDrop(newRow,null,true);inner.append(newRow);
  const orderedTracks=[...p.tracks.filter(t=>t.kind!=='audio').reverse(),...p.tracks.filter(t=>t.kind==='audio')];
@@ -332,7 +358,7 @@ syncVideo=function(){
  $('clip-cut-controls').hidden=!video;$('trim-start-label').hidden=$('trim-end-label').hidden=!video;
  for(const id of ['trim-start','trim-end','trim-start-handle','trim-end-handle']){const input=$(id),max=m?.duration??1;input.max=id.endsWith('handle')?max:Number(max.toFixed(2));input.disabled=!video||locked;const value=id.includes('start')?(c?.in??0):(c?.out??1);input.value=id.endsWith('handle')?value:Number(value.toFixed(2));}
  $('clip-duration').disabled=!c||locked;$('clip-duration').value=c?Number(c.duration.toFixed(2)):'';
- $('duration-final').disabled=!p.clips.length||p.clips.some(clipLocked);$('duration-final').value=Number(projectDuration().toFixed(2));
+ $('duration-final').disabled=!p.clips.length||p.clips.some(clipLocked);$('duration-final').value=Number(contentDuration().toFixed(2));
  $('normal-speed').disabled=!video||locked;$('video-speed').textContent=video?((c.out-c.in)/c.duration).toFixed(2).replace('.',',')+'×':'Imagem';
  $('video-size').value=Number(p.settings.targetMB.toFixed(2));$('video-size-warning').hidden=p.settings.targetMB*8e6/Math.max(.03,projectDuration())>=850000;
  $('video-speed-warning').hidden=!video||(c.out-c.in)/c.duration<=2;
@@ -383,9 +409,9 @@ for(const id of ['trim-start','trim-end','trim-start-handle','trim-end-handle'])
 $('clip-duration').onchange=()=>commitClipDuration(Number($('clip-duration').value));
 $('normal-speed').onclick=()=>{const c=projectClip();if(c&&timedMedia(projectMedia(c)))commitClipDuration(c.out-c.in);};
 $('duration-final').onchange=()=>{
- const p=project(),total=projectDuration(),value=Number($('duration-final').value);if(!p||value<1/30||value>3600||p.clips.some(clipLocked)){syncVideo();return;}
+ const p=project(),total=contentDuration(),value=Number($('duration-final').value);if(!p||!total||value<1/30||value>3600||p.clips.some(clipLocked)){syncVideo();return;}
  const factor=value/total;if(p.clips.some(c=>timedMedia(projectMedia(c))&&((c.out-c.in)/(c.duration*factor)<.25||(c.out-c.in)/(c.duration*factor)>4))){toast('A duração deve manter os vídeos entre 0,25× e 4×. Corte trechos para encurtar mais.');syncVideo();return;}
- editProject(()=>{for(const c of p.clips){c.at=snapFrame(c.at*factor);c.duration=Math.max(1/30,snapFrame(c.duration*factor));if(projectMedia(c).kind==='image')c.out=c.duration;}});
+ editProject(()=>{for(const c of p.clips){c.at=snapFrame(c.at*factor);c.duration=Math.max(1/30,snapFrame(c.duration*factor));if(projectMedia(c).kind==='image')c.out=c.duration;}p.settings.duracao=0;});
 };
 $('video-size').onchange=()=>{const value=Number($('video-size').value);if(Number.isFinite(value)&&value>=.1&&value<=1000)editProject(()=>project().settings.targetMB=value);else syncVideo();};
 $('audio-action').onclick=$('export-audio-action').onclick=()=>toggleAudio().catch(e=>toast(e.message));
@@ -488,6 +514,13 @@ window.addEventListener('keydown',e=>{
  if(action){e.preventDefault();e.stopImmediatePropagation();if(!e.repeat||['arrowleft','arrowright','+','=','-','_'].includes(key))action();}
 },true);
 window.addEventListener('resize',()=>{if(editorKind==='video'&&project())renderLayeredTimeline();});
+// A régua ocupa sempre toda a largura: redesenha quando o espaço da timeline muda (painéis que abrem e fecham, layout
+// que termina de se acomodar ao carregar), não só quando a janela do navegador é redimensionada.
+let timelineWidthSeen=0,timelineWidthFrame=0;
+new ResizeObserver(()=>{
+ const width=$('layered-timeline').clientWidth;if(!width||Math.abs(width-timelineWidthSeen)<1)return;timelineWidthSeen=width;
+ cancelAnimationFrame(timelineWidthFrame);timelineWidthFrame=requestAnimationFrame(()=>{if(editorKind==='video'&&project()&&!compositionDrag)renderLayeredTimeline();});
+}).observe($('layered-timeline'));
 syncEditorKind();
 document.querySelectorAll('.montage-tools .shortcut-hint,#normal-speed .shortcut-hint').forEach(el=>el.remove());
 

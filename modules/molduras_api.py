@@ -189,6 +189,26 @@ def api(method, path, value, query, raw, user, salvar_arquivos):
             mini = dados.copy(); mini.thumbnail((600, 600)); mini.save(PASTA / 'padroes' / (pid + '-previa.png'))
         (PASTA / 'padroes' / (pid + '.json')).write_text(json.dumps(meta), encoding='utf-8')
         return meta
+    if path == '/api/molduras/arte':
+        # arte vetorial pronta: substitui o layout (a linha de corte, a janela da TV e a logo Indoor ficam por cima)
+        nome = query.get('name', ['arte'])[0].replace(chr(92), '/').split('/')[-1][:120]
+        ext = ('.' + nome.rsplit('.', 1)[-1].lower()) if '.' in nome else ''
+        if not raw: raise ValueError('Arquivo vazio.')
+        try: tv = tv_validada(json.loads(query.get('tv', ['null'])[0]))
+        except (TypeError, ValueError, json.JSONDecodeError): raise ValueError('Tamanho da TV inválido.') from None
+        formas, aviso = P.importar_arte(raw, ext, G.geometria(tv['largura'], tv['altura']))
+        return {'nome': nome, 'formas': formas, 'aviso': aviso}
+    if path == '/api/molduras/modelo':
+        # modelo para o VectorCraft: a folha nas medidas desta moldura, o desenho atual e as guias
+        tv = tv_validada(value.get('tv')); cores = M.validar_cores(value.get('cores'))
+        svg, fora = P.modelo_svg(G.geometria(tv['largura'], tv['altura']), value.get('formas'), cores)
+        return {'svg': svg, 'fora': fora}
+    if path == '/api/molduras/instrucoes':
+        # texto para colar no claude.ai: a arte sai nas medidas da moldura e volta por "Importar arte"
+        from .molduras_instrucoes import instrucoes
+        tv = tv_validada(value.get('tv'))
+        return {'texto': instrucoes(G.geometria(tv['largura'], tv['altura']), M.validar_cores(value.get('cores')),
+                                       str(value.get('segmento') or '')[:40])}
     if path == '/api/molduras/padrao-aplicar':
         tv = tv_validada(value.get('tv')); g = G.geometria(tv['largura'], tv['altura'])
         tamanho, espacamento, giro = P.parametros(value)

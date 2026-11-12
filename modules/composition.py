@@ -64,6 +64,8 @@ def validate(value, media):
         raise ValueError('Para MP4, largura e altura precisam ser números pares.')
     output['mute'] = flag(value.get('settings', {}).get('mute'))
     output['targetMB'] = number(value.get('settings', {}).get('targetMB', 4), .1, 1000, 'Tamanho')
+    # duração escolhida para a timeline (0 = a do conteúdo); maior que o conteúdo, deixa o fim sem informação
+    output['duracao'] = number(value.get('settings', {}).get('duracao', 0) or 0, 0, 3600, 'Duração da timeline')
     cleaned = []
     for c in clips:
         if not isinstance(c, dict) or c.get('mediaId') not in rows or c.get('track') not in track_ids:
@@ -89,7 +91,12 @@ def validate(value, media):
 
 
 def duration(project):
-    return max((c['at'] + c['duration'] for c in project['clips']), default=0)
+    conteudo = max((c['at'] + c['duration'] for c in project['clips']), default=0)
+    return max(conteudo, project.get('settings', {}).get('duracao', 0) or 0)
+
+
+def segundos(v):
+    return f'{v:.2f}'.replace('.', ',') + ' s'
 
 
 def check_coverage(project):
@@ -104,6 +111,9 @@ def check_coverage(project):
         if clip['at'] > end + .001:
             raise ValueError('Há um espaço vazio na montagem. Encaixe os trechos antes de exportar.')
         end = max(end, clip['at'] + clip['duration'])
+    if (project['settings'].get('duracao') or 0) > end + .001:
+        raise ValueError(f'Há espaço sem informação no fim da timeline (de {segundos(end)} a {segundos(duration(project))}). '
+                         'Preencha esse espaço, use ≅ para ajustar a velocidade ou reduza o tempo total da timeline.')
     if duration(project) > end + .001:
         raise ValueError('O áudio ultrapassa o fim do vídeo. Corte o áudio ou adicione imagens para cobrir esse tempo.')
 

@@ -1,5 +1,34 @@
 # Histórico de versões
 
+## 1.16.0 — Editor de vídeos, Vetorização M6S, Molduras de TV e acabamento da interface — 12/11/2026
+
+**Editor de vídeos**
+- Marcadores fixos de 15 s e 30 s (tempos de veiculação) na timeline e na régua da prévia; só aparecem quando a timeline chega a esse tempo, e as bordas dos trechos encaixam neles.
+- A timeline cabe na largura, sem rolagem horizontal em 100%, e a régua acompanha o tamanho do painel.
+- Tempo total da timeline editável ao lado do tempo atual: muda só a timeline (os vídeos não mudam); o fim sem informação fica hachurado e Exportar, Adicionar à fila e Todas à fila avisam onde está o espaço vazio. O servidor também recusa exportar com espaço vazio.
+- Botão ≅: arredonda a montagem para 15 ou 30 s mudando a velocidade (acelera ou desacelera).
+- Ferramenta Seleção na timeline: vários trechos por Shift/Ctrl + clique, por caixa (arrastar numa área vazia) ou Ctrl + A; Delete remove todos e arrastar um deles move o grupo.
+- O tempo atual tem largura fixa: durante a reprodução, os botões ao lado não tremem mais.
+- Faixa do vídeo no verde de sempre, mesmo quando o vídeo começa num quadro preto.
+
+**Vetorização M6S**
+- Seleção de várias partes: arrastar um retângulo (pega as partes inteiras dentro dele), Shift + clique, Ctrl + A e Delete.
+- Novo botão "Manter só a seleção": seleciona a logo e apaga telefone, site e endereço de uma vez.
+- Edição avançada no VectorCraft: baixa o desenho em SVG (em mm), edita no programa e traz de volta (SVG, PDF ou AI), mantendo o nome do DXF e explicando o que corrigir se o arquivo vier com texto ou linhas soltas.
+- Prévia maior, ocupando a altura da tela sem rolar a página.
+- O botão Exportar DXF não fica mais desativado depois de uma edição.
+
+**Molduras de TV**
+- Corrigido: arrastar uma forma às vezes a jogava para fora da folha (parecia apagada). Clicar e arrastar agora é um gesto só, e só a tecla Delete apaga.
+- Barra de edição sobre a forma selecionada (Cor, Pattern, Frente, Trás, Duplicar, Apagar) e duplo clique para trocar a cor ou colocar um pattern na forma.
+- Importar arte pronta (SVG, PDF ou AI) no lugar do layout: cada forma continua editável, com as cores do arquivo.
+- Editar no VectorCraft: baixa um modelo com a folha nas medidas da moldura, o desenho atual e as guias (corte, tela, logos). No Chrome e no Edge, cada vez que o arquivo é salvo no VectorCraft a moldura se atualiza sozinha; nos outros navegadores a volta é manual, com aviso.
+- Copiar instruções para o Claude: texto pronto com as medidas e as cores para pedir a arte no claude.ai e trazê-la por "Importar arte".
+
+**Interface**
+- Acabamento geral com a paleta oficial da Indoor Channel, tema claro como padrão e o botão de tema mostrando o sol no modo escuro (e a lua no claro).
+- Prévias das Molduras, Estampas e Vetorização não estouram mais a área em alguns navegadores (Safari, e o Chrome às vezes).
+
 ## 1.15.3 — Encartes em imagem com selo do Clube e cores do nome e do preço — 11/11/2026
 
 - Leitor de encartes em imagem adaptado a layouts como o da CAPA (selos "Clube de Desconto" com título acima da foto): nomes, preços normal e Clube, unidade e equivalência por quilo corretos, sem o produto falso do cabeçalho e com o banner lido à parte.

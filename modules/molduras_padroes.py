@@ -15,6 +15,7 @@ from shapely.validation import make_valid
 from . import molduras as M, molduras_layouts as L
 
 MAX_MODULOS = 6000
+GUIA = '#FF00FF'          # cor das guias do modelo para o VectorCraft: linhas nessa cor são ignoradas na volta
 DPI_IMAGEM = 120          # patterns de imagem no PDF; a 1,5 m de distância da TV não se vê a diferença para 300 dpi
 
 
@@ -165,14 +166,15 @@ def aplicar_vetor(grupos, g, alvo, tamanho, espacamento, giro):
 
 
 # ---------- importação ----------
-def importar(raw, ext):
-    """Arquivo do usuário → ('vetor', grupos [(cor, geometria unitária)], aviso) ou ('imagem', PIL RGBA, aviso)."""
-    pdf, previa, _ = M.preparar_logo(raw, ext)
-    if not pdf: return 'imagem', previa, None
-    page = pymupdf.open('pdf', pdf)[0]
-    por_cor, ignorados = {}, 0
+def formas_do_pdf(page):
+    """Formas preenchidas da página, na ordem de pintura: [(cor hex, geometria em pt)], e quantas foram ignoradas
+    (linhas sem preenchimento)."""
+    out, ignorados = [], 0
     for dr in page.get_drawings():
-        if dr.get('fill') is None: ignorados += 1; continue
+        if dr.get('fill') is None:
+            # linhas magenta são as guias do modelo para o VectorCraft (molduras.modelo_svg): não contam como perda
+            if not (dr.get('color') and M.hexa(dr['color'][:3]) == GUIA): ignorados += 1
+            continue
         partes, cur = [], None
         for it in dr['items']:
             if it[0] == 're': r = it[1]; partes.append([(r.x0, r.y0), (r.x1, r.y0), (r.x1, r.y1), (r.x0, r.y1)]); cur = None; continue
@@ -192,7 +194,106 @@ def importar(raw, ext):
             p = make_valid(Polygon(anel))
             geom = p if geom is None else (geom.symmetric_difference(p) if dr.get('even_odd') else geom.union(p))
         if geom is None or geom.is_empty: continue
-        cor = M.hexa(dr['fill'][:3]) if len(dr['fill']) >= 3 else '#000000'
+        out.append((M.hexa(dr['fill'][:3]) if len(dr['fill']) >= 3 else '#000000', geom))
+    return out, ignorados
+
+
+def importar_arte(raw, ext, g, pagina=None):
+    """Arte vetorial pronta (SVG/PDF/AI) que substitui o layout: cada forma do arquivo vira uma forma editável, com a
+    cor original, na ordem de pintura.
+    - Página na proporção da folha (o modelo do VectorCraft, a arte pedida ao Claude): a página é a folha, sem
+      reenquadrar; cada forma volta exatamente onde foi desenhada.
+    - Qualquer outra arte: cobre toda a área de sangria (como um fundo de tela cheia), centralizada.
+    `pagina` força um dos dois modos. Devolve (formas, aviso). A forma 0 é o fundo branco, como nos layouts."""
+    ext = ext.lower()
+    if ext not in ('.svg', '.pdf', '.ai'): raise ValueError('A arte precisa ser vetorial: SVG, PDF ou AI.')
+    # a página inteira, sem recortar margens claras (a leitura de logos recorta, e isso deslocaria a arte)
+    try:
+        doc = pymupdf.open(stream=raw, filetype='svg' if ext == '.svg' else 'pdf')
+        page = (pymupdf.open('pdf', doc.convert_to_pdf()) if ext == '.svg' else doc)[0]
+    except Exception: raise ValueError('Não foi possível abrir a arte. Exporte de novo em SVG, PDF ou AI.') from None
+    fw, fh = g['folha']['largura'], g['folha']['altura']
+    if pagina is None: pagina = abs(page.rect.width / max(page.rect.height, 1e-9) / (fw / fh) - 1) < .01
+    desenhos, ignorados = formas_do_pdf(page)
+    desenhos = [(c, make_valid(geo)) for c, geo in desenhos if geo.area > 1e-6]
+    fundo, havia = '#FFFFFF', bool(desenhos)
+    # formas que cobrem a página toda (o papel do modelo, o fundo do layout) viram o fundo da moldura, como nos layouts
+    while pagina and desenhos and desenhos[0][1].area > page.rect.width * page.rect.height * .98:
+        fundo = desenhos.pop(0)[0]
+    if not havia:
+        raise ValueError('A arte não tem formas preenchidas (só linhas, textos ou imagens). Converta tudo em formas no Illustrator ou no VectorCraft.')
+    s = g['sangria']; aw, ah = s['x1'] - s['x0'], s['y1'] - s['y0']
+    if pagina:
+        k = fw / page.rect.width; dx = dy = 0
+    else:
+        x0, y0, x1, y1 = unary_union([geo for _, geo in desenhos]).bounds
+        k = max(aw / max(x1 - x0, 1e-9), ah / max(y1 - y0, 1e-9))  # cobrir a área toda (o que sobrar é cortado)
+        dx, dy = s['x0'] + aw / 2 - (x0 + x1) / 2 * k, s['y0'] + ah / 2 - (y0 + y1) / 2 * k
+    # junta formas seguidas da mesma cor quando o arquivo tem formas demais para editar (e para o PDF)
+    while len(desenhos) > M.MAX_FORMAS - 1:
+        juntos = []
+        for c, geo in desenhos:
+            if juntos and juntos[-1][0] == c: juntos[-1] = (c, juntos[-1][1].union(geo))
+            else: juntos.append((c, geo))
+        if len(juntos) == len(desenhos): raise ValueError('A arte tem formas demais. Simplifique-a antes de importar.')
+        desenhos = juntos
+    formas = [{'d': f'M0 0 L{fw} 0 L{fw} {fh} L0 {fh} Z', 'cor': fundo}]
+    pontos = 0
+    for c, geo in desenhos:
+        geo = affinity.translate(affinity.scale(geo, k, k, origin=(0, 0)), dx, dy).simplify(.01)
+        d = d_geometria(geo)
+        if not d: continue
+        pontos += d.count(' L') + d.count('M')
+        formas.append({'d': d, 'cor': c, 'regra': 'evenodd'})
+    if pontos > M.MAX_PONTOS: raise ValueError('A arte tem detalhes demais. Simplifique-a antes de importar.')
+    avisos = []
+    if ignorados: avisos.append('Linhas sem preenchimento foram ignoradas: no Illustrator, use Objeto › Expandir antes de exportar.')
+    if page.get_text().strip(): avisos.append('Textos que não estavam em curvas foram ignorados: converta-os em curvas.')
+    if page.get_images(): avisos.append('Imagens dentro do arquivo foram ignoradas: a arte entra só com vetores.')
+    return formas, ' '.join(avisos) or None
+
+
+def modelo_svg(g, formas, cores):
+    """Modelo para editar no VectorCraft: a folha nas medidas reais (cm), o desenho atual numa camada "Arte" (uma forma
+    por objeto, cores reais) e as medidas da moldura numa camada "Guias", em linhas magenta que a volta ignora.
+    Patterns de imagem não vão (são bitmap). Devolve (svg, quantos ficaram de fora)."""
+    fw, fh = g['folha']['largura'], g['folha']['altura']
+    n = lambda v: f'{v:g}'
+    arte, fora = [], 0
+    for f in formas or []:
+        if not isinstance(f, dict): raise ValueError('Forma inválida.')
+        if f.get('imagem'): fora += 1; continue
+        M.subcaminhos(f.get('d'))  # só M/L/C/Z e números: seguro dentro do atributo
+        op = f.get('opacidade')
+        extra = (' fill-rule="evenodd"' if f.get('regra') == 'evenodd' else '') + \
+                (f' fill-opacity="{float(op):g}"' if isinstance(op, (int, float)) and 0 <= op < 1 else '')
+        arte.append(f'    <path d="{f["d"]}" fill="{M.cor_de(f.get("cor"), cores)}"{extra}/>')
+    s, j, ic, et, lc = g['sangria'], g['janela'], g['logoIC'], g['etiqueta'], g['logoCliente']
+    ret = lambda x0, y0, x1, y1, nome: f'    <rect id="{nome}" x="{n(x0)}" y="{n(y0)}" width="{n(x1 - x0)}" height="{n(y1 - y0)}"/>'
+    guias = [ret(s['x0'], s['y0'], s['x1'], s['y1'], 'area-impressa-sangria'),
+             f'    <path id="linha-de-corte" d="{g["corte"]}"/>',
+             f'    <path id="tela-da-TV" d="{g["janelaPath"]}"/>',
+             ret(ic['x0'], ic['y0'], ic['x0'] + ic['largura'], ic['y0'] + ic['altura'], 'logo-Indoor-Channel'),
+             ret(et['x0'], et['y0'], et['x1'], et['y1'], 'etiqueta'),
+             ret(lc['cx'] - lc['largura'] / 2, lc['cy'] - lc['altura'] / 2, lc['cx'] + lc['largura'] / 2, lc['cy'] + lc['altura'] / 2, 'logo-do-cliente')]
+    svg = '\n'.join([
+        '<?xml version="1.0" encoding="UTF-8"?>',
+        f'<svg xmlns="http://www.w3.org/2000/svg" width="{n(fw)}cm" height="{n(fh)}cm" viewBox="0 0 {n(fw)} {n(fh)}">',
+        f'  <rect id="papel" width="{n(fw)}" height="{n(fh)}" fill="#FFFFFF"/>',
+        '  <g id="Arte" data-name="Arte (edite aqui)">', *arte, '  </g>',
+        f'  <g id="Guias" data-name="Guias (não imprimem)" fill="none" stroke="{GUIA}" stroke-width="0.08">', *guias, '  </g>',
+        '</svg>', ''])
+    return svg, fora
+
+
+def importar(raw, ext):
+    """Arquivo do usuário → ('vetor', grupos [(cor, geometria unitária)], aviso) ou ('imagem', PIL RGBA, aviso)."""
+    pdf, previa, _ = M.preparar_logo(raw, ext)
+    if not pdf: return 'imagem', previa, None
+    page = pymupdf.open('pdf', pdf)[0]
+    por_cor = {}
+    desenhos, ignorados = formas_do_pdf(page)
+    for cor, geom in desenhos:
         # o que vem depois cobre o que veio antes, como no arquivo original
         for outra in list(por_cor): por_cor[outra] = por_cor[outra].difference(geom)
         por_cor[cor] = por_cor[cor].union(geom) if cor in por_cor else geom

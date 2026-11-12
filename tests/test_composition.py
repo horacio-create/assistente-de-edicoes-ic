@@ -117,6 +117,16 @@ class CompositionTests(unittest.TestCase):
         job=api('/api/job',method='GET',query={'id':[job['id']]});p['clips'][0]['settings']['logoId']=uid();job['meta']['composition']=p
         with self.assertRaises(ValueError):api('/api/save',job)
 
+    def test_timeline_longer_than_content_keeps_videos_and_blocks_export(self):
+        """Tempo total da timeline maior que o conteúdo: o vídeo não muda e a exportação pede para corrigir o fim vazio."""
+        job=self.upload(self.create(),'clip.mp4',self.videos['red']);track=uid();p=self.project([track]);p['clips']=[self.clip(job['media'][0],track,0,1)]
+        p['settings']['duracao']=3
+        limpo=composition.validate(p,job['media'])
+        self.assertEqual((limpo['settings']['duracao'],composition.duration(limpo),limpo['clips'][0]['duration']),(3,3,1))
+        with self.assertRaisesRegex(ValueError,'sem informação no fim'):composition.check_coverage(limpo)
+        p['settings']['duracao']=0;self.assertEqual(composition.duration(composition.validate(p,job['media'])),1)
+        composition.check_coverage(composition.validate(p,job['media']))
+
     def test_rejects_foreign_sources_invalid_ranges_gaps_and_stale_plans(self):
         job=self.upload(self.create(),'primeiro.mp4',self.videos['red']);other=self.upload(self.create(),'outro.mp4',self.videos['blue']);track=uid();p=self.project([track]);p['clips']=[self.clip(other['media'][0],track,0,1)]
         with self.assertRaises(ValueError):composition.validate(p,job['media'])

@@ -177,6 +177,17 @@ uma camada no PDF), cores, logo e PDFs em `modules/molduras.py`, rotas em `modul
 `static/molduras.js`. A logo Indoor Channel vetorial está em `modules/molduras_dados/logo_indoor.json`.
 Molduras salvas ficam na tabela `molduras` e são da equipe toda; logos em `dados/molduras/logos`.
 
+- **Edição:** clicar seleciona e arrastar move (um gesto só); a barra flutuante sobre a forma tem Cor, Pattern,
+  Frente, Trás, Duplicar e Apagar; duplo clique abre Cor / Pattern. Só a tecla Delete apaga (Backspace não).
+- **Arte pronta:** no passo 4, "Importar arte" aceita SVG, PDF ou AI e substitui o layout; cada forma do arquivo
+  vira uma forma editável com a cor original, cobrindo a área de sangria (`molduras_padroes.importar_arte`).
+- **VectorCraft:** "Editar no VectorCraft…" baixa um modelo SVG da folha em cm (camada Arte + guias magenta, que a
+  volta ignora; `molduras_padroes.modelo_svg`). No Chrome e no Edge, o arquivo editado é escolhido uma vez e
+  acompanhado (File System Access API, conferido a cada 2 s): cada Ctrl + S no VectorCraft atualiza a moldura; se a
+  moldura também foi editada no sistema, pergunta antes. Nos outros navegadores a volta é manual, com aviso.
+- **Claude pela assinatura:** "Copiar instruções para o Claude" copia o texto com as medidas e as cores para colar
+  no claude.ai; o SVG que ele entrega entra por "Importar arte" (página na proporção da folha = sem reenquadrar).
+
 ## Relatórios (Clockify)
 
 A equipe registra o tempo no Clockify; a tela **Relatórios** (só superadmins, no servidor com login) lê os registros

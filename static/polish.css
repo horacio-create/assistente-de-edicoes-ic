@@ -1,0 +1,122 @@
+/* Gerado por gen_polish.py: paleta oficial Indoor Channel (cinza, azul, roxo). Verdes, vermelhos e âmbar (semânticos) ficam como estão. */
+:root{--ui-000000:#1a1a39;--bg-000000:#1a1a39;--ui-141820:#1a1a39;--bg-141820:#1a1a39;--ui-181d25:#181d25;--fg-181d25:#181d25;--ui-1a1a39:#1a1a39;--bg-1a1a39:#1a1a39;--fg-1a1a39:#1a1a39;--ui-202029:#1a1a39;--fg-202029:#1a1a39;--ui-2b2b48:#1a1a39;--bg-2b2b48:#1a1a39;--ui-2d3144:#1a1a39;--fg-2d3144:#1a1a39;--ui-353550:#1a1a39;--fg-353550:#1a1a39;--ui-353551:#1a1a39;--fg-353551:#1a1a39;--ui-3a3a5c:#1a1a39;--bg-3a3a5c:#1a1a39;--ui-40405a:#1a1a39;--fg-40405a:#1a1a39;--ui-41415b:#1a1a39;--bg-41415b:#1a1a39;--ui-4336b9:#4336b9;--fg-4336b9:#4336b9;--ui-43436a:#1a1a39;--fg-43436a:#1a1a39;--ui-454560:#1a1a39;--fg-454560:#1a1a39;--ui-454563:#1a1a39;--bg-454563:#1a1a39;--ui-4a4a62:#2d3143;--fg-4a4a62:#2d3143;--ui-4e5460:#2d3143;--fg-4e5460:#2d3143;--ui-4e5574:#2d3143;--fg-4e5574:#2d3143;--ui-511c83:#4336b9;--bg-511c83:#4336b9;--ui-525c73:#2d3143;--fg-525c73:#2d3143;--ui-53536b:#2d3143;--fg-53536b:#2d3143;--ui-55556d:#2d3143;--fg-55556d:#2d3143;--ui-55556f:#2d3143;--fg-55556f:#2d3143;--ui-555b68:#2d3143;--fg-555b68:#2d3143;--ui-58665c:#2d3143;--fg-58665c:#2d3143;--ui-595c76:#2d3143;--fg-595c76:#2d3143;--ui-5d5d75:#2d3143;--fg-5d5d75:#2d3143;--ui-5f5d9e:#2d3143;--fg-5f5d9e:#2d3143;--ui-61617b:#2d3143;--fg-61617b:#2d3143;--ui-626266:#626266;--fg-626266:#626266;--ui-626275:#2d3143;--fg-626275:#2d3143;--ui-62627a:#2d3143;--fg-62627a:#2d3143;--ui-626981:#2d3143;--fg-626981:#2d3143;--ui-64647c:#2d3143;--fg-64647c:#2d3143;--ui-64768d:#626266;--ui-656575:#2d3143;--fg-656575:#2d3143;--ui-65657d:#2d3143;--fg-65657d:#2d3143;--ui-66667f:#2d3143;--fg-66667f:#2d3143;--ui-676780:#2d3143;--fg-676780:#2d3143;--ui-677088:#626266;--fg-677088:#626266;--ui-686880:#2d3143;--fg-686880:#2d3143;--ui-68708c:#626266;--fg-68708c:#626266;--ui-6a68cb:#6a68cb;--bg-6a68cb:#6a68cb;--fg-6a68cb:#6a68cb;--ui-6b6b7b:#2d3143;--fg-6b6b7b:#2d3143;--ui-6d6d86:#2d3143;--fg-6d6d86:#2d3143;--ui-707080:#626266;--fg-707080:#626266;--ui-70708a:#626266;--fg-70708a:#626266;--ui-73738b:#626266;--fg-73738b:#626266;--ui-77758e:#626266;--fg-77758e:#626266;--ui-7b8190:#626266;--fg-7b8190:#626266;--ui-85899e:#626266;--fg-85899e:#626266;--ui-8989a5:#626266;--fg-8989a5:#626266;--ui-8a8aa0:#626266;--fg-8a8aa0:#626266;--ui-9190d9:#4336b9;--ui-9195a5:#626266;--ui-9397a7:#626266;--fg-9397a7:#626266;--ui-9696b6:#626266;--fg-9696b6:#626266;--ui-a3a3b5:#b4b4c4;--bg-a3a3b5:#b4b4c4;--ui-a9a7d8:#b4b4c4;--ui-aaa8dc:#b4b4c4;--ui-aaaec3:#b4b4c4;--fg-aaaec3:#b4b4c4;--ui-aab0bf:#b4b4c4;--ui-aab7ca:#b4b4c4;--ui-b4b4cc:#b4b4c4;--fg-b4b4cc:#b4b4c4;--ui-b4b4cd:#b4b4c4;--fg-b4b4cd:#b4b4c4;--ui-b6b5d8:#b4b4c4;--ui-b6b9f1:#b6b9f1;--bg-b6b9f1:#b6b9f1;--fg-b6b9f1:#b6b9f1;--ui-b8c3d3:#dadae5;--ui-c3c7cd:#dadae5;--bg-c3c7cd:#dadae5;--ui-c5c5e2:#dadae5;--ui-c6c6de:#dadae5;--fg-c6c6de:#dadae5;--ui-c6c8f6:#dadae5;--bg-c6c8f6:#dadae5;--ui-c7c9d8:#dadae5;--bg-c7c9d8:#dadae5;--ui-c9c8ec:#dadae5;--bg-c9c8ec:#dadae5;--ui-c9c9df:#dadae5;--fg-c9c9df:#dadae5;--ui-c9cadb:#dadae5;--bg-c9cadb:#dadae5;--ui-d5d7e0:#e9e9f0;--ui-d6d8df:#e9e9f0;--ui-d8d8e5:#e9e9f0;--ui-d8dce3:#e9e9f0;--ui-d9daf5:#e9e9f0;--bg-d9daf5:#e9e9f0;--ui-dadae5:#dadae5;--bg-dadae5:#dadae5;--fg-dadae5:#dadae5;--ui-dcdaf3:#e9e9f0;--bg-dcdaf3:#e9e9f0;--ui-ddddfb:#e9e9f0;--bg-ddddfb:#e9e9f0;--ui-dde0e8:#e9e9f0;--ui-dedee8:#e9e9f0;--ui-e0e4ea:#e9e9f0;--ui-e0e4eb:#e9e9f0;--ui-e4e7ec:#e9e9f0;--ui-e5e6ec:#e9e9f0;--bg-e5e6ec:#e9e9f0;--ui-e6e6fb:#f1f1f5;--bg-e6e6fb:#f1f1f5;--ui-e6e8ed:#f1f1f5;--bg-e6e8ed:#f1f1f5;--ui-e7e7ff:#f1f1f5;--bg-e7e7ff:#f1f1f5;--ui-e8e7fa:#f1f1f5;--bg-e8e7fa:#f1f1f5;--ui-e8ebf2:#f1f1f5;--bg-e8ebf2:#f1f1f5;--ui-e9e9fa:#f1f1f5;--bg-e9e9fa:#f1f1f5;--ui-e9ecf1:#f1f1f5;--bg-e9ecf1:#f1f1f5;--ui-eaeaf9:#f1f1f5;--bg-eaeaf9:#f1f1f5;--ui-edecf8:#f1f1f5;--bg-edecf8:#f1f1f5;--ui-ededf6:#f1f1f5;--bg-ededf6:#f1f1f5;--ui-ededf9:#f1f1f5;--bg-ededf9:#f1f1f5;--ui-ededfa:#f1f1f5;--bg-ededfa:#f1f1f5;--ui-edf0f4:#f1f1f5;--bg-edf0f4:#f1f1f5;--ui-eeedfa:#f1f1f5;--bg-eeedfa:#f1f1f5;--ui-efeffc:#f1f1f5;--bg-efeffc:#f1f1f5;--ui-f0eff9:#f1f1f5;--bg-f0eff9:#f1f1f5;--ui-f0effb:#f1f1f5;--bg-f0effb:#f1f1f5;--ui-f0f0f4:#f1f1f5;--bg-f0f0f4:#f1f1f5;--ui-f2f1ff:#f1f1f5;--bg-f2f1ff:#f1f1f5;--ui-f4f3fb:#f9f9f9;--bg-f4f3fb:#f9f9f9;--ui-f6faf7:#f9f9f9;--bg-f6faf7:#f9f9f9;--ui-f7f8fa:#f9f9f9;--bg-f7f8fa:#f9f9f9;--ui-f8f9fb:#f9f9f9;--bg-f8f9fb:#f9f9f9;--ui-f8faf9:#f9f9f9;--bg-f8faf9:#f9f9f9;--ui-f9f9f9:#f9f9f9;--bg-f9f9f9:#f9f9f9;--ui-fafbfc:#f9f9f9;--bg-fafbfc:#f9f9f9;--ui-ffffff:#ffffff;--bg-ffffff:#ffffff;--fg-ffffff:#ffffff}
+:root[data-theme="dark"]{--ui-000000:#f9f9f9;--bg-000000:#f9f9f9;--ui-141820:#f9f9f9;--bg-141820:#f9f9f9;--ui-181d25:#f9f9f9;--fg-181d25:#f9f9f9;--ui-1a1a39:#f9f9f9;--bg-1a1a39:#2d3143;--fg-1a1a39:#f9f9f9;--ui-202029:#f9f9f9;--fg-202029:#f9f9f9;--ui-2b2b48:#f9f9f9;--bg-2b2b48:#2d3143;--ui-2d3144:#f9f9f9;--fg-2d3144:#f9f9f9;--ui-353550:#f9f9f9;--fg-353550:#f9f9f9;--ui-353551:#f9f9f9;--fg-353551:#f9f9f9;--ui-3a3a5c:#f9f9f9;--bg-3a3a5c:#2d3143;--ui-40405a:#f9f9f9;--fg-40405a:#f9f9f9;--ui-41415b:#f9f9f9;--bg-41415b:#2d3143;--ui-4336b9:#b6b9f1;--fg-4336b9:#b6b9f1;--ui-43436a:#f9f9f9;--fg-43436a:#f9f9f9;--ui-454560:#f9f9f9;--fg-454560:#f9f9f9;--ui-454563:#f9f9f9;--bg-454563:#2d3143;--ui-4a4a62:#dadae5;--fg-4a4a62:#dadae5;--ui-4e5460:#dadae5;--fg-4e5460:#dadae5;--ui-4e5574:#dadae5;--fg-4e5574:#dadae5;--ui-511c83:#b6b9f1;--bg-511c83:#b6b9f1;--ui-525c73:#dadae5;--fg-525c73:#dadae5;--ui-53536b:#dadae5;--fg-53536b:#dadae5;--ui-55556d:#dadae5;--fg-55556d:#dadae5;--ui-55556f:#dadae5;--fg-55556f:#dadae5;--ui-555b68:#dadae5;--fg-555b68:#dadae5;--ui-58665c:#dadae5;--fg-58665c:#dadae5;--ui-595c76:#dadae5;--fg-595c76:#dadae5;--ui-5d5d75:#dadae5;--fg-5d5d75:#dadae5;--ui-5f5d9e:#dadae5;--fg-5f5d9e:#dadae5;--ui-61617b:#dadae5;--fg-61617b:#dadae5;--ui-626266:#dadae5;--fg-626266:#dadae5;--ui-626275:#dadae5;--fg-626275:#dadae5;--ui-62627a:#dadae5;--fg-62627a:#dadae5;--ui-626981:#dadae5;--fg-626981:#dadae5;--ui-64647c:#dadae5;--fg-64647c:#dadae5;--ui-64768d:#929dcc;--ui-656575:#dadae5;--fg-656575:#dadae5;--ui-65657d:#dadae5;--fg-65657d:#dadae5;--ui-66667f:#dadae5;--fg-66667f:#dadae5;--ui-676780:#dadae5;--fg-676780:#dadae5;--ui-677088:#929dcc;--fg-677088:#929dcc;--ui-686880:#dadae5;--fg-686880:#dadae5;--ui-68708c:#929dcc;--fg-68708c:#929dcc;--ui-6a68cb:#b6b9f1;--bg-6a68cb:#6a68cb;--fg-6a68cb:#b6b9f1;--ui-6b6b7b:#dadae5;--fg-6b6b7b:#dadae5;--ui-6d6d86:#dadae5;--fg-6d6d86:#dadae5;--ui-707080:#929dcc;--fg-707080:#929dcc;--ui-70708a:#929dcc;--fg-70708a:#929dcc;--ui-73738b:#929dcc;--fg-73738b:#929dcc;--ui-77758e:#929dcc;--fg-77758e:#929dcc;--ui-7b8190:#929dcc;--fg-7b8190:#929dcc;--ui-85899e:#929dcc;--fg-85899e:#929dcc;--ui-8989a5:#929dcc;--fg-8989a5:#929dcc;--ui-8a8aa0:#929dcc;--fg-8a8aa0:#929dcc;--ui-9190d9:#b6b9f1;--ui-9195a5:#929dcc;--ui-9397a7:#929dcc;--fg-9397a7:#929dcc;--ui-9696b6:#929dcc;--fg-9696b6:#929dcc;--ui-a3a3b5:#4a5068;--bg-a3a3b5:#4a5068;--ui-a9a7d8:#4a5068;--ui-aaa8dc:#4a5068;--ui-aaaec3:#4a5068;--fg-aaaec3:#4a5068;--ui-aab0bf:#4a5068;--ui-aab7ca:#4a5068;--ui-b4b4cc:#4a5068;--fg-b4b4cc:#4a5068;--ui-b4b4cd:#4a5068;--fg-b4b4cd:#4a5068;--ui-b6b5d8:#4a5068;--ui-b6b9f1:#dadae5;--bg-b6b9f1:#dadae5;--fg-b6b9f1:#b6b9f1;--ui-b8c3d3:#dadae5;--ui-c3c7cd:#dadae5;--bg-c3c7cd:#dadae5;--ui-c5c5e2:#dadae5;--ui-c6c6de:#dadae5;--fg-c6c6de:#dadae5;--ui-c6c8f6:#3a3f54;--bg-c6c8f6:#3a3f54;--ui-c7c9d8:#dadae5;--bg-c7c9d8:#dadae5;--ui-c9c8ec:#dadae5;--bg-c9c8ec:#dadae5;--ui-c9c9df:#dadae5;--fg-c9c9df:#dadae5;--ui-c9cadb:#dadae5;--bg-c9cadb:#dadae5;--ui-d5d7e0:#e9e9f0;--ui-d6d8df:#e9e9f0;--ui-d8d8e5:#2d3143;--ui-d8dce3:#2d3143;--ui-d9daf5:#2d3143;--bg-d9daf5:#2d3143;--ui-dadae5:#2d3143;--bg-dadae5:#2d3143;--fg-dadae5:#dadae5;--ui-dcdaf3:#2d3143;--bg-dcdaf3:#2d3143;--ui-ddddfb:#2d3143;--bg-ddddfb:#2d3143;--ui-dde0e8:#2d3143;--ui-dedee8:#2d3143;--ui-e0e4ea:#2d3143;--ui-e0e4eb:#2d3143;--ui-e4e7ec:#2d3143;--ui-e5e6ec:#2d3143;--bg-e5e6ec:#2d3143;--ui-e6e6fb:#262a39;--bg-e6e6fb:#262a39;--ui-e6e8ed:#262a39;--bg-e6e8ed:#262a39;--ui-e7e7ff:#262a39;--bg-e7e7ff:#262a39;--ui-e8e7fa:#262a39;--bg-e8e7fa:#262a39;--ui-e8ebf2:#262a39;--bg-e8ebf2:#262a39;--ui-e9e9fa:#262a39;--bg-e9e9fa:#262a39;--ui-e9ecf1:#262a39;--bg-e9ecf1:#262a39;--ui-eaeaf9:#262a39;--bg-eaeaf9:#262a39;--ui-edecf8:#262a39;--bg-edecf8:#262a39;--ui-ededf6:#262a39;--bg-ededf6:#262a39;--ui-ededf9:#262a39;--bg-ededf9:#262a39;--ui-ededfa:#262a39;--bg-ededfa:#262a39;--ui-edf0f4:#262a39;--bg-edf0f4:#262a39;--ui-eeedfa:#262a39;--bg-eeedfa:#262a39;--ui-efeffc:#262a39;--bg-efeffc:#262a39;--ui-f0eff9:#262a39;--bg-f0eff9:#262a39;--ui-f0effb:#262a39;--bg-f0effb:#262a39;--ui-f0f0f4:#262a39;--bg-f0f0f4:#262a39;--ui-f2f1ff:#262a39;--bg-f2f1ff:#262a39;--ui-f4f3fb:#1e222c;--bg-f4f3fb:#1e222c;--ui-f6faf7:#1e222c;--bg-f6faf7:#1e222c;--ui-f7f8fa:#1e222c;--bg-f7f8fa:#1e222c;--ui-f8f9fb:#1e222c;--bg-f8f9fb:#1e222c;--ui-f8faf9:#1e222c;--bg-f8faf9:#1e222c;--ui-f9f9f9:#1e222c;--bg-f9f9f9:#1e222c;--ui-fafbfc:#1e222c;--bg-fafbfc:#1e222c;--ui-ffffff:#181d25;--bg-ffffff:#181d25;--fg-ffffff:#ffffff}
+
+/* ---- Polimento de interface (12/11/2026) ----
+   Cores: somente a paleta oficial Indoor Channel (Cinza, Azul, Roxo, Verde, Laranja).
+   Fonte: a do sistema, como na main; pesos padronizados em 400, 500 e 600.
+   Verde da marca só na ação principal e no que está ligado/selecionado; roxo para links e foco. */
+:root{--brand-navy:#1a1a39;--brand-ink:#2d3143;--brand-purple:#4336b9;--brand-purple-2:#6a68cb;--brand-lavender:#b6b9f1;--brand-blue:#526ccb;--brand-green:#46d880;--brand-orange:#fc4d22;
+ --polish-sidebar:#1a1a39;--polish-sidebar-fg:#dadae5;--polish-sidebar-muted:#929dcc;--polish-sidebar-hover:#ffffff12;--polish-sidebar-active:#ffffff1f;
+ --accent:#4336b9;--accent-fill:#6a68cb;--accent-on:#1a1a39;--hairline:#1a1a3914;
+ --p-t1:#1a1a39;--p-t2:#2d3143;--p-t3:#626266;--p-raised:#f1f1f5;--p-raised2:#e9e9f0;--p-line:#dadae5}
+:root[data-theme="dark"]{--accent:#b6b9f1;--accent-fill:#6a68cb;--hairline:#ffffff12;
+ --p-t1:#f9f9f9;--p-t2:#dadae5;--p-t3:#929dcc;--p-raised:#262a39;--p-raised2:#2d3143;--p-line:#3a3f54}
+
+/* Barra lateral: marinho da marca nos dois temas; item ativo como degrau de superfície + marcador verde */
+.sidebar,:root[data-theme="dark"] .sidebar{background:var(--polish-sidebar);color:var(--polish-sidebar-fg);border-right:1px solid var(--hairline)}
+.sidebar .nav,:root[data-theme="dark"] .sidebar .nav{color:var(--polish-sidebar-fg)}
+.sidebar .nav:hover{background:var(--polish-sidebar-hover)}
+.sidebar .nav.active,:root[data-theme="dark"] .sidebar .nav.active{background:var(--polish-sidebar-active);color:#fff;box-shadow:none}
+.sidebar .workspace,.sidebar .upcoming p{color:var(--polish-sidebar-muted)}
+/* Rótulos somem na hora ao recolher e só aparecem quando a barra já abriu */
+.sidebar-collapsed .sidebar:not(:hover):not(:focus-within) .nav span,.sidebar-collapsed .sidebar:not(:hover):not(:focus-within) .upcoming>span>span{transition:none}
+.sidebar-collapsed .sidebar:hover .nav span,.sidebar-collapsed .sidebar:focus-within .nav span,.sidebar-collapsed .sidebar:hover .upcoming>span>span,.sidebar-collapsed .sidebar:focus-within .upcoming>span>span{transition:opacity .14s var(--motion) .14s,max-width .24s var(--motion)}
+.sidebar .nav span,.sidebar .upcoming>span>span{white-space:nowrap}
+
+/* Cabeçalho: o título já diz a ferramenta; a pílula colorida sai */
+.category-badge{display:none!important}
+
+/* Links e foco no roxo da marca */
+a{color:var(--accent)}
+:root[data-theme="dark"] a{color:var(--accent)}
+button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--accent-fill);outline-offset:1px}
+
+/* Tempos e contadores sem pular de largura */
+input[type=number],.time,.timecode,[class*=time-],[id*=time],[class*=duration],[id*=duration],[class*=ruler]{font-variant-numeric:tabular-nums}
+b,strong,h3,h4,th{font-weight:600}
+
+/* No escuro a profundidade vem dos degraus de superfície, não de sombra */
+:root[data-theme="dark"] .card,:root[data-theme="dark"] .panel,:root[data-theme="dark"] dialog{box-shadow:none}
+
+/* Editor: verde só onde decide (Exportar, seleção na prévia, opção escolhida); o resto fica neutro */
+.text-button{color:var(--p-t1)}
+.text-button:hover{color:var(--p-t1);background:var(--p-raised)}
+#timeline-reset-zoom{color:var(--p-t3)}
+#media-position.count{color:var(--p-t2)}
+.format-button{box-shadow:none!important}
+.media-type-badge{background:#1a1a39cc!important;color:#fff!important}
+#split-segment,#remove-segment,#segment-left,#segment-right,.track-property.clip-clock{background:var(--p-raised)!important;border-color:var(--p-line)!important;color:var(--p-t2)!important}
+#split-segment:hover,#remove-segment:hover,#segment-left:hover,#segment-right:hover,.track-property.clip-clock:hover{background:var(--p-raised2)!important;color:var(--p-t1)!important}
+.track-property.clip-clock[aria-pressed=true],.track-property.clip-clock.active{color:var(--accent)!important}
+#queue-add svg,#queue-open svg,#queue-all svg{color:var(--p-t2);stroke:currentColor}
+/* Texto e ícones sobre o verde: marinho (8:1) */
+.primary:not(:disabled),.primary:not(:disabled) svg{color:var(--accent-on)!important}
+.media-transform-handle,.media-transform-handle svg,.transform-visibility-toggle:not([aria-pressed=false]),.transform-visibility-toggle:not([aria-pressed=false]) svg{color:var(--accent-on)}
+#ofertas .of-numero{color:var(--p-t2)}
+#ofertas .of-etapas button[aria-current=step] .of-numero{color:var(--accent-on)}
+
+/* Marcadores de 15 s e 30 s: laranja da marca com texto marinho (5:1) */
+.timeline-veiculacao span{background:var(--brand-orange);color:var(--brand-navy)}
+/* Cursor de reprodução: azul da marca, só a linha, sem contorno */
+.montage-playhead::after{background:var(--brand-blue);box-shadow:none}
+.playhead-grip{background:var(--brand-blue)}
+.playhead-time{border-color:var(--brand-blue);color:var(--brand-blue)}
+
+/* Superfícies que eram brancas fixas seguem o tema escuro */
+:root[data-theme="dark"] .zoom-ctl,:root[data-theme="dark"] .media-arrow{background:#2d3143f0;color:var(--p-t1);border-color:var(--p-line)}
+:root[data-theme="dark"] .zoom-ctl svg,:root[data-theme="dark"] .zoom-btn{color:var(--p-t1)}
+:root[data-theme="dark"] .mold-num{background:var(--p-raised2);color:var(--p-t1)}
+:root[data-theme="dark"] .home-open{background:var(--p-raised2);color:var(--p-t1);border-color:var(--p-line)}
+:root[data-theme="dark"] .home-open:hover{background:#3a3f54}
+#pixel-geometry .scale-pair svg{stroke:var(--p-t3)}
+
+/* Desativados legíveis (≥ 4,5:1 no texto) e o principal desativado vira superfície neutra */
+button:disabled,.secondary:disabled,.audio-action:disabled,.timeline-rail button:disabled,.track-property.clip-clock:disabled,#of-edicao-dialog button:disabled,.ac-btn:disabled,.strip-arrow:disabled,.zoom-btn:disabled,.range-track input:disabled,.ac-input:disabled,.ac-select:disabled,.ac-switch input:disabled{opacity:.7}
+:root:not([data-theme="dark"]) button:disabled,:root:not([data-theme="dark"]) .secondary:disabled{opacity:.8}
+.primary:disabled,.primary:disabled svg{background:var(--p-raised2)!important;border-color:var(--p-line)!important;color:var(--p-t2)!important}
+.primary:disabled,:root:not([data-theme="dark"]) .primary:disabled{opacity:1}
+
+/* ---- Acabamento do Figma (Refinamento 01) nas posições atuais ----
+   Painel de ajustes: grupos separados por linha fina e 20 px; 8 px dentro do grupo; títulos com o mesmo estilo */
+.composition-editor .visual-adjustments>label:first-child{margin-top:0}
+.composition-editor .visual-adjustments>label:not(.check){display:block;font-size:13px;font-weight:600;color:var(--p-t1);margin:0 0 8px}
+.composition-editor .visual-adjustments #pixel-geometry{margin:20px 0 8px;padding-top:20px;border-top:1px solid var(--p-line)}
+.composition-editor #pixel-geometry h3{font-size:13px;font-weight:600;color:var(--p-t1);margin:0 0 12px}
+.composition-editor #pixel-geometry .geometry-row{margin-bottom:8px}
+.composition-editor .visual-adjustments .four-buttons{margin-top:8px}
+.composition-editor .visual-adjustments .lock-axes{margin-top:20px;padding-top:12px;border-top:1px solid var(--p-line)}
+.composition-editor .visual-adjustments .lock-axes .check,.composition-editor .visual-adjustments>label.check{margin:8px 0;font-size:12px;color:var(--p-t2)}
+.composition-editor .visual-adjustments #reset{margin-top:0}
+.composition-editor .visual-adjustments hr{margin:20px 0;border:0;border-top:1px solid var(--p-line)}
+.composition-editor .visual-adjustments .two-columns{gap:8px}
+/* Unidades dentro dos campos, como no Figma */
+#pixel-geometry .geometry-unit{flex:none;font-size:11px;color:var(--p-t3)}
+/* Tempo atual: no claro, marinho (o verde da marca sobre branco não chega a 4,5:1); o total fica apagado nos dois temas */
+:root:not([data-theme="dark"]) #montage-current-time,:root:not([data-theme="dark"]) #montage-current-time+span{color:var(--brand-navy)}
+#montage-total-time,#montage-total-field+span{color:var(--p-t3)}
+.format-button:disabled small,.format-button:disabled span{color:var(--p-t2)}
+:root[data-theme="dark"] .playhead-time{color:var(--brand-lavender)}
+
+/* Ferramenta Seleção (topo do trilho da timeline) e caixa de seleção */
+.video-workspace .timeline-rail .timeline-select-tool{position:relative}
+.timeline-select-count{position:absolute;top:1px;right:1px;min-width:14px;height:14px;padding:0 4px;border-radius:7px;background:var(--brand-purple-2);color:#fff;font-size:11px;font-weight:600;line-height:14px;text-align:center;font-variant-numeric:tabular-nums}
+.timeline-marquee{position:absolute;z-index:7;border:1px solid var(--brand-purple-2);background:#6a68cb1f;border-radius:2px;pointer-events:none}
+
+/* ---- Estados ativos: dois padrões só ----
+   1) Abas que trocam o conteúdo de um painel (Mídias/Edição, Gravação/Contornos…): botão claro sobre trilho cinza.
+   2) Opção escolhida ou ligada (formato, timeline, faixa, ferramenta Seleção): verde da marca, sempre o mesmo tom. */
+.library-tabs{background:var(--p-raised);border-radius:8px;padding:4px;gap:4px}
+.library-tabs>button{background:transparent;border-color:transparent;color:var(--p-t2);box-shadow:none}
+.library-tabs>button:hover{color:var(--p-t1)}
+.library-tabs>button[aria-selected=true],.vector-views>button[aria-pressed=true],.vector-views>button.active,.vector-views>button[aria-selected=true]{background:var(--surface-on-track);border:1px solid var(--p-line);color:var(--p-t1);font-weight:500}
+:root{--surface-on-track:#ffffff;--selected-bg:#46d88029;--selected-border:#46d880}
+:root[data-theme="dark"]{--surface-on-track:#2d3143;--selected-bg:#46d8802e}
+.format-button[aria-pressed=true],.timeline-tab[aria-selected=true],.timeline-item[aria-pressed=true],.track-property[aria-pressed=true],.video-workspace .timeline-rail .timeline-select-tool{background:var(--selected-bg)!important;border:1px solid var(--selected-border)!important;color:var(--p-t1)!important;box-shadow:none!important}
+.format-button[aria-pressed=true] *{color:var(--p-t1)}
+/* Abas de edição no topo: a ativa em roxo da marca, as outras em texto secundário */
+.editing-tab .editing-tab-select{color:var(--p-t2)}
+.editing-tab.active .editing-tab-select{color:var(--accent);font-weight:500}
+.audio-action[aria-pressed=true]{border-color:#fda188!important}
+/* Miniatura do trecho só clareia o verde (modo "tela"): quadros escuros, como o preto de abertura de um VT, não sujam a cor da faixa. */
+.montage-block:not(.blur-clip) img{mix-blend-mode:screen}

@@ -66,7 +66,7 @@ MODULES = [{'id': 'images', 'name': 'Imagens', 'active': True}, {'id': 'video', 
 AUTH = os.environ.get('INDOOR_AUTH') == '1'
 # Cronômetro próprio guardado: a equipe registra o tempo no Clockify. INDOOR_CRONOMETRO=1 religa a caixa e o cronômetro.
 CRONOMETRO = os.environ.get('INDOOR_CRONOMETRO') == '1'
-PUBLIC = ('/theme.js', '/theme.css', '/login.html', '/login.js', '/style.css', '/acesso.css', '/favicon.svg', '/logo-indoor.png', '/api/info')
+PUBLIC = ('/theme.js', '/theme.css', '/polish.css', '/login.html', '/login.js', '/style.css', '/acesso.css', '/favicon.svg', '/logo-indoor.png', '/api/info')
 # ferramenta exigida por prefixo; o resto do /api e as mídias são do editor (Imagens ou Vídeos)
 TOOLS = [(('/api/history', '/api/home', '/home/', '/api/atividades', '/api/relatorios', '/relatorios/'), None), (('/api/ofertas/', '/ofertas/'), {'offers'}), (('/api/vector/', '/vetor/'), {'ms6'}), (('/api/molduras/', '/molduras/'), {'molduras'}), (('/api/estampas/', '/estampas/'), {'estampas'}), (('/api/eap/', '/eap/'), {'eap'}),
          (('/api/', '/media/', '/logo/', '/video/', '/audio/', '/entrega'), {'images', 'video'})]
@@ -358,7 +358,7 @@ def run_export(token, row, plan):
     return response
 
 def api(method, path, query, raw, environ=None, background=False):
-    value = json.loads(raw) if raw and path not in ('/api/upload', '/api/logo', '/api/vector/upload', '/api/eap/upload', '/api/home/foto', '/api/home/tutorial', '/api/molduras/logo', '/api/molduras/referencia', '/api/molduras/padrao', '/api/estampas/arte') else {}
+    value = json.loads(raw) if raw and path not in ('/api/upload', '/api/logo', '/api/vector/upload', '/api/eap/upload', '/api/home/foto', '/api/home/tutorial', '/api/molduras/logo', '/api/molduras/referencia', '/api/molduras/padrao', '/api/molduras/arte', '/api/estampas/arte') else {}
     if path == '/api/info':
         user = USUARIO.get()
         if AUTH and not user: return dict(version=VERSION, auth=True, user=None)
@@ -379,7 +379,7 @@ def api(method, path, query, raw, environ=None, background=False):
         if path == '/api/estampas/catalogo': return estampas_api.api(method, path, value, query, raw, salvar_molduras)
         with LEVE: return estampas_api.api(method, path, value, query, raw, salvar_molduras)
     if path.startswith('/api/molduras/'):
-        if path in ('/api/molduras/logo', '/api/molduras/referencia', '/api/molduras/exportar', '/api/molduras/gerar', '/api/molduras/padrao', '/api/molduras/padrao-aplicar'):
+        if path in ('/api/molduras/logo', '/api/molduras/referencia', '/api/molduras/exportar', '/api/molduras/gerar', '/api/molduras/padrao', '/api/molduras/padrao-aplicar', '/api/molduras/arte'):
             with LEVE: return molduras_api.api(method, path, value, query, raw, USUARIO.get(), salvar_molduras)
         return molduras_api.api(method, path, value, query, raw, USUARIO.get(), salvar_molduras)
     if path.startswith('/api/home'):
@@ -917,7 +917,7 @@ def app(environ, start_response):
             content_type = 'image/png'
         else:
             name = 'index.html' if path == '/' else path.lstrip('/')
-            if name not in ('theme.js','theme.css','index.html','app.js','video-controls.js','composition-controls.js','project-controls.js','video-batch.js','editor-layout.js','audio-panels.js','transform-controls.js','clip-dialogs.js','timeline-sequence.js','editing-tabs.js','preview-ruler.js','icons.js', 'edition-names.js','export-progress.js','undo-history.js','vector.js','eap.js','style.css','favicon.svg','logo-indoor.png','ofertas.js','ofertas-editor.js','ofertas-entregas.js','ofertas.css','tarefas.js','tarefas.css','login.html','login.js','admin.js','acesso.css','conta.js','home.js','eap-icon.svg','atividades.js','relatorios.js','molduras.js','zoom.js','estampas.js'): raise FileNotFoundError()
+            if name not in ('theme.js','theme.css','index.html','app.js','video-controls.js','composition-controls.js','project-controls.js','video-batch.js','editor-layout.js','audio-panels.js','transform-controls.js','clip-dialogs.js','timeline-sequence.js','editing-tabs.js','preview-ruler.js','icons.js', 'edition-names.js','export-progress.js','undo-history.js','vector.js','eap.js','style.css','polish.css','favicon.svg','logo-indoor.png','ofertas.js','ofertas-editor.js','ofertas-entregas.js','ofertas.css','tarefas.js','tarefas.css','login.html','login.js','admin.js','acesso.css','conta.js','home.js','eap-icon.svg','atividades.js','relatorios.js','molduras.js','zoom.js','estampas.js'): raise FileNotFoundError()
             data = (ROOT / 'static' / name).read_bytes()
             content_type = mimetypes.guess_type(name)[0] or 'application/octet-stream'
     except Conflict as exc:

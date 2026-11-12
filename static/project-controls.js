@@ -123,12 +123,26 @@ function renderQueue(){
 $('queue-close').onclick=()=>queueDialog.close();$('queue-open').onclick=()=>{renderQueue();queueDialog.showModal();};
 $('queue-add').onclick=()=>guard(async()=>{
  if(!project()?.clips.length)throw new Error('Adicione uma mídia à timeline antes de colocá-la na fila.');if(exportQueue().length>=50)throw new Error('A fila aceita até cinquenta vídeos.');if(exportQueue().some(q=>q.number>=999))throw new Error('Exporte ou esvazie a fila antes de iniciar outra numeração.');
+ if(!checkGaps([{name:activeTimeline()?.name||'Timeline',composition:project()}]))return;
  const snapshot=structuredClone(project()),timeline=activeTimeline();mutateEdition(()=>job.meta.exportQueue.push({id:freshId(),timelineId:timeline.id,name:timeline.name,number:Math.max(0,...exportQueue().map(q=>q.number))+1,composition:snapshot}));
  await save();renderProjectPanels();toast('Timeline adicionada à fila. Você pode continuar editando ou criar outra.');
 });
+// Espaços sem informação: avisa antes de exportar ou de pôr na fila, dizendo a timeline e o intervalo, e pede a correção.
+const gapDialog=document.createElement('dialog');gapDialog.id='gap-dialog';gapDialog.className='gap-dialog';gapDialog.setAttribute('aria-labelledby','gap-dialog-title');
+gapDialog.innerHTML=`<div class="dialog-head"><div><span class="eyebrow">Antes de exportar</span><h2 id="gap-dialog-title">Há espaço sem informação</h2></div><button type="button" class="close" aria-label="Fechar">${icon('x')}</button></div>`+
+ '<p>Nestes intervalos o vídeo ficaria sem imagem:</p><ul id="gap-list" class="gap-list"></ul>'+
+ '<p class="help">Corrija antes de exportar: preencha com uma mídia, use ≅ para ajustar a velocidade ou reduza o tempo total da timeline.</p>'+
+ '<div class="dialog-footer"><span></span><button type="button" class="primary">Entendi</button></div>';
+document.body.append(gapDialog);gapDialog.querySelector('.close').onclick=gapDialog.querySelector('.primary').onclick=()=>gapDialog.close();
+function checkGaps(items){
+ const lista=items.flatMap(t=>timelineGaps(t.composition).map(([de,ate])=>`${t.name}: de ${seconds(de)} a ${seconds(ate)}`));
+ if(!lista.length)return true;
+ $('gap-list').replaceChildren(...lista.map(texto=>{const li=document.createElement('li');li.textContent=texto;return li;}));gapDialog.showModal();return false;
+}
 function exportProject(){return queueExportMode?(exportQueue()[previewIndex]?.composition??project()):project();}
 const projectOpenExport=openExport,projectExportValues=exportValues,projectFinalPreview=finalPreview;
 openExport=async function(){
+ if(editorKind==='video'&&!checkGaps(exportQueue().length?exportQueue().map(q=>({name:q.name,composition:q.composition})):[{name:activeTimeline()?.name||'Timeline',composition:project()}]))return;
  if(editorKind!=='video'||!exportQueue().length){queueExportMode=false;return projectOpenExport();}
  stopComposition();const folder=await chooseFolder();if(!folder)return;await save();exportFolder=folder;queueExportMode=true;exportIds=exportQueue().map(q=>q.id);previewIndex=0;
  $('export-name').value='VT';$('format').value='mp4';$('folder-label').textContent=folder;$('overwrite').checked=false;$('overwrite-label').hidden=true;$('export-result').hidden=true;resetCompletion();$('export-dialog').showModal();await Promise.all([finalPreview(),refreshPlan()]);syncAudio();

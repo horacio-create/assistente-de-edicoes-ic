@@ -1236,7 +1236,7 @@ async function abrirVisaoLote(id){
     for(const [k,tamanho] of tamanhosCartelas(v.produtos.length,2,v.ultimacartela==='tres').entries()){
       const produtos=v.produtos.slice(inicio,inicio+tamanho),indices=v.indices.slice(inicio,inicio+tamanho);inicio+=tamanho;
       const b=document.createElement('button');b.type='button';b.className='of-lote-cartela';b.dataset.cartela=String(k);
-      b.innerHTML=`<img alt="Prévia da cartela ${k+1}" loading="lazy" decoding="async"><strong>Cartela ${k+1} · ${tamanho} produto(s)</strong><span>${produtos.map((p,i)=>`${esc(p.nome)} · R$ ${esc(p.por)}${uso[indices[i]]>1?' · repetido':''}`).join('<br>')}</span><small>Abrir esta cartela para ajustar →</small>`;
+      b.innerHTML=`<img alt="Prévia da cartela ${k+1}" loading="lazy" decoding="async"><strong>Cartela ${k+1} · ${tamanho} produto(s)</strong><span>${produtos.map((p,i)=>`${esc(p.nome)} · R$ ${esc(p.por)}${uso[indices[i]]>1?' · repetido':''}`).join('<br>')}</span><small>Abrir esta cartela para ajustar</small>`;
       b.onclick=async()=>{try{await abrirPedido(await api('/pedido?id='+v.pedido));OfertasEdicao.irParaCartela(k);}catch(e){falha(e);}};
       grade.append(b);
     }

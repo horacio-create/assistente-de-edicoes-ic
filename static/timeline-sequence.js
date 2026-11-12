@@ -44,7 +44,9 @@
  const oldSelect=selectProjectClip;
  selectProjectClip=function(id,seek=true){if(!preserveSelection)chosenClips=new Set([id]);oldSelect(id,seek);paint();};
  const oldClick=handleClipClick;
+ let suppressClick=false;  // o clique que encerra um arraste em grupo não deve desfazer a seleção
  handleClipClick=function(e,c){
+  if(suppressClick){suppressClick=false;return;}
   if(e.shiftKey||e.ctrlKey||e.metaKey){
    reconcile();if(chosenClips.has(c.id))chosenClips.delete(c.id);else chosenClips.add(c.id);
    preserveSelection=true;
@@ -94,4 +96,100 @@
    }
   }catch(error){$('timeline-sequence-error').textContent=error.message;$('timeline-sequence-error').hidden=false;}
  };
+
+ /* Ferramenta Seleção: vários trechos por Shift/Ctrl + clique, por caixa (arrastar numa área vazia) ou Ctrl + A;
+    Delete remove todos e arrastar um deles move o grupo inteiro. */
+ const host=$('layered-timeline');
+ const tool=document.createElement('button');tool.type='button';tool.id='timeline-select-tool';tool.className='text-button timeline-select-tool';
+ tool.setAttribute('aria-pressed','true');tool.setAttribute('aria-label','Seleção');
+ tool.dataset.help='Seleção: clique para escolher um trecho. Para vários, use Shift ou Ctrl + clique, arraste numa área vazia da faixa ou Ctrl + A. Delete remove e arrastar move todos juntos.';
+ tool.innerHTML=icon('pointer')+'<span class="timeline-select-count" hidden></span>';
+ document.querySelector('.timeline-rail')?.prepend(tool);
+ tool.onclick=()=>toast('Seleção: Shift ou Ctrl + clique, ou arraste numa área vazia da faixa para escolher vários trechos.');
+ function showCount(){const n=chosenClips.size,badge=tool.querySelector('.timeline-select-count');badge.hidden=n<2;badge.textContent=n;tool.setAttribute('aria-label',n>1?`Seleção: ${n} trechos selecionados`:'Seleção');}
+ const basePaint=paint;paint=function(){basePaint();showCount();};
+ function setChosen(ids){
+  chosenClips=new Set(ids);const last=ids.at(-1);
+  if(last){preserveSelection=true;try{oldSelect(last,false);}finally{preserveSelection=false;}}
+  paint();
+ }
+ const chosenClipList=()=>{reconcile();return [...chosenClips].map(id=>project().clips.find(c=>c.id===id)).filter(Boolean);};
+
+ // Remover: com vários selecionados, remove todos os que não estão bloqueados, num único passo de desfazer
+ const oldRemove=removeProjectClip;
+ removeProjectClip=function(){
+  const all=chosenClipList();if(all.length<2)return oldRemove();
+  const free=all.filter(c=>!clipLocked(c));if(!free.length){toast('Os trechos selecionados estão bloqueados.');return;}
+  const ids=new Set(free.map(c=>c.id));
+  if(editProject(()=>{project().clips=project().clips.filter(c=>!ids.has(c.id));compositionSelected=project().clips[0]?.id??null;project().tracks=project().tracks.filter((t,i)=>i===0||project().clips.some(c=>c.track===t.id));})){
+   chosenClips=new Set(compositionSelected?[compositionSelected]:[]);paint();
+   toast(`${ids.size} trechos removidos${all.length>ids.size?'; os bloqueados ficaram':''}. Ctrl + Z desfaz.`);
+  }
+ };
+ $('remove-segment').onclick=removeProjectClip;
+
+ // Mover em grupo: arrastar um trecho já selecionado (com outros) leva todos juntos, cada um na sua faixa
+ let group=null;
+ const oldBegin=beginClipDrag;
+ beginClipDrag=function(e,c){
+  reconcile();
+  if(busy||e.button!==0||e.shiftKey||e.ctrlKey||e.metaKey||chosenClips.size<2||!chosenClips.has(c.id))return oldBegin(e,c);
+  const clips=chosenClipList().filter(k=>!clipLocked(k));if(!clips.length)return;
+  stopComposition();
+  group={startX:e.clientX,started:false,delta:0,clips:clips.map(k=>({id:k.id,at:k.at,el:host.querySelector(`[data-clip="${k.id}"]`)}))};
+  e.currentTarget.setPointerCapture(e.pointerId);
+ };
+ window.addEventListener('pointermove',e=>{
+  if(!group)return;const dx=e.clientX-group.startX;
+  if(!group.started&&Math.abs(dx)<5)return;group.started=true;
+  const first=Math.min(...group.clips.map(k=>k.at));let delta=Math.round(dx/timelineScale()*30)/30;if(first+delta<0)delta=-first;group.delta=delta;  // snapFrame não aceita negativos: o deslocamento é arredondado ao quadro aqui
+  for(const k of group.clips)if(k.el){k.el.classList.add('clip-moving');k.el.style.transform=`translateX(${delta*timelineScale()}px)`;}
+  showSnap(first+delta);
+ });
+ function endGroup(cancel){
+  const g=group;if(!g)return;group=null;
+  for(const k of g.clips)if(k.el){k.el.classList.remove('clip-moving');k.el.style.transform='';}
+  showSnap(null);if(!g.started)return;
+  suppressClick=true;setTimeout(()=>{suppressClick=false;},0);
+  if(cancel||!g.delta)return;
+  // Mesma regra do arraste de um trecho só: o grupo é inserido onde foi solto (mantendo a ordem e os espaços
+  // entre os seus trechos) e os demais da faixa são empurrados; depois a montagem fecha os buracos.
+  const ids=new Set(g.clips.map(k=>k.id)),keep=[...chosenClips];
+  if(editProject(()=>{
+   const p=project(),moving=p.clips.filter(c=>ids.has(c.id)).sort((a,b)=>a.at-b.at);
+   p.clips=p.clips.filter(c=>!ids.has(c.id));
+   for(const c of moving){c.at=snapFrame(Math.max(0,c.at+g.delta));insertClip(c);}  // insertClip já devolve o trecho à lista
+  })){chosenClips=new Set(keep.filter(id=>project().clips.some(c=>c.id===id)));paint();}
+  else renderLayeredTimeline();
+ }
+ window.addEventListener('pointerup',()=>endGroup(false));window.addEventListener('pointercancel',()=>endGroup(true));
+
+ // Caixa de seleção: arrastar a partir de uma área vazia de uma faixa
+ let box=null;
+ host.addEventListener('pointerdown',e=>{
+  // começa em qualquer área vazia da timeline: faixa, linha "Nova faixa" ou o espaço abaixo; nunca na régua, no cursor, nos trechos ou nos botões das faixas
+  if(e.button!==0||busy||editorKind!=='video'||e.target.closest('[data-clip],.layered-ruler,.montage-playhead,.track-header,.timeline-veiculacao,button,input,select'))return;
+  const inner=$('layered-inner');if(!inner)return;const r=inner.getBoundingClientRect(),add=e.shiftKey||e.ctrlKey||e.metaKey;
+  reconcile();box={x:e.clientX-r.left,y:e.clientY-r.top,base:add?[...chosenClips]:[],hits:null,el:null};
+ });
+ window.addEventListener('pointermove',e=>{
+  if(!box)return;const inner=$('layered-inner');if(!inner){box=null;return;}
+  const r=inner.getBoundingClientRect(),x=e.clientX-r.left,y=e.clientY-r.top;
+  if(!box.el){if(Math.hypot(x-box.x,y-box.y)<5)return;box.el=document.createElement('div');box.el.className='timeline-marquee';inner.append(box.el);}
+  e.preventDefault();
+  Object.assign(box.el.style,{left:Math.min(x,box.x)+'px',top:Math.min(y,box.y)+'px',width:Math.abs(x-box.x)+'px',height:Math.abs(y-box.y)+'px'});
+  const area=box.el.getBoundingClientRect(),hits=[...box.base];
+  for(const b of inner.querySelectorAll('[data-clip]')){const q=b.getBoundingClientRect();if(q.left<area.right&&q.right>area.left&&q.top<area.bottom&&q.bottom>area.top&&!hits.includes(b.dataset.clip))hits.push(b.dataset.clip);}
+  box.hits=hits;for(const b of inner.querySelectorAll('[data-clip]'))b.classList.toggle('selected',hits.includes(b.dataset.clip));
+ });
+ function endBox(){const b=box;box=null;if(!b?.el)return;b.el.remove();if(b.hits?.length)setChosen(b.hits);else paint();}
+ window.addEventListener('pointerup',endBox);window.addEventListener('pointercancel',()=>{if(box?.el)box.el.remove();box=null;paint();});
+
+ // Ctrl + A seleciona todos os trechos da timeline; Esc volta a um só
+ window.addEventListener('keydown',e=>{
+  if(editorKind!=='video'||busy||!host.offsetParent||e.target.closest?.('input,textarea,select,[contenteditable="true"],dialog'))return;
+  const key=e.key.toLowerCase();
+  if((e.ctrlKey||e.metaKey)&&key==='a'&&project()?.clips.length){e.preventDefault();setChosen(project().clips.map(c=>c.id));}
+  else if(key==='escape'&&chosenClips.size>1&&compositionSelected){setChosen([compositionSelected]);}
+ });
 })(globalThis);

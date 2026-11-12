@@ -56,7 +56,7 @@ async function moldNova() {
 async function moldAbrir(id) {
  await moldCatalogo();
  const p = await request('/api/molduras/projeto?id=' + id);
- moldZoom.novo(); moldId = p.id; delete p.id; mold = p; moldRefs = []; moldCoresManuais = true;
+ moldZoom.novo(); moldId = p.id; delete p.id; mold = p; moldRefs = []; moldCoresManuais = true; moldVcParar();
  // patterns importados que o projeto usa voltam para a lista
  const vistos = new Set(); moldPadroesProprios = [];
  for (const f of p.formas) {
@@ -80,13 +80,34 @@ async function moldGerar() {
  const r = await request('/api/molduras/gerar', {tv: mold.tv, layouts: [mold.layout]});
  moldGeo = r.geometria; mold.formas = moldClone(r.layouts[mold.layout].formas); moldOriginal = moldClone(mold.formas);
  if (mold.logo && !mold.logo.placaEscolhida) mold.logo.placa = r.layouts[mold.layout].placa || 'nenhuma';
- mold.editado = false; moldHist = []; moldSel = null;
+ mold.editado = false; mold.arte = null; moldHist = []; moldSel = null; $('mold-arte-info').hidden = true;
+ moldVcParar();  // outro layout ou outra TV: o arquivo do VectorCraft deixa de valer
  await moldAtualizarPlaca();
+}
+// Arte vetorial pronta no lugar do layout: as formas vêm do arquivo, com as cores dele, cobrindo a área de sangria
+async function moldImportarArte(arquivo) {
+ if (!arquivo) return;
+ moldVcParar();  // arte escolhida à mão: para de acompanhar o arquivo do VectorCraft
+ await guard(async () => {
+  if (!/\.(svg|pdf|ai)$/i.test(arquivo.name)) throw new Error('A arte precisa ser vetorial: SVG, PDF ou AI. Imagens (PNG, JPG) não ficam nítidas na impressão.');
+  if (mold.editado && !confirm('A arte importada substitui o desenho atual, com as edições. Continuar?')) return;
+  toast(`Lendo ${arquivo.name}…`);
+  const r = await moldEnviar(arquivo, `/api/molduras/arte?tv=${encodeURIComponent(JSON.stringify(mold.tv))}`);
+  moldAplicarArte(r);
+ });
+ $('mold-arte-file').value = '';
+}
+function moldAplicarArte(r) {
+ moldGuardar();
+ mold.formas = r.formas; moldOriginal = moldClone(r.formas); mold.arte = {nome: r.nome}; mold.editado = true; moldSel = null;
+ moldRender(); moldMarcarLayout();
+ $('mold-arte-info').hidden = false; $('mold-arte-info').textContent = `Usando a arte ${r.nome}. Escolha um layout acima para voltar aos modelos.`;
+ toast(r.aviso || `Arte aplicada: ${r.formas.length - 1} formas editáveis. Duplo clique numa forma troca a cor.`);
 }
 async function moldAtualizarPlaca() {
  moldPlaca = mold.logo ? await request('/api/molduras/placa', {tv: mold.tv, logo: mold.logo.id, escala: mold.logo.escala, placa: mold.logo.placa}) : null;
 }
-function moldConfirmaPerda() { return !mold.editado || confirm('Isso refaz o desenho a partir do layout e descarta as edições manuais. Continuar?'); }
+function moldConfirmaPerda() { return !mold.editado || confirm(mold.arte ? 'Isso troca a arte importada pelo layout e descarta as edições. Continuar?' : 'Isso refaz o desenho a partir do layout e descarta as edições manuais. Continuar?'); }
 
 // ---------- prévia ----------
 function moldRender() {
@@ -131,7 +152,7 @@ function moldRender() {
  $('mold-size').textContent = `Folha ${moldCm(W)} × ${moldCm(H)} cm`;
  $('mold-stats').textContent = `TV ${tv.polegadas ? tv.polegadas + '" · ' : ''}${moldCm(tv.largura)} × ${moldCm(tv.altura)} cm · moldura ${moldCm(g.moldura.largura)} × ${moldCm(g.moldura.altura)} cm`;
  $('mold-export-info').textContent = mold.cliente ? `${mold.cliente} · ${tv.polegadas ? tv.polegadas + '"' : moldCm(tv.largura) + ' × ' + moldCm(tv.altura) + ' cm'}` : 'Informe o cliente';
- moldAvisos(); moldSyncEdicao(); moldAplicadosLista();
+ moldAvisos(); moldSyncEdicao(); moldAplicadosLista(); moldBarraSync();
  // a faca de corte é só o guia de corte: as etapas de design ficam na folha de impressão
  document.querySelectorAll('.mold-design').forEach(el => { el.hidden = moldView !== 'folha'; });
  $('mold-faca-nota').hidden = moldView === 'folha';
@@ -270,7 +291,7 @@ async function moldMiniaturas() {
   const g = r.geometria, s = g.sangria;
   const mini = moldEl('svg', {viewBox: `${s.x0} ${s.y0} ${s.x1 - s.x0} ${s.y1 - s.y0}`, 'aria-hidden': 'true', 'data-layout': l.id});
   return moldHtml('button', {type: 'button', className: 'mold-layout' + (l.id === mold.layout ? ' is-on' : ''), role: 'radio', ariaChecked: String(l.id === mold.layout),
-   onclick: () => guard(async () => { if (l.id === mold.layout || !moldConfirmaPerda()) return; mold.layout = l.id; await moldGerar(); moldMudou(); moldRender(); moldSyncLogo(); moldMarcarLayout(); })},
+   onclick: () => guard(async () => { if ((l.id === mold.layout && !mold.arte) || !moldConfirmaPerda()) return; mold.layout = l.id; await moldGerar(); moldMudou(); moldRender(); moldSyncLogo(); moldMarcarLayout(); })},
    mini, moldHtml('span', {textContent: l.nome}));
  }));
  moldPintarMiniaturas(r.geometria);
@@ -283,7 +304,7 @@ function moldPintarMiniaturas(g = moldGeo) {
  });
 }
 function moldMarcarLayout() {
- document.querySelectorAll('.mold-layout').forEach(b => { const on = b.querySelector('svg').dataset.layout === mold.layout; b.classList.toggle('is-on', on); b.setAttribute('aria-checked', String(on)); });
+ document.querySelectorAll('.mold-layout').forEach(b => { const on = !mold.arte && b.querySelector('svg').dataset.layout === mold.layout; b.classList.toggle('is-on', on); b.setAttribute('aria-checked', String(on)); });
 }
 
 // ---------- edição das formas ----------
@@ -293,7 +314,7 @@ function moldSyncEdicao() {
  const f = moldSel != null ? mold.formas[moldSel] : null;
  $('mold-edit').hidden = !f;
  $('mold-desfazer').disabled = !moldHist.length; $('mold-restaurar').disabled = !mold.editado;
- if (!f) { $('mold-edit-hint').textContent = 'Clique numa forma da moldura para editar. Arraste uma forma selecionada para movê-la.'; return; }
+ if (!f) { $('mold-edit-hint').textContent = 'Clique numa forma da moldura: a barra de edição aparece sobre ela. Arraste para mover; duplo clique troca a cor ou põe um pattern; Delete apaga.'; return; }
  const fundo = moldSel === 0, padrao = !!f.padrao;
  $('mold-edit-hint').textContent = fundo ? 'Fundo selecionado: troque a cor abaixo.' : padrao ? 'Pattern selecionado: ajuste tamanho, espaçamento e giro no passo 5.'
   : 'Forma selecionada: troque a cor, mude a ordem ou arraste na prévia para mover.';
@@ -332,7 +353,7 @@ function moldDesenharPontos() {
  for (const a of ancoras) {
   const chave = a.x.toFixed(2) + ',' + a.y.toFixed(2); if (vistos.has(chave)) continue; vistos.add(chave);
   const c = moldEl('circle', {cx: a.x, cy: a.y, r, class: 'mold-ponto'});
-  c.addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); c.setPointerCapture(e.pointerId); moldDrag = {tipo: 'ponto', x: a.x, y: a.y, inicio: moldPonto(e), d0: f.d, el: c}; });
+  c.addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); $('mold-svg').setPointerCapture(e.pointerId); const p = moldPonto(e); moldDrag = {tipo: 'ponto', x: a.x, y: a.y, inicio: p, ultimo: p, d0: f.d, el: c}; });
   camada.append(c);
  }
 }
@@ -353,41 +374,50 @@ function moldMoverAncora(d, ax, ay, dx, dy) {
 function moldEventosPrevia() {
  const svg = $('mold-svg');
  svg.addEventListener('pointerdown', e => {
+  if (e.button !== 0) return;
   const alvo = e.target.closest('.mold-forma');
   if (!alvo) { if (e.target.closest('.mold-janela') || e.target === svg || e.target.classList.contains('mold-papel')) { if (moldSel != null) moldSelecionar(null); } return; }
   const i = Number(alvo.dataset.i);
-  if (moldSel !== i) { moldSelecionar(i); return; }
+  // um só gesto: clicar seleciona e, se arrastar, já move (sem precisar clicar duas vezes)
+  if (moldSel !== i) moldSelecionar(i);
   if (i === 0 || mold.formas[i].padrao) return;
+  e.preventDefault();  // sem isso o navegador pode começar um arraste próprio e cancelar o nosso no meio
   svg.setPointerCapture(e.pointerId);
-  moldDrag = {tipo: 'forma', inicio: moldPonto(e), d0: mold.formas[i].d, el: alvo, moveu: false};
+  const el = document.querySelector(`#mold-formas [data-i="${i}"]`), inicio = moldPonto(e);
+  moldDrag = {tipo: 'forma', inicio, ultimo: inicio, d0: mold.formas[i].d, el, moveu: false};
  });
  svg.addEventListener('pointermove', e => {
   if (!moldDrag) return;
   const p = moldPonto(e), dx = p.x - moldDrag.inicio.x, dy = p.y - moldDrag.inicio.y;
+  moldDrag.ultimo = p;
   if (moldDrag.tipo === 'forma') {
    if (Math.hypot(dx, dy) > .15) moldDrag.moveu = true;
-   if (moldDrag.moveu) moldDrag.el.setAttribute('d', moldMover(moldDrag.d0, dx, dy));
+   if (moldDrag.moveu) { moldDrag.el.setAttribute('d', moldMover(moldDrag.d0, dx, dy)); moldBarra.hidden = true; moldPop.hidden = true; }
   } else {
    moldDrag.el.setAttribute('cx', moldDrag.x + dx); moldDrag.el.setAttribute('cy', moldDrag.y + dy);
    document.querySelector(`#mold-formas [data-i="${moldSel}"]`)?.setAttribute('d', moldMoverAncora(moldDrag.d0, moldDrag.x, moldDrag.y, dx, dy));
   }
  });
- const soltar = e => {
+ // Fecha o arraste com a última posição vista no pointermove, nunca com a do evento final: num cancelamento o
+ // navegador manda (0, 0) e a forma era jogada para fora da folha (parecia ter sido apagada).
+ const soltar = cancelou => () => {
   if (!moldDrag) return;
-  const p = moldPonto(e), dx = p.x - moldDrag.inicio.x, dy = p.y - moldDrag.inicio.y, d = moldDrag;
-  moldDrag = null;
+  const d = moldDrag; moldDrag = null;
+  if (cancelou) { moldRender(); return; }  // devolve a forma ao lugar
+  const dx = d.ultimo.x - d.inicio.x, dy = d.ultimo.y - d.inicio.y;
   if (d.tipo === 'forma' && !d.moveu) return;
   moldGuardar();
   mold.formas[moldSel].d = d.tipo === 'forma' ? moldMover(d.d0, dx, dy) : moldMoverAncora(d.d0, d.x, d.y, dx, dy);
   moldRender();
  };
- svg.addEventListener('pointerup', soltar); svg.addEventListener('pointercancel', soltar);
+ svg.addEventListener('pointerup', soltar(false)); svg.addEventListener('pointercancel', soltar(true));
+ svg.addEventListener('lostpointercapture', soltar(false));
 }
 
 // ---------- logo e referências ----------
 async function moldEnviar(arquivo, rota) {
  if (arquivo.size > 100 * 1024 * 1024) throw new Error('Limite de 100 MB por arquivo.');
- const r = await fetch(`${rota}?name=${encodeURIComponent(arquivo.name)}`, {method: 'POST', headers: {'X-Indoor': '1', 'Content-Type': 'application/octet-stream'}, body: arquivo});
+ const r = await fetch(`${rota}${rota.includes('?') ? '&' : '?'}name=${encodeURIComponent(arquivo.name)}`, {method: 'POST', headers: {'X-Indoor': '1', 'Content-Type': 'application/octet-stream'}, body: arquivo});
  const data = await r.json(); if (!r.ok) throw new Error(data.error); return data;
 }
 async function moldLogoEnviar(arquivo) {
@@ -518,7 +548,7 @@ function moldEventos() {
  document.addEventListener('keydown', e => {
   if ($('molduras').hidden || $('mold-editor').hidden || e.target.closest('input,select,textarea') || document.querySelector('dialog[open]')) return;
   if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') { e.preventDefault(); $('mold-desfazer').click(); }
-  else if ((e.key === 'Delete' || e.key === 'Backspace') && moldSel > 0) { e.preventDefault(); $('mold-apagar').click(); }
+  else if (e.key === 'Delete' && moldSel > 0) { e.preventDefault(); $('mold-apagar').click(); }  // só Delete apaga (Backspace não)
   else if (e.key === 'Escape' && moldSel != null) moldSelecionar(null);
  });
  const caixa = $('mold-logo-box');
@@ -697,6 +727,8 @@ function moldPadraoImagem(f, i) {
  return pat;
 }
 $('mold-padrao-importar').onclick = () => $('mold-padrao-file').click();
+$('mold-arte-importar').onclick = () => $('mold-arte-file').click();
+$('mold-arte-file').onchange = () => moldImportarArte($('mold-arte-file').files[0]);
 $('mold-padrao-file').onchange = () => moldImportarPadrao($('mold-padrao-file').files[0]);
 $('mold-padrao-aplicar').onclick = () => guard(moldAplicarPadrao);
 $('mold-padrao-remover').onclick = moldRemoverPadrao;
@@ -720,5 +752,230 @@ $('mold-padrao-cor-livre').addEventListener('change', () => {
  moldPadraoDefinirCor($('mold-padrao-cor-livre').value.toUpperCase(), false);
 });
 for (const id of ['tamanho', 'espaco', 'giro', 'opacidade']) $('mold-padrao-' + id).oninput = moldPadraoRotulos;
+
+// ---------- barra flutuante e duplo clique ----------
+// A edição da forma selecionada fica na própria prévia, logo acima dela (antes ficava só no passo 6, no fim do painel).
+// Duplo clique numa forma abre a janelinha de Cor / Pattern. Apagar só pelo botão ou pela tecla Delete.
+const moldShell = document.querySelector('.mold-shell');
+const moldBarra = moldHtml('div', {id: 'mold-barra', className: 'mold-barra', role: 'toolbar', ariaLabel: 'Editar a forma selecionada', hidden: true});
+const moldBotaoBarra = (acao, rotulo, ic, titulo) => moldHtml('button', {type: 'button', className: 'mold-barra-btn', title: titulo || rotulo, ariaLabel: titulo || rotulo,
+ innerHTML: icon(ic) + `<span>${rotulo}</span>`, onclick: () => moldBarraAcao(acao)});
+const moldBotoes = {
+ cor: moldBotaoBarra('cor', 'Cor', 'palette', 'Trocar a cor (ou dê duplo clique na forma)'),
+ pattern: moldBotaoBarra('pattern', 'Pattern', 'layout-grid', 'Colocar um pattern dentro da forma'),
+ frente: moldBotaoBarra('frente', 'Frente', 'arrow-up-to-line', 'Trazer para frente'),
+ tras: moldBotaoBarra('tras', 'Trás', 'arrow-down-to-line', 'Enviar para trás'),
+ duplicar: moldBotaoBarra('duplicar', 'Duplicar', 'copy'),
+ apagar: moldBotaoBarra('apagar', 'Apagar', 'trash', 'Apagar a forma (tecla Delete)'),
+};
+moldBarra.append(...Object.values(moldBotoes));
+const moldPop = moldHtml('div', {id: 'mold-pop', className: 'mold-pop', role: 'dialog', ariaLabel: 'Cor ou pattern da forma', hidden: true});
+moldShell.append(moldBarra, moldPop);
+let moldPopAba = 'cor';
+
+function moldBarraSync() {
+ const f = moldSel != null ? mold?.formas[moldSel] : null;
+ const el = f && moldView === 'folha' && !moldDrag ? document.querySelector(`#mold-formas [data-i="${moldSel}"]`) : null;
+ if (!el) { moldBarra.hidden = true; moldPop.hidden = true; return; }
+ const fundo = moldSel === 0, padrao = !!f.padrao;
+ const mostra = {cor: !f.imagem, pattern: true, frente: !fundo, tras: !fundo, duplicar: !fundo && !padrao, apagar: !fundo};
+ for (const [k, b] of Object.entries(moldBotoes)) b.hidden = !mostra[k];
+ moldBotoes.pattern.querySelector('span').textContent = padrao ? 'Trocar pattern' : 'Pattern';
+ moldBarra.hidden = false;
+ // acima da forma (ou abaixo, se não couber), sempre dentro da área da prévia
+ const caixa = moldShell.getBoundingClientRect(), r = el.getBoundingClientRect(), bw = moldBarra.offsetWidth, bh = moldBarra.offsetHeight;
+ const topoForma = Math.max(r.top, caixa.top), baseForma = Math.min(r.bottom, caixa.bottom);
+ let top = fundo ? 12 : topoForma - caixa.top - bh - 10;
+ if (top < 8) top = Math.min(baseForma - caixa.top + 10, caixa.height - bh - 8);
+ const meio = (Math.max(r.left, caixa.left) + Math.min(r.right, caixa.right)) / 2 - caixa.left;
+ moldBarra.style.top = Math.max(8, top) + 'px';
+ moldBarra.style.left = Math.min(Math.max(8, meio - bw / 2), caixa.width - bw - 8) + 'px';
+ if (!moldPop.hidden) moldPopMontar();
+}
+function moldBarraAcao(acao) {
+ if (acao === 'cor' || acao === 'pattern') return moldPopAbrir(acao, moldBarra.getBoundingClientRect());
+ moldPop.hidden = true;
+ $({frente: 'mold-frente', tras: 'mold-tras', duplicar: 'mold-duplicar', apagar: 'mold-apagar'}[acao]).click();
+ if (acao === 'apagar') toast('Forma apagada. Para desfazer: Ctrl + Z.');
+}
+
+// Janelinha de Cor / Pattern, perto de onde a pessoa clicou
+function moldPopAbrir(aba, perto) {
+ moldPopAba = aba; moldPop.hidden = false; moldPopMontar();
+ const caixa = moldShell.getBoundingClientRect(), pw = moldPop.offsetWidth, ph = moldPop.offsetHeight;
+ const x = (perto.left ?? perto.x) - caixa.left, y = (perto.bottom ?? perto.y) - caixa.top + 8;
+ moldPop.style.left = Math.min(Math.max(8, x), caixa.width - pw - 8) + 'px';
+ moldPop.style.top = Math.min(Math.max(8, y), caixa.height - ph - 8) + 'px';
+}
+function moldPopMontar() {
+ const f = moldSel != null ? mold.formas[moldSel] : null; if (!f) { moldPop.hidden = true; return; }
+ if (f.imagem) moldPopAba = 'pattern';
+ const aba = (id, rotulo) => moldHtml('button', {type: 'button', role: 'tab', className: 'mold-pop-aba', textContent: rotulo, ariaSelected: String(moldPopAba === id),
+  disabled: id === 'cor' && !!f.imagem, onclick: () => { moldPopAba = id; moldPopMontar(); }});
+ const fechar = moldHtml('button', {type: 'button', className: 'mold-pop-fechar', ariaLabel: 'Fechar', innerHTML: icon('x'), onclick: () => { moldPop.hidden = true; }});
+ const corpo = moldHtml('div', {className: 'mold-pop-corpo', role: 'tabpanel'});
+ if (moldPopAba === 'cor') {
+  const atual = f.cor;
+  const livre = moldHtml('input', {type: 'color', value: moldCor(atual).toLowerCase(), ariaLabel: 'Outra cor'});
+  livre.addEventListener('change', () => moldPopCor(livre.value.toUpperCase()));
+  corpo.append(moldHtml('p', {className: 'mold-pop-dica', textContent: f.padrao ? 'Cor do pattern' : moldSel === 0 ? 'Cor do fundo' : 'Cor desta forma'}),
+   moldHtml('div', {className: 'mold-swatches'}, ...moldSwatches(atual, c => moldPopCor(c))),
+   moldHtml('label', {className: 'mold-cor-input mold-pop-livre'}, moldHtml('span', {className: 'mold-papel-cor', style: `--sw:${moldCor(atual)}`}, livre), 'Outra cor'));
+ } else {
+  const seg = moldCat.segmentos.find(s => s.id === mold.segmento);
+  const prontos = (moldCat.padroes.porSegmento[mold.segmento] || []).map(k => ({fonte: 'pronto:' + k, chave: k, tipo: 'pronto', nome: moldCat.padroes.modulos[k].nome}));
+  const lista = [...prontos, ...moldPadroesProprios];
+  corpo.append(moldHtml('p', {className: 'mold-pop-dica', textContent: !lista.length ? `Nenhum pattern pronto para ${seg?.nome.toLowerCase() || 'este ramo'}: importe um no passo 5.`
+    : moldSel === 0 ? 'Pattern no fundo da moldura' : f.padrao ? 'Trocar o pattern' : 'Pattern dentro desta forma'}),
+   moldHtml('div', {className: 'mold-padroes mold-pop-padroes'}, ...lista.map(p => moldHtml('button', {type: 'button', className: 'mold-padrao', title: p.nome, ariaLabel: p.nome,
+    onclick: () => moldPopPattern(p)}, moldPadraoPrevia(p)))),
+   moldHtml('button', {type: 'button', className: 'text-button', textContent: 'Mais ajustes: tamanho, giro, importar…', onclick: () => {
+    moldPop.hidden = true; const passo = $('mold-padroes').closest('details'); passo.open = true; passo.scrollIntoView({behavior: 'smooth', block: 'start'});
+   }}));
+ }
+ moldPop.replaceChildren(moldHtml('div', {className: 'mold-pop-topo', role: 'tablist'}, aba('cor', 'Cor'), aba('pattern', 'Pattern'), fechar), corpo);
+}
+function moldPopCor(c) {
+ const f = mold.formas[moldSel];
+ if (f.padrao) moldPadraoDefinirCor(c);
+ else { moldGuardar(); f.cor = c; moldRender(); }
+}
+async function moldPopPattern(p) {
+ const f = mold.formas[moldSel];
+ moldPadrao = p;
+ if (p.tipo === 'vetor' && p.grupos.length > 1) moldPadraoCor = 'original'; else if (moldPadraoCor === 'original') moldPadraoCor = 'secundaria';
+ if (!f.padrao) $('mold-padrao-alvo').value = moldSel === 0 ? 'fundo' : 'forma';
+ moldPop.hidden = true;
+ await guard(moldAplicarPadrao);
+}
+
+// Duplo clique contado aqui: o primeiro clique redesenha a prévia (seleção) e o navegador perde o dblclick nativo
+let moldUltimoToque = null;
+$('mold-svg').addEventListener('pointerdown', e => {
+ const alvo = e.target.closest('.mold-forma'); if (!alvo || e.button !== 0) { moldUltimoToque = null; return; }
+ const i = Number(alvo.dataset.i), agora = performance.now(), u = moldUltimoToque;
+ moldUltimoToque = {i, t: agora, x: e.clientX, y: e.clientY};
+ if (u && u.i === i && agora - u.t < 450 && Math.hypot(e.clientX - u.x, e.clientY - u.y) < 6) {
+  moldUltimoToque = null;
+  setTimeout(() => moldPopAbrir(mold.formas[i]?.imagem ? 'pattern' : 'cor', {x: e.clientX, y: e.clientY}), 0);
+ }
+});
+$('mold-svg').addEventListener('zoom', moldBarraSync);
+window.addEventListener('resize', moldBarraSync);
+document.addEventListener('pointerdown', e => { if (!moldPop.hidden && !moldPop.contains(e.target) && !moldBarra.contains(e.target) && !e.target.closest('#mold-svg')) moldPop.hidden = true; });
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && !moldPop.hidden) { e.stopImmediatePropagation(); moldPop.hidden = true; } }, true);
+
+// ---------- criar a arte em outro programa ----------
+// VectorCraft: ida e volta por arquivo. O modelo tem a folha nas medidas desta moldura, o desenho atual e as guias em
+// magenta (a volta as ignora); como a página tem a proporção da folha, cada forma volta exatamente onde foi desenhada.
+// Claude (claude.ai, pela assinatura): o texto copiado traz as mesmas medidas; o SVG que ele entrega entra por "Importar arte".
+const MOLD_VC_KEY = 'indoor-vectorcraft';  // o mesmo da Vetorização M6S: quem já confirmou lá não é perguntado de novo
+function moldVcMostrar() {
+ let tem = false; try { tem = localStorage.getItem(MOLD_VC_KEY) === 'sim'; } catch {}
+ $('mold-vc-need').hidden = tem; $('mold-vc-steps').hidden = !tem; $('mold-vc-foot').hidden = !tem;
+ $('mold-vc-heading').textContent = tem ? 'Editar no VectorCraft' : 'Você tem o VectorCraft?';
+}
+$('mold-vc-abrir').onclick = () => {
+ const f = moldGeo.folha, tv = mold.tv;
+ $('mold-vc-medidas').textContent = `Um SVG com a folha de ${moldCm(f.largura)} × ${moldCm(f.altura)} cm (TV ${tv.polegadas ? tv.polegadas + '"' : moldCm(tv.largura) + ' × ' + moldCm(tv.altura) + ' cm'}), o desenho atual na camada "Arte" e as guias em magenta: linha de corte, tela da TV, logo da Indoor e logo do cliente.`;
+ $('mold-vc-salvo').textContent = ''; moldVcMostrar(); $('mold-vc-dialog').showModal();
+};
+$('mold-vc-have').onclick = () => { try { localStorage.setItem(MOLD_VC_KEY, 'sim'); } catch {} moldVcMostrar(); };
+$('mold-vc-baixar').onclick = () => guard(async () => {
+ const r = await request('/api/molduras/modelo', {tv: mold.tv, cores: mold.cores, formas: mold.formas});
+ const tv = mold.tv, nome = `Moldura ${mold.cliente || 'nova'} - ${tv.polegadas ? tv.polegadas + ' polegadas' : moldCm(tv.largura) + 'x' + moldCm(tv.altura) + ' cm'} - modelo.svg`;
+ const url = URL.createObjectURL(new Blob([r.svg], {type: 'image/svg+xml'}));
+ const a = moldHtml('a', {href: url, download: nome}); document.body.append(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 1000);
+ $('mold-vc-salvo').textContent = `Baixado: ${nome} (na pasta de downloads do navegador).` + (r.fora ? ` ${r.fora} pattern${r.fora > 1 ? 's' : ''} de imagem não ${r.fora > 1 ? 'foram' : 'foi'} junto (só vetores).` : '');
+});
+// a volta usa o mesmo caminho do "Importar arte"; fecha a janela quando o arquivo for escolhido
+$('mold-arte-file').addEventListener('change', () => { if ($('mold-vc-dialog').open) $('mold-vc-dialog').close(); });
+
+$('mold-claude-copiar').onclick = () => guard(async () => {
+ const r = await request('/api/molduras/instrucoes', {tv: mold.tv, cores: mold.cores, segmento: mold.segmento});
+ try { await navigator.clipboard.writeText(r.texto); }
+ catch {  // navegador sem permissão de área de transferência: copia pelo jeito antigo
+  const t = moldHtml('textarea', {value: r.texto}); document.body.append(t); t.select(); document.execCommand('copy'); t.remove();
+ }
+ toast('Instruções copiadas. Cole no claude.ai, troque a última linha pela arte que você quer, baixe o moldura.svg e use "Importar arte".');
+});
+
+// ---------- VectorCraft: atualização automática (Chrome e Edge) ----------
+// Com a File System Access API, a pessoa escolhe o arquivo salvo uma vez e o navegador o acompanha: a cada Ctrl + S no
+// VectorCraft, a moldura se atualiza sozinha (Ctrl + Z desfaz). Quem acompanha é o navegador, no computador da
+// pessoa: funciona também no site oficial. Firefox e Safari não têm essa API: lá a volta é manual, com aviso.
+const MOLD_VC_AUTO = 'showOpenFilePicker' in window;
+let moldVcSync = null, moldVcTimer = 0;
+const moldVcBarra = moldHtml('div', {id: 'mold-vc-sync', className: 'mold-vc-sync', hidden: true, role: 'status'});
+moldShell.append(moldVcBarra);
+
+function moldVcParar() {
+ clearInterval(moldVcTimer); moldVcTimer = 0; moldVcSync = null; moldVcBarra.hidden = true;
+}
+function moldVcBarraMostrar(texto, botoes = []) {
+ moldVcBarra.replaceChildren(moldHtml('span', {className: 'mold-vc-sync-ponto', ariaHidden: 'true'}), moldHtml('span', {textContent: texto}), ...botoes,
+  moldHtml('button', {type: 'button', className: 'text-button', textContent: 'Parar', onclick: () => { moldVcParar(); toast('A moldura não acompanha mais o arquivo do VectorCraft.'); }}));
+ moldVcBarra.hidden = false;
+}
+const moldVcAcompanhando = () => moldVcBarraMostrar(`Acompanhando ${moldVcSync.nome}: salve no VectorCraft e a moldura se atualiza.`);
+
+async function moldVcTrazer(arquivo, primeira) {
+ const r = await moldEnviar(arquivo, `/api/molduras/arte?tv=${encodeURIComponent(JSON.stringify(mold.tv))}`);
+ moldAplicarArte(r);
+ if (!primeira) toast(r.aviso || `Moldura atualizada com o que foi salvo no VectorCraft (${new Date().toLocaleTimeString('pt-BR', {hour: '2-digit', minute: '2-digit', second: '2-digit'})}). Ctrl + Z desfaz.`);
+ moldVcSync.formas = JSON.stringify(mold.formas);  // para saber se depois a moldura foi editada aqui no sistema
+}
+async function moldVcConferir(forcar) {
+ const s = moldVcSync; if (!s || busy || $('molduras').hidden) return;
+ let arquivo;
+ try { arquivo = await s.handle.getFile(); }
+ catch { moldVcParar(); toast('O arquivo do VectorCraft não está mais acessível (foi movido ou apagado). Escolha-o de novo.'); return; }
+ if (!forcar && arquivo.lastModified === s.visto) return;
+ // editaram aqui depois da última atualização: pergunta antes de passar por cima (sem janelas repetidas a cada 2 s)
+ if (!forcar && JSON.stringify(mold.formas) !== s.formas) {
+  if (s.pendente !== arquivo.lastModified) {
+   s.pendente = arquivo.lastModified;
+   moldVcBarraMostrar(`${s.nome} foi salvo no VectorCraft, mas a moldura também foi editada aqui.`,
+    [moldHtml('button', {type: 'button', className: 'text-button', textContent: 'Trazer do VectorCraft', onclick: () => moldVcConferir(true)})]);
+  }
+  return;
+ }
+ s.visto = arquivo.lastModified; s.pendente = null;
+ // arquivo no meio da gravação: tenta de novo na próxima volta; só avisa se continuar falhando
+ await guard(async () => {
+  try { await moldVcTrazer(arquivo, false); s.falhas = 0; moldVcAcompanhando(); }
+  catch (e) { if (++s.falhas >= 3) throw e; s.visto = null; }
+ });
+}
+async function moldVcEscolher() {
+ if (!MOLD_VC_AUTO) { $('mold-arte-file').click(); return; }
+ let handle;
+ try {
+  [handle] = await window.showOpenFilePicker({id: 'molduras-vectorcraft', types: [{description: 'Arte vetorial (SVG, PDF ou AI)',
+   accept: {'image/svg+xml': ['.svg'], 'application/pdf': ['.pdf', '.ai']}}]});
+ } catch { return; }  // a pessoa cancelou
+ const arquivo = await handle.getFile();
+ if (!/\.(svg|pdf|ai)$/i.test(arquivo.name)) { toast('Escolha o arquivo salvo como SVG, PDF ou AI.'); return; }
+ if (mold.editado && !confirm('O arquivo do VectorCraft substitui o desenho atual, com as edições. Continuar?')) return;
+ $('mold-vc-dialog').close();
+ moldVcParar();
+ moldVcSync = {handle, nome: arquivo.name, visto: arquivo.lastModified, falhas: 0};
+ await guard(async () => {
+  try { toast(`Lendo ${arquivo.name}…`); await moldVcTrazer(arquivo, true); }
+  catch (e) { moldVcParar(); throw e; }
+ });
+ if (!moldVcSync) return;
+ moldVcAcompanhando();
+ moldVcTimer = setInterval(moldVcConferir, 2000);
+ toast(`Pronto. A cada vez que você salvar ${arquivo.name} no VectorCraft (Ctrl + S), a moldura se atualiza aqui.`);
+}
+$('mold-vc-voltar').onclick = moldVcEscolher;
+// ao voltar para a aba depois de salvar no VectorCraft, confere na hora (sem esperar a próxima volta)
+document.addEventListener('visibilitychange', () => { if (!document.hidden && moldVcSync) moldVcConferir(); });
+// passo 3 da janela: o que acontece depois depende do navegador
+$('mold-vc-auto').textContent = MOLD_VC_AUTO
+ ? 'Salve como SVG, PDF ou AI e escolha o arquivo aqui uma vez. Depois, a cada vez que você salvar no VectorCraft (Ctrl + S), a moldura se atualiza sozinha.'
+ : 'Salve como SVG, PDF ou AI e escolha o arquivo aqui. Cada forma volta exatamente onde foi desenhada.';
+$('mold-vc-manual').hidden = MOLD_VC_AUTO;
 
 moldEventos();

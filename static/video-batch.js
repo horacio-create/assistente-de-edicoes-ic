@@ -58,6 +58,7 @@ function appendImportedVideo(media,mode){
 async function enqueueAllTimelines(){
  ensureTimelines();const candidates=timelines().filter(t=>t.composition.clips.length);
  if(!candidates.length)throw new Error('Adicione imagens ou vídeos às timelines antes de colocá-las na fila.');
+ if(!checkGaps(candidates.map(t=>({name:t.name,composition:t.composition}))))return null;
  const queue=structuredClone(exportQueue());let number=Math.max(0,...queue.map(q=>q.number));
  const add=candidates.filter(t=>!queue.some(q=>q.timelineId===t.id));
  if(queue.length+add.length>50||number+add.length>999)throw new Error('A fila não tem espaço para todas as timelines. Exporte ou remova itens antes de continuar.');
@@ -76,7 +77,7 @@ $('queue-add').after(queueAllButton);
 const batchSyncQueueControls=syncQueueControls;
 syncQueueControls=function(){batchSyncQueueControls();queueAllButton.disabled=busy||editorKind!=='video'||!timelines().some(t=>t.composition.clips.length);};
 syncQueueControls();
-queueAllButton.onclick=()=>guard(async()=>{const count=await enqueueAllTimelines();toast(`${count} timeline(s) preparada(s) na fila.`);});
+queueAllButton.onclick=()=>guard(async()=>{const count=await enqueueAllTimelines();if(count===null)return;toast(`${count} timeline(s) preparada(s) na fila.`);});
 
 const originalNamesLabel=document.createElement('label');originalNamesLabel.className='check';originalNamesLabel.id='original-video-names-label';originalNamesLabel.hidden=true;
 originalNamesLabel.innerHTML='<input id="original-video-names" type="checkbox"> Manter os nomes originais dos arquivos';

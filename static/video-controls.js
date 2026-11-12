@@ -106,7 +106,7 @@ function syncEditorKind() {
   $('files').accept = video ? '.mp4,.mov,.m4v,.mkv,.avi,.webm,.wmv,.mpg,.mpeg' : '.jpg,.jpeg,.png,.webp,.bmp,.tif,.tiff,.pdf';
   $('empty').setAttribute('aria-label', video ? 'Adicionar vídeos' : 'Adicionar imagens ou PDF');
   $('empty').querySelector('.step-label').textContent = video ? 'Adicionar vídeos' : 'Adicionar imagens ou PDF';
-  $('empty').querySelector('h2').textContent = video ? 'Traga seu primeiro vídeo.' : 'Traga sua primeira arte.';
+  $('empty').querySelector('h2').textContent = video ? 'Traga seu primeiro vídeo' : 'Traga sua primeira arte';
   $('empty').querySelector('p:not(.help)').textContent = video ? 'Arraste vídeos para esta área ou clique para escolher.' : 'Arraste imagens ou PDFs para esta área. Cada página do PDF vira uma imagem separada.';
   $('add-files').textContent = video ? 'Escolher vídeos' : 'Escolher imagens';
   const formats = video ? 'MP4, MOV, MKV, AVI, WebM e outros vídeos' : 'JPG, PNG, WebP, BMP, TIFF e PDF';

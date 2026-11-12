@@ -135,6 +135,39 @@ class PatternTests(unittest.TestCase):
         x0, y0, x1, y1 = P.geometria_d(r[0]['d']).bounds
         self.assertTrue(x0 >= .99 and y0 >= 55.99 and x1 <= 40.01 and y1 <= 66.01)
 
+    def test_arte_pronta_substitui_o_layout_cobre_a_sangria_e_vira_pdf(self):
+        from shapely.geometry import box
+        g = G.geometria(88, 49)
+        svg = (b'<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="660"><rect width="1000" height="660" fill="#1a1a39"/>'
+               b'<circle cx="120" cy="120" r="90" fill="#fc4d22"/><circle cx="120" cy="120" r="45" fill="#fecfc1"/>'
+               b'<line x1="0" y1="400" x2="1000" y2="420" stroke="#ffffff" stroke-width="4"/></svg>')
+        formas, aviso = P.importar_arte(svg, '.svg', g)
+        self.assertEqual([f['cor'] for f in formas], ['#FFFFFF', '#1A1A39', '#FC4D22', '#FECFC1'])  # fundo + ordem de pintura
+        self.assertIn('Linhas sem preenchimento', aviso)
+        s = g['sangria']
+        self.assertTrue(P.geometria_d(formas[1]['d']).buffer(1e-3).contains(box(s['x0'], s['y0'], s['x1'], s['y1'])))
+        M.validar_formas(formas, L.PALETAS['academias'])
+        proj = {'cliente': 'Teste', 'tv': {'polegadas': 40, 'largura': 88, 'altura': 49}, 'quantidade': 1, 'material': 'PS',
+                'cores': L.PALETAS['academias'], 'formas': formas, 'logoIC': 'auto'}
+        ops = operadores_cor(M.folha_pdf(proj, g))
+        self.assertGreater(ops['k'], 3); self.assertEqual(ops['rg'], 0)  # cores da arte convertidas para CMYK
+        with self.assertRaisesRegex(ValueError, 'vetorial'): P.importar_arte(logo_png(), '.png', g)
+        with self.assertRaisesRegex(ValueError, 'formas preenchidas'):
+            P.importar_arte(b'<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10"><line x1="0" y1="0" x2="10" y2="10" stroke="#000"/></svg>', '.svg', g)
+
+    def test_modelo_do_vectorcraft_vai_e_volta_no_lugar(self):
+        g = G.geometria(88, 49); seg = L.catalogo()[0]
+        formas = L.gerar(g, seg['layouts'][0]['id'])['formas']
+        svg, fora = P.modelo_svg(g, formas, seg['paleta'])
+        self.assertEqual(fora, 0); self.assertIn('width="101.5cm"', svg); self.assertIn(P.GUIA, svg)
+        volta, aviso = P.importar_arte(svg.encode(), '.svg', g)
+        self.assertIsNone(aviso)  # as guias magenta não contam como linhas perdidas
+        self.assertEqual(len(volta), len(formas)); self.assertEqual(volta[0]['cor'], M.cor_de(formas[0]['cor'], seg['paleta']))
+        for a, b in zip(formas[1:], volta[1:]):
+            ga, gb = P.geometria_d(a['d'], a.get('regra') == 'evenodd'), P.geometria_d(b['d'])
+            self.assertLess(ga.symmetric_difference(gb).area, .05 * max(ga.area, 1e-3) + .05)
+        with self.assertRaises(ValueError): P.modelo_svg(g, [{'d': 'M0 0 L1 1 Z" onload="x', 'cor': 'clara'}], seg['paleta'])
+
     def test_importar_vetor_por_cor_e_imagem(self):
         svg = (b'<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"><circle cx="50" cy="50" r="40" fill="#c0392b"/>'
                b'<rect x="35" y="35" width="30" height="30" fill="#f1c40f"/></svg>')
@@ -229,6 +262,21 @@ class ApiTests(unittest.TestCase):
         with self.assertRaises(ValueError): api('/api/molduras/logo', query={'name': ['x.exe']}, raw=logo_png())
         with self.assertRaises(ValueError): api('/api/molduras/projeto', query={'id': ['../../etc']}, method='GET')
         with self.assertRaises(ValueError): api('/api/molduras/gerar', {'tv': {'largura': 88, 'altura': 49}, 'layouts': []})
+
+
+class InstrucoesClaudeTests(unittest.TestCase):
+    def test_instrucoes_trazem_as_medidas_e_a_arte_do_claude_volta_no_lugar(self):
+        from modules.molduras_instrucoes import instrucoes
+        g = G.geometria(88, 49); seg = L.catalogo()[0]
+        texto = instrucoes(g, seg['paleta'], seg['id'])
+        self.assertIn('viewBox="0 0 101.5 68"', texto); self.assertIn(seg['paleta']['principal'], texto)
+        # o SVG que o Claude entrega (nas medidas pedidas) entra por "Importar arte" sem reenquadrar
+        svg = (b'<svg xmlns="http://www.w3.org/2000/svg" width="101.5cm" height="68cm" viewBox="0 0 101.5 68">'
+               b'<rect width="101.5" height="68" fill="#FFF4E0"/><circle cx="8" cy="8" r="6" fill="#E8312F"/></svg>')
+        formas, aviso = P.importar_arte(svg, '.svg', g)
+        self.assertEqual([f['cor'] for f in formas], ['#FFF4E0', '#E8312F'])
+        c = P.geometria_d(formas[1]['d']).centroid
+        self.assertAlmostEqual(c.x, 8, delta=.1); self.assertAlmostEqual(c.y, 8, delta=.1)
 
 
 if __name__ == '__main__':

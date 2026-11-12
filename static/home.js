@@ -12,8 +12,8 @@ const HOME_TOOLS = {
  estampas: {name: 'Estampas de camisa', icon: 'shirt', view: 'estampas', text: 'Prepara a estampa para o DTF em cada tamanho de camisa, dentro da área segura, com folha de conferência.'}
 };
 const HOME_BRAND = {
- indoor: {eyebrow: 'Indoor Channel · Assistente de Edições', text: 'Prepare artes, vídeos, ofertas e logos para as telas da Indoor Channel, direto no navegador. Escolha uma ferramenta abaixo ou veja um tutorial antes de começar.'},
- eap: {eyebrow: 'EAP · Assistente de edições', text: 'Prepare as logos dos clientes da EAP, os arquivos de gravação a laser do microfone M6S e as estampas de camisa, direto no navegador. Escolha uma ferramenta abaixo ou veja um tutorial antes de começar.'}
+ indoor: {eyebrow: 'Indoor Channel · Assistente de Edições', title: 'Artes, vídeos e ofertas para as telas da Indoor Channel', text: 'Tudo direto no navegador. Escolha uma ferramenta abaixo ou veja um tutorial antes de começar.'},
+ eap: {eyebrow: 'EAP · Assistente de edições', title: 'Logos, gravação do M6S e estampas para os clientes da EAP', text: 'Tudo direto no navegador. Escolha uma ferramenta abaixo ou veja um tutorial antes de começar.'}
 };
 const HOME_PHOTO_MS = 6000, HOME_FADE_MS = 1200;  // cada foto fica 6 s no topo; a troca leva 1,2 s
 let homeTimer = null;
@@ -37,16 +37,16 @@ async function loadHome() {
 }
 
 function homePage(data) {
- const brand = HOME_BRAND[info.brand] || HOME_BRAND.indoor, first = (info.user?.name || '').trim().split(/\s+/)[0];
+ const brand = HOME_BRAND[info.brand] || HOME_BRAND.indoor;
  const photos = homeEl('div', {className: 'home-photos', ariaHidden: 'true'}, ...data.fotos.map((f, i) => homeEl('img', {className: 'home-photo' + (i ? '' : ' is-active'), src: f.url, alt: '', decoding: 'async'})));
  startHomePhotos(photos);
  const tutorials = data.tutoriais.filter(t => HOME_TOOLS[t.tool]);
  const hero = homeEl('section', {className: 'home-hero', ariaLabelledby: 'home-welcome'}, photos,
   homeEl('div', {className: 'home-hero-copy'},
    homeEl('span', {className: 'home-eyebrow', textContent: brand.eyebrow}),
-   homeEl('h1', {id: 'home-welcome', textContent: first ? `Bem-vindo, ${first}` : 'Bem-vindo'}),
+   homeEl('h1', {id: 'home-welcome', textContent: brand.title}),
    homeEl('p', {textContent: brand.text}),
-   tutorials.length && homeEl('a', {className: 'home-cta', href: '#home-tutorials', onclick: e => { e.preventDefault(); $('home-tutorials').scrollIntoView({behavior: 'smooth'}); }}, 'Ver tutoriais', homeIcon('arrow-right', 'home-cta-icon'))),
+   tutorials.length > 0 && homeEl('a', {className: 'home-cta', href: '#home-tutorials', onclick: e => { e.preventDefault(); $('home-tutorials').scrollIntoView({behavior: 'smooth'}); }}, 'Ver tutoriais', homeIcon('arrow-right', 'home-cta-icon'))),
   data.editar && homeEl('button', {className: 'home-manage', type: 'button', onclick: () => { homeManaging = true; loadHome().catch(e => toast(e.message)); }}, homeIcon('pencil', 'home-manage-icon'), 'Conteúdo da Home'));
  const cards = homeTools().map(id => {
   const t = HOME_TOOLS[id];
