@@ -1,5 +1,9 @@
 # Histórico de versões
 
+## 1.16.4 — Template Ofertas para Encher o Seu Carrinho — 16/11/2026
+
+- Novo template "Ofertas para Encher o Seu Carrinho" (Rede Uniforça), com a data editável abaixo de "Ofertas Válidas para os dias" (dias e mês em negrito, como na arte).
+
 ## 1.16.3 — Encartes em PDF com títulos pequenos ou encostados no selo — 16/11/2026
 
 - Encartes em PDF como a Quinzenal 17 a 22.11 voltam a ser lidos: títulos com letra pequena em painéis de destaque, títulos encostados à esquerda do selo e títulos com entrelinha apertada (ex.: "Refrigerante Guaraná Antarctica Zero 1L") são reconhecidos.
