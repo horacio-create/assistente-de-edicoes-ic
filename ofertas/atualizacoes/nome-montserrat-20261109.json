@@ -2,9 +2,10 @@
   "uniforca-casa-limpa-flexivel": {
     "index.html": {
       "antes": "e2313dc4ef751d557997776ca14255fe8fa56263e38bc1f5d476533dbab2e956",
-      "depois": "eb7c308b920b81b3b316b6b76486432004589faf8dbd2e9df53eeeecae9e62ca",
+      "depois": "8b10d8962a4024c980d4dd372a9e5b8118699f341a1645f9c9570d8d0123fd3e",
       "intermediarios": [
-        "eaeecb1a07e6a7cc52eaf0f9ec0a4fc36c965f2c96eaaf3bd9c2c56b6b88f5d2"
+        "eaeecb1a07e6a7cc52eaf0f9ec0a4fc36c965f2c96eaaf3bd9c2c56b6b88f5d2",
+        "eb7c308b920b81b3b316b6b76486432004589faf8dbd2e9df53eeeecae9e62ca"
       ]
     },
     "assets/layout.js": {

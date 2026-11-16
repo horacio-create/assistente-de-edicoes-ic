@@ -83,6 +83,26 @@ def _ler(img, rec='latino', escala=1):
     return out
 
 
+def _ler_faixas(img, rec='latino', escala=1):
+    """_ler numa página comprida (encarte inteiro numa tira só): o OCR reduz a imagem a 2000 px no lado
+    maior e as letras sumiam. Lê em faixas com a proporção de uma página A4, que se sobrepõem; cada texto
+    fica com a faixa em que o centro dele cai longe da borda."""
+    w, h = img.size
+    alto = int(w * 1.45)
+    if h <= alto * 1.15: return _ler(img, rec, escala)
+    sobra = int(w * .2)
+    out, y = [], 0
+    while True:
+        y1 = min(h, y + alto)
+        de = (y + sobra / 2) / escala if y else float('-inf')
+        ate = (y1 - sobra / 2) / escala if y1 < h else float('inf')
+        for c in _ler(img.crop((0, y, w, y1)), rec, escala):
+            c['y0'] += y / escala; c['y1'] += y / escala
+            if de <= (c['y0'] + c['y1']) / 2 < ate: out.append(c)
+        if y1 >= h: return out
+        y = y1 - sobra
+
+
 def _textos(img, rec='numeros'):
     return [c['t'] for c in _ler(img, rec)]
 
@@ -96,6 +116,7 @@ def _linha(img):
 
 
 def _votos(texto, modo, votos, fracos):
+    texto = re.sub(r'(?<![\d,.])0+(?=\d)', '', texto)   # "01,99": o zero vem do "R$" colado
     for m in re.finditer(r'(?<![\d,.])(\d{1,3})\s*[,.]\s*(\d{2})(?!\d)', texto): votos[f'{m[1]},{m[2]}'] += 1
     # centavos elevados com a vírgula minúscula: o OCR lê "12 99" ou, na leitura direta, "1899"
     for m in re.finditer(r'(?<![\d,.])(\d{1,3})\s+(\d{2})(?![\d,.])', texto): fracos[f'{m[1]},{m[2]}'] += 1
@@ -155,9 +176,10 @@ def _par_coerente(por, de, cand_por, cand_de):
     ok = lambda p, d: not d or (_num(p) > 0 and _num(p) < _num(d) <= _num(p) * 3)
     if ok(por, de): return por, de
     pares = [(cp, cd) for cp in cand_por for cd in cand_de if ok(cp, cd)]
-    # dígito a mais vindo do "R$": "112,99" -> "12,99"
+    # dígito a mais vindo do "R$": "112,99" -> "12,99", "16,99" -> "6,99"
     for cd in cand_de:
-        if len(cd.split(',')[0]) == 3 and cd[0] == '1' and ok(por, cd[1:]): pares.append((por, cd[1:]))
+        sem = re.sub(r'^0+(?=\d)', '', cd[1:])   # "101,99" -> "1,99" (não "01,99")
+        if len(cd.split(',')[0]) >= 2 and cd[0] == '1' and ok(por, sem): pares.append((por, sem))
     if not pares: return por, de
     return max(pares, key=lambda pd: cand_por.get(pd[0], 0) + cand_de.get(pd[1], 0))
 
@@ -182,14 +204,21 @@ def _numeros(nome):
 
 
 def _ancoras(caixas):
-    """Rótulos "Clube de Desconto" (às vezes partidos em duas caixas), agrupados em linhas da grade."""
+    """Rótulos "Clube de Desconto" (às vezes partidos em duas ou três caixas: "Clube de" + "Desconto" ou
+    "Clube" + "de" + "Desconto"), agrupados em linhas da grade."""
     out = []
     for c in caixas:
         if re.search(r'clube\s*de\s*desconto', c['t'], re.I): out.append(dict(c))
-        elif re.fullmatch(r'clube\s*de', c['t'], re.I):
-            par = next((o for o in caixas if o['t'].lower() == 'desconto' and abs(o['y0'] - c['y0']) < c['h']
-                        and -8 < o['x0'] - c['x1'] < 3 * c['h']), None)
-            if par: out.append({**c, 'x1': par['x1'], 't': 'Clube de Desconto'})
+        elif re.fullmatch(r'clube(\s*de)?', c['t'], re.I):
+            texto, x1 = c['t'], c['x1']
+            for _ in range(2):   # junta as próximas caixas da mesma linha, da esquerda para a direita
+                par = min((o for o in caixas if o is not c and abs(o['y0'] - c['y0']) < c['h'] and o['x0'] > c['x0']
+                           and -8 < o['x0'] - x1 < 3 * c['h']), key=lambda o: o['x0'], default=None)
+                if par is None: break
+                texto, x1 = texto + ' ' + par['t'], par['x1']
+                if re.fullmatch(r'clube\s*de\s*descontos?', texto, re.I):
+                    out.append({**c, 'x1': x1, 't': 'Clube de Desconto'}); break
+                if not re.fullmatch(r'clube\s*de', texto, re.I): break
     out.sort(key=lambda a: a['y0'])
     linha, inicio = -1, -1e9
     for a in out:   # selos da mesma linha variam algumas dezenas de px (o do queijo fica mais alto)
@@ -285,6 +314,26 @@ def _png_mascara(img, produto):
 TEXTO_SELO = re.compile(r'clube|desconto|sai\s*por|promo[çc]|\bness[ae]\b|\bnest[ae]\b|embalagem|leve\s*\d|pague|^\W*(cada|kg|un|r\$)\W*$', re.I)
 
 
+LARGURA_LEITURA = 1240   # largura em que o leitor foi calibrado (encarte A4 a 150 dpi)
+LEVE = re.compile(r'leve\s*\d', re.I)
+FAIXA_UNIDADE = re.compile(r'ness[ae]\s*promo|unidade\s*sai|^nest[ae]$|embalagem|\bsa[ií]\s*a\b', re.I)
+
+
+def _chamada(texto):
+    """"LEVE 2 POR:" como está no selo; o OCR às vezes perde os dois-pontos ou junta as palavras."""
+    m = re.search(r'leve\s*(\d+)\s*(por|pague\s*\d+)?', texto, re.I)
+    if not m: return texto.strip().upper()
+    fim = re.sub(r'\s+', ' ', m[2]).upper() if m[2] else 'POR'
+    return f'LEVE {m[1]} {fim}:'
+
+
+def _frase(texto):
+    """"NESTA EMBALAGEM 1L SAÍ A" -> "Nesta embalagem 1L sai a" (medidas continuam em maiúsculas)."""
+    palavras = [w if re.search(r'\d', w) else w.lower() for w in texto.split()]
+    frase = re.sub(r'\bsaí\b', 'sai', ' '.join(palavras))
+    return frase[:1].upper() + frase[1:]
+
+
 def _no_selo(img, a):
     """O rótulo "Clube de Desconto" de uma oferta está sobre o selo colorido; o mesmo texto solto na arte
     (cabeçalho "Para ter acesso ao preço Clube de Descontos…") está sobre fundo claro e não é oferta."""
@@ -296,11 +345,15 @@ def ler_pagina(img, pagina=1, fator=1.0):
     """Imagem da página -> [{'nome','por','de','unidade','avisos','pagina','area','png'}] (area em unidades
     da página: pixels / fator). Sem rótulos "Clube de Desconto" reconhecidos: lista vazia."""
     from .encarte import avisos
-    img = img.convert('RGB')
+    original = img.convert('RGB')
+    # encarte em alta resolução (ex.: 2480 px de largura): a leitura é feita na escala de sempre (as medidas
+    # em pixels do leitor valem para ~1240 px) e as fotos saem da imagem original, com toda a nitidez
+    reduz = LARGURA_LEITURA / original.width if original.width > LARGURA_LEITURA * 1.3 else 1
+    img = original.resize((round(original.width * reduz), round(original.height * reduz)), Image.Resampling.LANCZOS) if reduz < 1 else original
     W, H = img.size
     with LOCK:  # um por vez: OCR e recorte são pesados
         grande = img.resize((W * 2, H * 2), Image.Resampling.LANCZOS)
-        caixas = _ler(grande, 'latino', 2)
+        caixas = _ler_faixas(grande, 'latino', 2)
         for c in caixas: c['cx'] = (c['x0'] + c['x1']) / 2
         ancoras = [a for a in _ancoras(caixas) if _no_selo(img, a)]
         if not ancoras: return []
@@ -318,6 +371,11 @@ def ler_pagina(img, pagina=1, fator=1.0):
             dir_ = W if i == len(mesma) - 1 else (a['x1'] + mesma[i + 1]['x0']) / 2
             acima = [b for b in ancoras if b['linha'] < a['linha']]
             topo = max((b['y1'] + hm * 3.2 for b in acima), default=inicio)   # abaixo dos preços da linha de cima
+            abaixo = [b['y0'] for b in ancoras if b['linha'] == a['linha'] + 1]
+            if not acima and abaixo:
+                # primeira linha: o título fica a menos de uma linha da grade acima do selo (os textos da arte
+                # do cabeçalho, como "Quem abastece o Brasil…", ficam mais acima)
+                topo = max(topo, a['y0'] - (min(abaixo) - a['y0']))
             celulas.append(dict(a=a, h=h, esq=esq, dir=dir_, topo=topo, i=i, mesma=mesma,
                                 selo=(a['x0'] - 6, a['y0'] - 4, a['x1'] + 16, a['y1'] + h * 5.6),
                                 normal=(max(esq, a['x0'] - h * 7.5), a['y1'] - h * .2, a['x0'] + 2, a['y1'] + h * 4.8)))
@@ -358,14 +416,38 @@ def ler_pagina(img, pagina=1, fator=1.0):
             nome = _numeros(nome)
             fim_titulo = max((c['y1'] for c in bloco), default=topo)
             selo, normal = cl['selo'], cl['normal']
-            corte = lambda r: img.crop(tuple(int(max(0, min(lim, v))) for v, lim in zip(r, (W, H, W, H))))
+            # recortes de preço na imagem original: em alta resolução o "7,99" pequeno não vira "7,29"
+            corte = lambda r: original.crop(tuple(int(max(0, min(lim, v)) / reduz) for v, lim in zip(r, (W, H, W, H))))
             dentro = lambda r: [c['t'] for c in caixas if r[0] - 4 <= c['x0'] and c['x1'] <= r[2] + 4 and r[1] - 4 <= c['y0'] and c['y1'] <= r[3] + 4]
             r_por = (a['x0'] - 5, a['y1'], a['x1'] + 15, a['y1'] + h * 5.5)
             r_por_linha = (a['x0'] - 5, a['y1'], a['x1'] + 15, a['y1'] + h * 4.4)
-            r_de = (normal[0], a['y1'] + h * .5, a['x0'] + 2, a['y1'] + h * 4.6)
+            hh = max(h, hm)   # rótulo em maiúsculas é mais baixo: a altura típica alcança o preço normal inteiro
+            r_de = (max(cl['esq'], a['x0'] - hh * 7.5), a['y1'] + h * .5, a['x0'] + 2, a['y1'] + hh * 4.6)
+            # selo "LEVE 2 POR: 9,98" com a faixa "Nessa promoção a unidade sai por: 4,99": o preço do selo é o
+            # do pacote (maior que o normal da unidade) e o da faixa vira o complemento do selo editável
+            leve = next((c for c in caixas if LEVE.search(c['t']) and a['x0'] - h <= c['cx'] <= a['x1'] + h
+                         and a['y0'] <= c['y0'] <= a['y1'] + h * 2), None)
+            faixa = [c for c in caixas if FAIXA_UNIDADE.search(c['t']) and a['x0'] - h * 2 <= c['x0'] <= a['x1']
+                     and a['y1'] + h * 2 <= c['y0'] <= a['y1'] + h * 7]
+            if faixa and not leve:   # "NESTA EMBALAGEM 1L SAI A": o preço do selo termina antes da faixa
+                fim = min(c['y0'] for c in faixa) - 1
+                r_por, r_por_linha = (*r_por[:3], min(r_por[3], fim)), (*r_por_linha[:3], min(r_por_linha[3], fim))
+            if leve:
+                fim = min((c['y0'] for c in faixa), default=a['y1'] + h * 5.5) - 1
+                r_por = r_por_linha = (a['x0'] - 5, leve['y1'] - 2, a['x1'] + 15, fim)
             por, lido_por = _preco(corte(r_por), corte(r_por_linha), dentro(r_por))
             de, lido_de = _preco(corte(r_de), corte(r_de), dentro(r_de))
-            if de and not (0 < _num(por) < _num(de) <= _num(por) * 3):  # par incoerente: relê tudo e escolhe
+            chamada_selo = _chamada(leve['t']) if leve else ''
+            if leve and por:
+                # pacote: o preço do selo é maior que o da unidade de propósito; o normal (da unidade) é
+                # conferido contra o preço do pacote dividido pela quantidade
+                n = int(re.search(r'\d', leve['t'])[0]) or 1
+                unidade_pacote = f'{_num(por) / n:.2f}'.replace('.', ',')
+                if de and not (_num(unidade_pacote) < _num(de) <= _num(unidade_pacote) * 3):
+                    _, ld, cand_de = _preco(corte(r_de), corte(r_de), dentro(r_de), todos=True)
+                    de = _par_coerente(unidade_pacote, de, {unidade_pacote: 1}, cand_de)[1]
+                    lido_de += ' ' + ld
+            elif de and not (0 < _num(por) < _num(de) <= _num(por) * 3):  # par incoerente: relê tudo e escolhe
                 _, lp, cand_por = _preco(corte(r_por), corte(r_por_linha), dentro(r_por), todos=True)
                 _, ld, cand_de = _preco(corte(r_de), corte(r_de), dentro(r_de), todos=True)
                 por, de = _par_coerente(por, de, cand_por, cand_de)
@@ -374,7 +456,7 @@ def ler_pagina(img, pagina=1, fator=1.0):
             # unidade ("cada", "kg", "100g"): textos da página na linha dos preços, mais o que os recortes leram
             na_linha = [c['t'] for c in caixas if normal[0] - h <= c['x0'] and c['x1'] <= a['x1'] + h * 2
                         and a['y1'] <= c['y0'] <= a['y1'] + h * 5]
-            unidade = _unidade(' '.join(na_linha) + ' ' + lido_por + ' ' + lido_de)
+            unidade = _unidade(' '.join(na_linha) + ' ' + lido_por + ' ' + lido_de) or ('CADA' if leve else '')
             # equivalência por quilo na parte de baixo do selo ("No Clube de Desconto o preço do Kg sai por: 42,99")
             extra = {}
             chamadas = [c for c in caixas if re.search(r'clube\s*de', c['t'], re.I)
@@ -388,6 +470,20 @@ def ler_pagina(img, pagina=1, fator=1.0):
                     extra = {'equivalenciatexto': 'No Clube de Desconto o preço do Kg sai por:', 'equivalenciapreco': valor,
                              'equivalenciaunidade': 'kg'}
                     selo = (selo[0], selo[1], selo[2], max(selo[3], c['y0'] + h * 2.8))
+            if faixa:
+                topo_f, fim_f = min(c['y0'] for c in faixa), max(c['y1'] for c in faixa)
+                x_f = max(c['x1'] for c in faixa)
+                r_promo = (x_f - 2, topo_f - h * .6, selo[2] + 20, fim_f + h * 1.4)
+                valor, lido = _preco(corte(r_promo), corte(r_promo), dentro(r_promo))
+                if valor and valor not in (por, de):
+                    texto = ' '.join(c['t'] for c in sorted(faixa, key=lambda c: c['y0']))
+                    # a faixa escura embaixo do selo é o complemento do selo editável (mesma extensão do
+                    # "No Clube de Desconto o preço do kg sai por"), não um balão solto
+                    extra['equivalenciapreco'] = valor
+                    extra['equivalenciatexto'] = ('Nessa promoção a unidade sai por:' if re.search('unidade', texto, re.I)
+                                                  else _frase(texto) if re.search(r'embalagem', texto, re.I) else 'Nessa promoção sai por:')
+                    extra['equivalenciaunidade'] = 'cada' if re.search(r'\bcada\b', ' '.join(dentro(r_promo)) + ' ' + lido, re.I) else ''
+                    selo = (selo[0], selo[1], selo[2], max(selo[3], fim_f + h * 1.4))
             banner = cl['banner']
             linha = [o for o in celulas if o['a']['linha'] == a['linha']]
             k = linha.index(cl)
@@ -406,17 +502,20 @@ def ler_pagina(img, pagina=1, fator=1.0):
             if foto[3] - foto[1] < 30 or foto[2] - foto[0] < 30: continue
             # encarte em baixa resolução: o recorte é feito na foto ampliada (bordas mais limpas, a limpeza
             # das bordas come menos do produto e a foto sai maior)
-            esc = 2 if max(foto[2] - foto[0], foto[3] - foto[1]) < 500 else 1
-            recorte = img.crop(foto)
+            fo = [int(round(v / reduz)) for v in foto]   # a foto na imagem original
+            esc = 2 if max(fo[2] - fo[0], fo[3] - fo[1]) < 500 else 1
+            recorte = original.crop(fo)
             if esc > 1: recorte = recorte.resize((recorte.width * esc, recorte.height * esc), Image.Resampling.LANCZOS)
             # selo e preço normal desta oferta e os das vizinhas que entram na foto
             caixas_preco = [selo, normal] + ([ant['selo']] if ant else []) + ([prox['normal']] if prox else [])
-            apagar = [((x0 - foto[0]) * esc, (y0 - foto[1]) * esc, (x1 - foto[0]) * esc, (y1 - foto[1]) * esc)
+            k = esc / reduz
+            apagar = [((x0 - foto[0]) * k, (y0 - foto[1]) * k, (x1 - foto[0]) * k, (y1 - foto[1]) * k)
                       for x0, y0, x1, y1 in caixas_preco]
             png = recortar_foto(recorte, [] if banner else apagar, so_ia=banner, base=None if banner else apagar[0], escala=esc)
             area = [min(foto[0], normal[0]), min(foto[1], fim_titulo - h * 3 if bloco else foto[1]), max(foto[2], selo[2]), max(foto[3], selo[3])]
-            itens.append({'nome': nome, 'por': por, 'de': de, 'unidade': unidade, **extra, 'pagina': pagina, 'png': png,
-                          'area': [round(v / fator, 1) for v in area], 'avisos': [AVISO] + avisos(nome, por, de, unidade)})
+            itens.append({'nome': nome, 'por': por, 'de': de, 'unidade': unidade, **extra, **({'chamadaselo': chamada_selo} if chamada_selo else {}), 'pagina': pagina, 'png': png,
+                          'area': [round(v / (fator * reduz), 1) for v in area],
+                          'avisos': [AVISO] + [x for x in avisos(nome, por, de, unidade) if not (leve and x.startswith('Preço normal menor'))]})
     return itens
 
 

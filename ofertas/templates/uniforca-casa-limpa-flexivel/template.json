@@ -82,6 +82,14 @@
           "rotulo": "Preço Clube de Desconto"
         },
         {
+          "id": "chamadaselo",
+          "tipo": "texto",
+          "rotulo": "Chamada no selo",
+          "opcional": true,
+          "max": 24,
+          "ajuda": "Ex.: LEVE 2 POR:. Aparece no selo, acima do preço. Vazio: sem chamada."
+        },
+        {
           "id": "unidade",
           "tipo": "opcoes",
           "rotulo": "Unidade"

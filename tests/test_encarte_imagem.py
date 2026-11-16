@@ -82,6 +82,51 @@ class PrecosTests(unittest.TestCase):
             self.assertFalse(ei.TEXTO_SELO.search(t), t)
 
 
+class LeveEPagueTests(unittest.TestCase):
+    def test_selo_leve_2_por_e_faixa_da_unidade(self):
+        self.assertTrue(ei.LEVE.search('LEVE 2 POR:'))
+        self.assertTrue(ei.LEVE.search('Leve3por'))
+        self.assertFalse(ei.LEVE.search('LEVÍSSIMO 200G'))
+        self.assertTrue(ei.FAIXA_UNIDADE.search('NESSA PROMOÇÃO'))
+        self.assertTrue(ei.FAIXA_UNIDADE.search('A UNIDADE SAIPOR:'))
+
+
+class EncarteCompridoTests(unittest.TestCase):
+    def test_pagina_comprida_e_lida_em_faixas_sem_repetir_textos(self):
+        lidas = []
+        def ler(img, rec='latino', escala=1):
+            lidas.append(img.size)
+            # um texto no mesmo ponto de cada faixa: as faixas se sobrepõem e só uma fica com cada ponto
+            return [{'x0': 10, 'y0': 500 / escala, 'x1': 90, 'y1': 520 / escala, 'h': 20, 't': f'faixa {len(lidas)}'}]
+        with mock.patch.object(ei, '_ler', ler):
+            out = ei._ler_faixas(Image.new('RGB', (1000, 4000)), escala=1)
+        self.assertGreater(len(lidas), 2)
+        self.assertTrue(all(h <= 1450 for _, h in lidas))          # proporção de página A4: o OCR não encolhe as letras
+        ys = sorted(c['y0'] for c in out)
+        self.assertEqual(len(ys), len(set(ys)))
+        with mock.patch.object(ei, '_ler', lambda img, rec='latino', escala=1: [{'x0': 0, 'y0': 0, 'x1': 1, 'y1': 1, 'h': 1, 't': 'a'}]):
+            self.assertEqual(len(ei._ler_faixas(Image.new('RGB', (1000, 1400)))), 1)   # página normal: leitura única
+
+    def test_rotulo_do_clube_em_tres_caixas(self):
+        c = lambda x, t, w: {'x0': x, 'y0': 100, 'x1': x + w, 'y1': 118, 'h': 18, 't': t}
+        ancoras = ei._ancoras([c(476, 'Clube', 60), c(534, 'de', 28), c(563, 'Desconto', 93)])
+        self.assertEqual(len(ancoras), 1)
+        self.assertEqual(ancoras[0]['x1'], 656)
+
+    def test_r_cifrao_lido_como_digito(self):
+        self.assertEqual(ei._par_coerente('1,49', '101,99', {}, {'101,99': 14, '1,99': 12}), ('1,49', '1,99'))
+        self.assertEqual(ei._par_coerente('4,99', '16,99', {'4,99': 1}, {'16,99': 12}), ('4,99', '6,99'))
+
+    def test_chamada_do_selo(self):
+        self.assertEqual(ei._chamada('LEVE 2 POR:'), 'LEVE 2 POR:')
+        self.assertEqual(ei._chamada('Leve2por'), 'LEVE 2 POR:')
+        self.assertEqual(ei._chamada('LEVE 3 PAGUE 2'), 'LEVE 3 PAGUE 2:')
+
+    def test_texto_do_balao_da_embalagem(self):
+        self.assertEqual(ei._frase('NESTA EMBALAGEM 1L SAÍ A'), 'Nesta embalagem 1L sai a')
+        self.assertTrue(ei.FAIXA_UNIDADE.search('EMBALAGEM'))
+
+
 class SeloDaOfertaTests(unittest.TestCase):
     def test_rotulo_solto_na_arte_clara_nao_e_oferta(self):
         img = Image.new('RGB', (400, 100), (245, 245, 250))
