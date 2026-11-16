@@ -2,29 +2,32 @@
   "uniforca-hora-da-carne-flexivel": {
     "assets/edicao.js": {
       "antes": "80fc5ce09e52d552d28a41deea224347b2ea23e248bab7648cb77ef5e56e4290",
-      "depois": "20e0d74043b372ae96b38c28683d872f058cfb6cc132674b82ea2a0341911dd5",
+      "depois": "f32b9c8febb7040b1293839758d3270f58fbe571dab313a5db17cfb2d821a669",
       "intermediarios": [
-        "deca9b0514d185e8e4f70433683e0e600e81af541b771b29680866b207660fb3"
+        "deca9b0514d185e8e4f70433683e0e600e81af541b771b29680866b207660fb3",
+        "20e0d74043b372ae96b38c28683d872f058cfb6cc132674b82ea2a0341911dd5"
       ]
     },
     "index.html": {
       "antes": "50551c4907531056ffb233cc6cbb86ea5fd272d9e0999921f20c798efde0bf71",
-      "depois": "9f0f6d0f62eb26494fb94cccabbb742948fcb233518c3702a40394169aa2573a",
+      "depois": "c2195044fca92b05a3f8fc2d3908438272983260ccf2cbba6a619d2918b5f4cb",
       "intermediarios": [
         "50551c4907531056ffb233cc6cbb86ea5fd272d9e0999921f20c798efde0bf71",
         "0d6ba4813eaa268c167247ebfef47f984d557392ee5958b5fc5d290aca29ff06",
         "ed7fd267ac7238a4b58795cc242f5f12f3685e30f59b79f1dca0f80655bbf8a7",
-        "07e94915f9bfdf6b568e14e965a9ab9c8e5251aecfc1f521255e1b58ddb088e3"
+        "07e94915f9bfdf6b568e14e965a9ab9c8e5251aecfc1f521255e1b58ddb088e3",
+        "9f0f6d0f62eb26494fb94cccabbb742948fcb233518c3702a40394169aa2573a"
       ]
     },
     "template.json": {
       "antes": "4dd7ff95fcc0be19839412fbee8553be1677e22aa80d4f08da120353e9fd76dc",
-      "depois": "621978bf6def8017865188461fed65549cbe3ea89f8d5b7b0264df5a4cb50840",
+      "depois": "75bf45b324ac458ccddeb27d9871973377548c1d47bb2365db1358b58d4bbd91",
       "intermediarios": [
         "4dd7ff95fcc0be19839412fbee8553be1677e22aa80d4f08da120353e9fd76dc",
         "74fc9dcf0ebbe8f0374fde9aec0bc8a7beb1d9235595c5f459f69f4450e22c10",
         "c4319941523eea06186a21726b3cee541a20010f9c552532e682ce7222112397",
-        "bd99e88f26d90380edc13fa593ada882baab17aa312247bf3f92c5bcfaad7970"
+        "bd99e88f26d90380edc13fa593ada882baab17aa312247bf3f92c5bcfaad7970",
+        "621978bf6def8017865188461fed65549cbe3ea89f8d5b7b0264df5a4cb50840"
       ]
     },
     "assets/layout.js": {
@@ -37,48 +40,53 @@
     },
     "assets/selos.js": {
       "antes": "819f4d04a0037355940e58117e675bb773614a1a0a4695d183c5b3adc73af6b3",
-      "depois": "df0313b29e92ddfcae6faa54d1b6eb20ce29698ff88cc23e3039c0a9dee091ba",
+      "depois": "250cd7facc1350f0ada12fa8e1f3fa52028320add0de048353e5c3a233f54066",
       "intermediarios": [
         "819f4d04a0037355940e58117e675bb773614a1a0a4695d183c5b3adc73af6b3",
         "cd19c355fe83d28800bb4932a60f8d8fab11c8a4d1f0e87445930daba0e67023",
-        "cc6e7d7724c219372e6600a4c36fd57b2d44cf22f8b191c5784907981d2772c2"
+        "cc6e7d7724c219372e6600a4c36fd57b2d44cf22f8b191c5784907981d2772c2",
+        "df0313b29e92ddfcae6faa54d1b6eb20ce29698ff88cc23e3039c0a9dee091ba"
       ]
     },
     "assets/selos.css": {
       "antes": "a7dee46baf0b9ae40bc9717c9ac86bcd8a2369c95e9a92bc36cd0ae842fc4d47",
-      "depois": "46f1e02934ca7d995b86e5c61aaff9d2e81acad21050819e31d998432f5a4ddc",
+      "depois": "23d1dfd013d6b3159dd48f8fa810078aaeaf45484a4b865bb62bab7cd333a4c3",
       "intermediarios": [
         "a7dee46baf0b9ae40bc9717c9ac86bcd8a2369c95e9a92bc36cd0ae842fc4d47",
-        "d3a9b3e250369ed09d848337d37d1db336f0dd99001dadbfd348a4ff5439814b"
+        "d3a9b3e250369ed09d848337d37d1db336f0dd99001dadbfd348a4ff5439814b",
+        "46f1e02934ca7d995b86e5c61aaff9d2e81acad21050819e31d998432f5a4ddc"
       ]
     }
   },
   "uniforca-hora-da-feira-flexivel": {
     "assets/edicao.js": {
       "antes": "80fc5ce09e52d552d28a41deea224347b2ea23e248bab7648cb77ef5e56e4290",
-      "depois": "20e0d74043b372ae96b38c28683d872f058cfb6cc132674b82ea2a0341911dd5",
+      "depois": "f32b9c8febb7040b1293839758d3270f58fbe571dab313a5db17cfb2d821a669",
       "intermediarios": [
-        "deca9b0514d185e8e4f70433683e0e600e81af541b771b29680866b207660fb3"
+        "deca9b0514d185e8e4f70433683e0e600e81af541b771b29680866b207660fb3",
+        "20e0d74043b372ae96b38c28683d872f058cfb6cc132674b82ea2a0341911dd5"
       ]
     },
     "index.html": {
       "antes": "16956c772902af2ea0450323261451f741e21cf5fccea566ad31a0dccfc1e3ce",
-      "depois": "14d2e911f4ba48d49dc29b4b36e37e973562f6d787c6879ffff8aa7f44218803",
+      "depois": "80351e7fd0fa37f829d47bea3396562cb65cf75f269e975f03c809e7cede46ce",
       "intermediarios": [
         "16956c772902af2ea0450323261451f741e21cf5fccea566ad31a0dccfc1e3ce",
         "3d7a0fb7a1720b57ceffb8d1be87270538a3af322b68e832785e65d00a958126",
         "ac396aca1f90c8ef6c8a997d5d7e63ebbbfb86fbfd59ab69fea7ef61128930aa",
-        "e61e84ca78eb717ffb57472ff7dc828d9b694683999ce0f25cb38c59860a496e"
+        "e61e84ca78eb717ffb57472ff7dc828d9b694683999ce0f25cb38c59860a496e",
+        "14d2e911f4ba48d49dc29b4b36e37e973562f6d787c6879ffff8aa7f44218803"
       ]
     },
     "template.json": {
       "antes": "4ab4b8babb739a90ae44133d45d41ee75b0a54c32a414a0b4e31be6bbe80b721",
-      "depois": "c2bdccde924a472eac1d41ebc285b8518e9477ea11dbfb6aae83fa897945b29c",
+      "depois": "a684ad62a3d2d3cba36f88f04a49f85c027a2f32c1e52583f834c79f33b7a4e8",
       "intermediarios": [
         "4ab4b8babb739a90ae44133d45d41ee75b0a54c32a414a0b4e31be6bbe80b721",
         "d0c88290093e30625b992c83bb7837180f0c0dbcf28bedc4687eeb707ae2d681",
         "655fb9de7328989f17a4b7f6138075c029bb969d75091f0912f83e373819602d",
-        "e48c1bf79f71914e0820b14b8dc336d2abc5b31386072599912b91d830edd5f3"
+        "e48c1bf79f71914e0820b14b8dc336d2abc5b31386072599912b91d830edd5f3",
+        "c2bdccde924a472eac1d41ebc285b8518e9477ea11dbfb6aae83fa897945b29c"
       ]
     },
     "assets/layout.js": {
@@ -91,48 +99,53 @@
     },
     "assets/selos.js": {
       "antes": "819f4d04a0037355940e58117e675bb773614a1a0a4695d183c5b3adc73af6b3",
-      "depois": "df0313b29e92ddfcae6faa54d1b6eb20ce29698ff88cc23e3039c0a9dee091ba",
+      "depois": "250cd7facc1350f0ada12fa8e1f3fa52028320add0de048353e5c3a233f54066",
       "intermediarios": [
         "819f4d04a0037355940e58117e675bb773614a1a0a4695d183c5b3adc73af6b3",
         "cd19c355fe83d28800bb4932a60f8d8fab11c8a4d1f0e87445930daba0e67023",
-        "cc6e7d7724c219372e6600a4c36fd57b2d44cf22f8b191c5784907981d2772c2"
+        "cc6e7d7724c219372e6600a4c36fd57b2d44cf22f8b191c5784907981d2772c2",
+        "df0313b29e92ddfcae6faa54d1b6eb20ce29698ff88cc23e3039c0a9dee091ba"
       ]
     },
     "assets/selos.css": {
       "antes": "a7dee46baf0b9ae40bc9717c9ac86bcd8a2369c95e9a92bc36cd0ae842fc4d47",
-      "depois": "46f1e02934ca7d995b86e5c61aaff9d2e81acad21050819e31d998432f5a4ddc",
+      "depois": "23d1dfd013d6b3159dd48f8fa810078aaeaf45484a4b865bb62bab7cd333a4c3",
       "intermediarios": [
         "a7dee46baf0b9ae40bc9717c9ac86bcd8a2369c95e9a92bc36cd0ae842fc4d47",
-        "d3a9b3e250369ed09d848337d37d1db336f0dd99001dadbfd348a4ff5439814b"
+        "d3a9b3e250369ed09d848337d37d1db336f0dd99001dadbfd348a4ff5439814b",
+        "46f1e02934ca7d995b86e5c61aaff9d2e81acad21050819e31d998432f5a4ddc"
       ]
     }
   },
   "uniforca-momento-do-bebe-flexivel": {
     "assets/edicao.js": {
       "antes": "80fc5ce09e52d552d28a41deea224347b2ea23e248bab7648cb77ef5e56e4290",
-      "depois": "20e0d74043b372ae96b38c28683d872f058cfb6cc132674b82ea2a0341911dd5",
+      "depois": "f32b9c8febb7040b1293839758d3270f58fbe571dab313a5db17cfb2d821a669",
       "intermediarios": [
-        "deca9b0514d185e8e4f70433683e0e600e81af541b771b29680866b207660fb3"
+        "deca9b0514d185e8e4f70433683e0e600e81af541b771b29680866b207660fb3",
+        "20e0d74043b372ae96b38c28683d872f058cfb6cc132674b82ea2a0341911dd5"
       ]
     },
     "index.html": {
       "antes": "515dcd6cc3abb0049d2f95606182dbca9dcb7469d624d79628156b6a8bb2ff22",
-      "depois": "a3c531947fe93b251290b1bef3908a2cbeedbb00a6e0d82dfb58894242af6130",
+      "depois": "3c48d9846f4ff794b341386fe841867c7e509537afdb1b80c443399f5f125d72",
       "intermediarios": [
         "515dcd6cc3abb0049d2f95606182dbca9dcb7469d624d79628156b6a8bb2ff22",
         "04a5cf1e8ef48cc8dbc14db2d00e3e80828270f9400937365e3dda810bfa6e3b",
         "53567cafcea481d38819ae5341493376c7f3ac7b6581ef873b55ecf8f71d9a11",
-        "b1b316790f8d6712fc48162a187f176e64d587de571f4c54ed9512db2882158d"
+        "b1b316790f8d6712fc48162a187f176e64d587de571f4c54ed9512db2882158d",
+        "a3c531947fe93b251290b1bef3908a2cbeedbb00a6e0d82dfb58894242af6130"
       ]
     },
     "template.json": {
       "antes": "1da901033e728395599177b86026e7d243b2d35dc8f676f3fc749003914eec8f",
-      "depois": "46c228698cf7fb31341cd08783a29d9062a40ca49e29bf4f38697a472d9d41e9",
+      "depois": "b7c6b0bc365cdda41435302fc4169b3900a50bd8bfa0e54a1b34476a5aad7031",
       "intermediarios": [
         "1da901033e728395599177b86026e7d243b2d35dc8f676f3fc749003914eec8f",
         "5f0a01c5ed1a82b980523bb28a03913b953850701537e5f50a425c335650ec9f",
         "6030f65964c217fa0516194a5b93c113f117274e3ec206d2a7980f9529e737df",
-        "1198c2e74d23729aae9284469e0404ad0d4120177f2a01ece8f33a83bdcaf2b3"
+        "1198c2e74d23729aae9284469e0404ad0d4120177f2a01ece8f33a83bdcaf2b3",
+        "46c228698cf7fb31341cd08783a29d9062a40ca49e29bf4f38697a472d9d41e9"
       ]
     },
     "assets/layout.js": {
@@ -145,48 +158,53 @@
     },
     "assets/selos.js": {
       "antes": "819f4d04a0037355940e58117e675bb773614a1a0a4695d183c5b3adc73af6b3",
-      "depois": "df0313b29e92ddfcae6faa54d1b6eb20ce29698ff88cc23e3039c0a9dee091ba",
+      "depois": "250cd7facc1350f0ada12fa8e1f3fa52028320add0de048353e5c3a233f54066",
       "intermediarios": [
         "819f4d04a0037355940e58117e675bb773614a1a0a4695d183c5b3adc73af6b3",
         "cd19c355fe83d28800bb4932a60f8d8fab11c8a4d1f0e87445930daba0e67023",
-        "cc6e7d7724c219372e6600a4c36fd57b2d44cf22f8b191c5784907981d2772c2"
+        "cc6e7d7724c219372e6600a4c36fd57b2d44cf22f8b191c5784907981d2772c2",
+        "df0313b29e92ddfcae6faa54d1b6eb20ce29698ff88cc23e3039c0a9dee091ba"
       ]
     },
     "assets/selos.css": {
       "antes": "a7dee46baf0b9ae40bc9717c9ac86bcd8a2369c95e9a92bc36cd0ae842fc4d47",
-      "depois": "46f1e02934ca7d995b86e5c61aaff9d2e81acad21050819e31d998432f5a4ddc",
+      "depois": "23d1dfd013d6b3159dd48f8fa810078aaeaf45484a4b865bb62bab7cd333a4c3",
       "intermediarios": [
         "a7dee46baf0b9ae40bc9717c9ac86bcd8a2369c95e9a92bc36cd0ae842fc4d47",
-        "d3a9b3e250369ed09d848337d37d1db336f0dd99001dadbfd348a4ff5439814b"
+        "d3a9b3e250369ed09d848337d37d1db336f0dd99001dadbfd348a4ff5439814b",
+        "46f1e02934ca7d995b86e5c61aaff9d2e81acad21050819e31d998432f5a4ddc"
       ]
     }
   },
   "uniforca-perdigao-flexivel": {
     "assets/edicao.js": {
       "antes": "80fc5ce09e52d552d28a41deea224347b2ea23e248bab7648cb77ef5e56e4290",
-      "depois": "20e0d74043b372ae96b38c28683d872f058cfb6cc132674b82ea2a0341911dd5",
+      "depois": "f32b9c8febb7040b1293839758d3270f58fbe571dab313a5db17cfb2d821a669",
       "intermediarios": [
-        "deca9b0514d185e8e4f70433683e0e600e81af541b771b29680866b207660fb3"
+        "deca9b0514d185e8e4f70433683e0e600e81af541b771b29680866b207660fb3",
+        "20e0d74043b372ae96b38c28683d872f058cfb6cc132674b82ea2a0341911dd5"
       ]
     },
     "index.html": {
       "antes": "d8f83a609340aa7fbd2032a06f247e411ccdeac22419f1c61079ac48d55dd2b9",
-      "depois": "0571df401332df601175f5258e14fe9435e5d47ae15df957e35196f00a2b1988",
+      "depois": "a4f2f5a877f37e30cc1ef32c8cd350300a7f2518cc7787703c35859f96a3df77",
       "intermediarios": [
         "d8f83a609340aa7fbd2032a06f247e411ccdeac22419f1c61079ac48d55dd2b9",
         "8945170e09304df32447b6a2a8aa998aa4886f1bfce13ec247d7ddc077dac33a",
         "cbe5fbe38b396560ddb98c5573633ae78299821cce4087a9a10d4487d602eb00",
-        "22afb6d6e0e78e94eed24177bd5297ed568443b3fed5f3f57d53fcdf5c253a7b"
+        "22afb6d6e0e78e94eed24177bd5297ed568443b3fed5f3f57d53fcdf5c253a7b",
+        "0571df401332df601175f5258e14fe9435e5d47ae15df957e35196f00a2b1988"
       ]
     },
     "template.json": {
       "antes": "35b5661860ab8eee7c006076dd39d472efdf50af7e0175ffdc2a89f65e41c509",
-      "depois": "eb7c81751e25aa438de301ffa5a435acdbb5b174985be71e79dcde9e67491add",
+      "depois": "3df0b4856d273bb0b3466240a9baabf47546624ec84793c5114c748275cb2628",
       "intermediarios": [
         "35b5661860ab8eee7c006076dd39d472efdf50af7e0175ffdc2a89f65e41c509",
         "455ade8320e2aabdc2e8723abd93eae8234bf7400df342d57268b34837853f68",
         "29da5d8a88fad1cd8438f8a2da1eb2338d94f90e0824475787d61498c9a334db",
-        "c0c87ed97ea5c043c49f8b26818c2bb10253d63f72ff411ec36b33014dedfac6"
+        "c0c87ed97ea5c043c49f8b26818c2bb10253d63f72ff411ec36b33014dedfac6",
+        "eb7c81751e25aa438de301ffa5a435acdbb5b174985be71e79dcde9e67491add"
       ]
     },
     "assets/layout.js": {
@@ -199,48 +217,53 @@
     },
     "assets/selos.js": {
       "antes": "819f4d04a0037355940e58117e675bb773614a1a0a4695d183c5b3adc73af6b3",
-      "depois": "df0313b29e92ddfcae6faa54d1b6eb20ce29698ff88cc23e3039c0a9dee091ba",
+      "depois": "250cd7facc1350f0ada12fa8e1f3fa52028320add0de048353e5c3a233f54066",
       "intermediarios": [
         "819f4d04a0037355940e58117e675bb773614a1a0a4695d183c5b3adc73af6b3",
         "cd19c355fe83d28800bb4932a60f8d8fab11c8a4d1f0e87445930daba0e67023",
-        "cc6e7d7724c219372e6600a4c36fd57b2d44cf22f8b191c5784907981d2772c2"
+        "cc6e7d7724c219372e6600a4c36fd57b2d44cf22f8b191c5784907981d2772c2",
+        "df0313b29e92ddfcae6faa54d1b6eb20ce29698ff88cc23e3039c0a9dee091ba"
       ]
     },
     "assets/selos.css": {
       "antes": "a7dee46baf0b9ae40bc9717c9ac86bcd8a2369c95e9a92bc36cd0ae842fc4d47",
-      "depois": "46f1e02934ca7d995b86e5c61aaff9d2e81acad21050819e31d998432f5a4ddc",
+      "depois": "23d1dfd013d6b3159dd48f8fa810078aaeaf45484a4b865bb62bab7cd333a4c3",
       "intermediarios": [
         "a7dee46baf0b9ae40bc9717c9ac86bcd8a2369c95e9a92bc36cd0ae842fc4d47",
-        "d3a9b3e250369ed09d848337d37d1db336f0dd99001dadbfd348a4ff5439814b"
+        "d3a9b3e250369ed09d848337d37d1db336f0dd99001dadbfd348a4ff5439814b",
+        "46f1e02934ca7d995b86e5c61aaff9d2e81acad21050819e31d998432f5a4ddc"
       ]
     }
   },
   "uniforca-sadia-flexivel": {
     "assets/edicao.js": {
       "antes": "80fc5ce09e52d552d28a41deea224347b2ea23e248bab7648cb77ef5e56e4290",
-      "depois": "20e0d74043b372ae96b38c28683d872f058cfb6cc132674b82ea2a0341911dd5",
+      "depois": "f32b9c8febb7040b1293839758d3270f58fbe571dab313a5db17cfb2d821a669",
       "intermediarios": [
-        "deca9b0514d185e8e4f70433683e0e600e81af541b771b29680866b207660fb3"
+        "deca9b0514d185e8e4f70433683e0e600e81af541b771b29680866b207660fb3",
+        "20e0d74043b372ae96b38c28683d872f058cfb6cc132674b82ea2a0341911dd5"
       ]
     },
     "index.html": {
       "antes": "5a12da8d3f15a70d2cd76e242664919e61f328a485a9050d4e5890ea8bf7f03d",
-      "depois": "a6347b911e9a527ed8976b97c9049f10d5f7ac9e088abc943e1fce58d5286577",
+      "depois": "96586ebcf4777dc6f908dc73287e14a951828c505666f5510ee32062b7f442d9",
       "intermediarios": [
         "5a12da8d3f15a70d2cd76e242664919e61f328a485a9050d4e5890ea8bf7f03d",
         "0db114102851ab23089adcb6458e4ec1dd29e510259e2dcabf809b14f477e765",
         "027822c1d72e2e40db0df74cde65d68720cc08a8025f1e58447e9c99b4a0307d",
-        "a4ebf2796369286a54afd998be9884b3bf09ca3c40c68674f71de6b3b7757eb1"
+        "a4ebf2796369286a54afd998be9884b3bf09ca3c40c68674f71de6b3b7757eb1",
+        "a6347b911e9a527ed8976b97c9049f10d5f7ac9e088abc943e1fce58d5286577"
       ]
     },
     "template.json": {
       "antes": "690ff3c637c00482edc85dfa4a04c576b381dff6ee9b91879ff5d75ba66ec845",
-      "depois": "f70dedf00ea77ab968c86792137a66dcaf085b7970d2f503624d08d90fecf61f",
+      "depois": "c3472e485e1a1556053efc8b97dd140e1a8390132d063aa3b489dd2ddd8f0123",
       "intermediarios": [
         "690ff3c637c00482edc85dfa4a04c576b381dff6ee9b91879ff5d75ba66ec845",
         "d483fddcc1e9055f80d6197706423e0f4d1e4b517a0004bfe6c500d85c940d8e",
         "9d1c3597e73bb9325547350b3053772153e893cc5d671b2fb28e7299092e7274",
-        "b19dd8a04e928baf230aab55b865741d888f32169e1e7c518c95c9988926ec35"
+        "b19dd8a04e928baf230aab55b865741d888f32169e1e7c518c95c9988926ec35",
+        "f70dedf00ea77ab968c86792137a66dcaf085b7970d2f503624d08d90fecf61f"
       ]
     },
     "assets/layout.js": {
@@ -253,48 +276,53 @@
     },
     "assets/selos.js": {
       "antes": "819f4d04a0037355940e58117e675bb773614a1a0a4695d183c5b3adc73af6b3",
-      "depois": "df0313b29e92ddfcae6faa54d1b6eb20ce29698ff88cc23e3039c0a9dee091ba",
+      "depois": "250cd7facc1350f0ada12fa8e1f3fa52028320add0de048353e5c3a233f54066",
       "intermediarios": [
         "819f4d04a0037355940e58117e675bb773614a1a0a4695d183c5b3adc73af6b3",
         "cd19c355fe83d28800bb4932a60f8d8fab11c8a4d1f0e87445930daba0e67023",
-        "cc6e7d7724c219372e6600a4c36fd57b2d44cf22f8b191c5784907981d2772c2"
+        "cc6e7d7724c219372e6600a4c36fd57b2d44cf22f8b191c5784907981d2772c2",
+        "df0313b29e92ddfcae6faa54d1b6eb20ce29698ff88cc23e3039c0a9dee091ba"
       ]
     },
     "assets/selos.css": {
       "antes": "a7dee46baf0b9ae40bc9717c9ac86bcd8a2369c95e9a92bc36cd0ae842fc4d47",
-      "depois": "46f1e02934ca7d995b86e5c61aaff9d2e81acad21050819e31d998432f5a4ddc",
+      "depois": "23d1dfd013d6b3159dd48f8fa810078aaeaf45484a4b865bb62bab7cd333a4c3",
       "intermediarios": [
         "a7dee46baf0b9ae40bc9717c9ac86bcd8a2369c95e9a92bc36cd0ae842fc4d47",
-        "d3a9b3e250369ed09d848337d37d1db336f0dd99001dadbfd348a4ff5439814b"
+        "d3a9b3e250369ed09d848337d37d1db336f0dd99001dadbfd348a4ff5439814b",
+        "46f1e02934ca7d995b86e5c61aaff9d2e81acad21050819e31d998432f5a4ddc"
       ]
     }
   },
   "uniforca-vitrine-itambe-flexivel": {
     "assets/edicao.js": {
       "antes": "80fc5ce09e52d552d28a41deea224347b2ea23e248bab7648cb77ef5e56e4290",
-      "depois": "20e0d74043b372ae96b38c28683d872f058cfb6cc132674b82ea2a0341911dd5",
+      "depois": "f32b9c8febb7040b1293839758d3270f58fbe571dab313a5db17cfb2d821a669",
       "intermediarios": [
-        "deca9b0514d185e8e4f70433683e0e600e81af541b771b29680866b207660fb3"
+        "deca9b0514d185e8e4f70433683e0e600e81af541b771b29680866b207660fb3",
+        "20e0d74043b372ae96b38c28683d872f058cfb6cc132674b82ea2a0341911dd5"
       ]
     },
     "index.html": {
       "antes": "83f761d6446654720330f786f444674f82af9bf4cba30710223784af4f1e0c8a",
-      "depois": "b6d387a360eb8ba8ca15ba93f75b2f391f31706b0292885cbd6d487f3620cbb0",
+      "depois": "98d6d6a81908c00acd3c2c4ee5c5b8fe9a78f12db1758d5af6ed07c746d539df",
       "intermediarios": [
         "83f761d6446654720330f786f444674f82af9bf4cba30710223784af4f1e0c8a",
         "6321840a8fd2cc252f3b9e240cf4b249d7788f95e41bf7043cca30e4276abba9",
         "497c530af90958bacc94a0e07ade6d4c9b8604405f807d0a27d7085a55c232ab",
-        "4fd914163b53d70a54f7d0af714ff353da3d95e608d8e9b154fb08d977f821fd"
+        "4fd914163b53d70a54f7d0af714ff353da3d95e608d8e9b154fb08d977f821fd",
+        "b6d387a360eb8ba8ca15ba93f75b2f391f31706b0292885cbd6d487f3620cbb0"
       ]
     },
     "template.json": {
       "antes": "02311bd301e49278aec70ff375c728b8954e0d3c9ae8b4e9d6a24b8aed3f4070",
-      "depois": "d33af935366d113b523f7b1a8b513351ea9b70ce42b836ae4fe715d7178b73d1",
+      "depois": "31c97855579a6e3f0c26b85fb33513366422d1e5e9156b3492028314b3bc96ff",
       "intermediarios": [
         "02311bd301e49278aec70ff375c728b8954e0d3c9ae8b4e9d6a24b8aed3f4070",
         "7e5fe19b4a48c72409767e765238a20dca8f811eb88e12fe2c227bbf53b34bda",
         "41b16b5eee7699b5e706cddbace896ec946a33d680e99b757305f00bac2d43b9",
-        "aed88f24cc19b9d6e230a4e3b4880396640585649f6c6caf7160bc50fa048ffd"
+        "aed88f24cc19b9d6e230a4e3b4880396640585649f6c6caf7160bc50fa048ffd",
+        "d33af935366d113b523f7b1a8b513351ea9b70ce42b836ae4fe715d7178b73d1"
       ]
     },
     "assets/layout.js": {
@@ -307,48 +335,53 @@
     },
     "assets/selos.js": {
       "antes": "819f4d04a0037355940e58117e675bb773614a1a0a4695d183c5b3adc73af6b3",
-      "depois": "df0313b29e92ddfcae6faa54d1b6eb20ce29698ff88cc23e3039c0a9dee091ba",
+      "depois": "250cd7facc1350f0ada12fa8e1f3fa52028320add0de048353e5c3a233f54066",
       "intermediarios": [
         "819f4d04a0037355940e58117e675bb773614a1a0a4695d183c5b3adc73af6b3",
         "cd19c355fe83d28800bb4932a60f8d8fab11c8a4d1f0e87445930daba0e67023",
-        "cc6e7d7724c219372e6600a4c36fd57b2d44cf22f8b191c5784907981d2772c2"
+        "cc6e7d7724c219372e6600a4c36fd57b2d44cf22f8b191c5784907981d2772c2",
+        "df0313b29e92ddfcae6faa54d1b6eb20ce29698ff88cc23e3039c0a9dee091ba"
       ]
     },
     "assets/selos.css": {
       "antes": "a7dee46baf0b9ae40bc9717c9ac86bcd8a2369c95e9a92bc36cd0ae842fc4d47",
-      "depois": "46f1e02934ca7d995b86e5c61aaff9d2e81acad21050819e31d998432f5a4ddc",
+      "depois": "23d1dfd013d6b3159dd48f8fa810078aaeaf45484a4b865bb62bab7cd333a4c3",
       "intermediarios": [
         "a7dee46baf0b9ae40bc9717c9ac86bcd8a2369c95e9a92bc36cd0ae842fc4d47",
-        "d3a9b3e250369ed09d848337d37d1db336f0dd99001dadbfd348a4ff5439814b"
+        "d3a9b3e250369ed09d848337d37d1db336f0dd99001dadbfd348a4ff5439814b",
+        "46f1e02934ca7d995b86e5c61aaff9d2e81acad21050819e31d998432f5a4ddc"
       ]
     }
   },
   "uniforca-vitrine-laranja-flexivel": {
     "assets/edicao.js": {
       "antes": "80fc5ce09e52d552d28a41deea224347b2ea23e248bab7648cb77ef5e56e4290",
-      "depois": "20e0d74043b372ae96b38c28683d872f058cfb6cc132674b82ea2a0341911dd5",
+      "depois": "f32b9c8febb7040b1293839758d3270f58fbe571dab313a5db17cfb2d821a669",
       "intermediarios": [
-        "deca9b0514d185e8e4f70433683e0e600e81af541b771b29680866b207660fb3"
+        "deca9b0514d185e8e4f70433683e0e600e81af541b771b29680866b207660fb3",
+        "20e0d74043b372ae96b38c28683d872f058cfb6cc132674b82ea2a0341911dd5"
       ]
     },
     "index.html": {
       "antes": "d6ce0b2b6ff9355570a4d90111ca7a709334e21a12d315a22a2488dce67433f5",
-      "depois": "1135b08f4e4498cbef4b55b993373b87feb4e9a6a6d26ab3199a5148c0fc1047",
+      "depois": "0c66400e6d1b7db9d9a945e99b7930b4488ec2d6e8f86d56d98f1208fafb8ff8",
       "intermediarios": [
         "d6ce0b2b6ff9355570a4d90111ca7a709334e21a12d315a22a2488dce67433f5",
         "a14a5464462c41dbf43370c329145a1e9c57f799035f5ae953978b65bcdbfcba",
         "8b0f9961769eb89881095d02ae6f9dc8084c92213bca361faf9da8877e5aa4a9",
-        "db7c71721759366625d7c756156b07600c11a893782e7eb1b598410dbe9dc867"
+        "db7c71721759366625d7c756156b07600c11a893782e7eb1b598410dbe9dc867",
+        "1135b08f4e4498cbef4b55b993373b87feb4e9a6a6d26ab3199a5148c0fc1047"
       ]
     },
     "template.json": {
       "antes": "571865bcd258fb49aa06f67a7481771de95ac27d01c093218e76cbcea864e107",
-      "depois": "1f4247d6ec81d53b98803543e79abb69895865508fcc4a84576e6428d06e22d0",
+      "depois": "2ca61c77c1b4370ed926818c324bee58c992bd0326447b7a76b5616817edf0e4",
       "intermediarios": [
         "571865bcd258fb49aa06f67a7481771de95ac27d01c093218e76cbcea864e107",
         "d385fd5790b9d424b7dbfa976d5d763d998017f00476d0e8eab8e1875d2b46bd",
         "7bd1a2eb13a22b08e70f7e62ecc980126e01446ae9bcb2e7324e18dd8d8252a6",
-        "5a0b1c0513603b7537710f294760f9c68750eb4d8a3c6c17c3259dbf1a9959ad"
+        "5a0b1c0513603b7537710f294760f9c68750eb4d8a3c6c17c3259dbf1a9959ad",
+        "1f4247d6ec81d53b98803543e79abb69895865508fcc4a84576e6428d06e22d0"
       ]
     },
     "assets/layout.js": {
@@ -361,48 +394,53 @@
     },
     "assets/selos.js": {
       "antes": "819f4d04a0037355940e58117e675bb773614a1a0a4695d183c5b3adc73af6b3",
-      "depois": "df0313b29e92ddfcae6faa54d1b6eb20ce29698ff88cc23e3039c0a9dee091ba",
+      "depois": "250cd7facc1350f0ada12fa8e1f3fa52028320add0de048353e5c3a233f54066",
       "intermediarios": [
         "819f4d04a0037355940e58117e675bb773614a1a0a4695d183c5b3adc73af6b3",
         "cd19c355fe83d28800bb4932a60f8d8fab11c8a4d1f0e87445930daba0e67023",
-        "cc6e7d7724c219372e6600a4c36fd57b2d44cf22f8b191c5784907981d2772c2"
+        "cc6e7d7724c219372e6600a4c36fd57b2d44cf22f8b191c5784907981d2772c2",
+        "df0313b29e92ddfcae6faa54d1b6eb20ce29698ff88cc23e3039c0a9dee091ba"
       ]
     },
     "assets/selos.css": {
       "antes": "a7dee46baf0b9ae40bc9717c9ac86bcd8a2369c95e9a92bc36cd0ae842fc4d47",
-      "depois": "46f1e02934ca7d995b86e5c61aaff9d2e81acad21050819e31d998432f5a4ddc",
+      "depois": "23d1dfd013d6b3159dd48f8fa810078aaeaf45484a4b865bb62bab7cd333a4c3",
       "intermediarios": [
         "a7dee46baf0b9ae40bc9717c9ac86bcd8a2369c95e9a92bc36cd0ae842fc4d47",
-        "d3a9b3e250369ed09d848337d37d1db336f0dd99001dadbfd348a4ff5439814b"
+        "d3a9b3e250369ed09d848337d37d1db336f0dd99001dadbfd348a4ff5439814b",
+        "46f1e02934ca7d995b86e5c61aaff9d2e81acad21050819e31d998432f5a4ddc"
       ]
     }
   },
   "uniforca-vitrine-nestle-flexivel": {
     "assets/edicao.js": {
       "antes": "80fc5ce09e52d552d28a41deea224347b2ea23e248bab7648cb77ef5e56e4290",
-      "depois": "20e0d74043b372ae96b38c28683d872f058cfb6cc132674b82ea2a0341911dd5",
+      "depois": "f32b9c8febb7040b1293839758d3270f58fbe571dab313a5db17cfb2d821a669",
       "intermediarios": [
-        "deca9b0514d185e8e4f70433683e0e600e81af541b771b29680866b207660fb3"
+        "deca9b0514d185e8e4f70433683e0e600e81af541b771b29680866b207660fb3",
+        "20e0d74043b372ae96b38c28683d872f058cfb6cc132674b82ea2a0341911dd5"
       ]
     },
     "index.html": {
       "antes": "e9c90798e8623375263d19928aac4c4e1e6b37c6f5d937b3ed2eeebe82c7475d",
-      "depois": "9a65e97cdf5dab7cd3f3a9857a1bc6e72c069d798b62b29e2d48d1f1140029a8",
+      "depois": "d13b48bfe9a8eafd17ee4645df7af3aac77ad1125865299074f348ee5e485faa",
       "intermediarios": [
         "e9c90798e8623375263d19928aac4c4e1e6b37c6f5d937b3ed2eeebe82c7475d",
         "387b423e73daf5aa01d73a5c87d5f91b157afbb643fe7046b6bfa53756df4de0",
         "fe28b3a291a6c7295ba5f67ad024aa6411133675979758dea64c45e35c04149f",
-        "dc38fc9cde88645accbed09fe066fc09afe475a15bb8e40f4d555385b68e59ba"
+        "dc38fc9cde88645accbed09fe066fc09afe475a15bb8e40f4d555385b68e59ba",
+        "9a65e97cdf5dab7cd3f3a9857a1bc6e72c069d798b62b29e2d48d1f1140029a8"
       ]
     },
     "template.json": {
       "antes": "249d906fef971bdc73aaba169f2a349ddf83dff5ac402fa2f0e20130a57306d7",
-      "depois": "d8dc133016d9cce23bbf6bf1c32130d7a7a0e1938425c1490ba482623431c7fe",
+      "depois": "1f8c48392c146dd53fc7a16ae06f7b907d652b3cf0f76613ae1653221ef6d320",
       "intermediarios": [
         "249d906fef971bdc73aaba169f2a349ddf83dff5ac402fa2f0e20130a57306d7",
         "a1190162ab8021e23901e28e622268e8c65bda7fad20b806630e6998632c1f0c",
         "d96b288547fa6929ce88c6a6ba630dc55ff3e7954510736383a5cdff667d4785",
-        "13a4ce24947dc24ff505d380d0a1e9ba872d69c214f874b0d3df508ba57578f7"
+        "13a4ce24947dc24ff505d380d0a1e9ba872d69c214f874b0d3df508ba57578f7",
+        "d8dc133016d9cce23bbf6bf1c32130d7a7a0e1938425c1490ba482623431c7fe"
       ]
     },
     "assets/layout.js": {
@@ -415,19 +453,21 @@
     },
     "assets/selos.js": {
       "antes": "819f4d04a0037355940e58117e675bb773614a1a0a4695d183c5b3adc73af6b3",
-      "depois": "df0313b29e92ddfcae6faa54d1b6eb20ce29698ff88cc23e3039c0a9dee091ba",
+      "depois": "250cd7facc1350f0ada12fa8e1f3fa52028320add0de048353e5c3a233f54066",
       "intermediarios": [
         "819f4d04a0037355940e58117e675bb773614a1a0a4695d183c5b3adc73af6b3",
         "cd19c355fe83d28800bb4932a60f8d8fab11c8a4d1f0e87445930daba0e67023",
-        "cc6e7d7724c219372e6600a4c36fd57b2d44cf22f8b191c5784907981d2772c2"
+        "cc6e7d7724c219372e6600a4c36fd57b2d44cf22f8b191c5784907981d2772c2",
+        "df0313b29e92ddfcae6faa54d1b6eb20ce29698ff88cc23e3039c0a9dee091ba"
       ]
     },
     "assets/selos.css": {
       "antes": "a7dee46baf0b9ae40bc9717c9ac86bcd8a2369c95e9a92bc36cd0ae842fc4d47",
-      "depois": "46f1e02934ca7d995b86e5c61aaff9d2e81acad21050819e31d998432f5a4ddc",
+      "depois": "23d1dfd013d6b3159dd48f8fa810078aaeaf45484a4b865bb62bab7cd333a4c3",
       "intermediarios": [
         "a7dee46baf0b9ae40bc9717c9ac86bcd8a2369c95e9a92bc36cd0ae842fc4d47",
-        "d3a9b3e250369ed09d848337d37d1db336f0dd99001dadbfd348a4ff5439814b"
+        "d3a9b3e250369ed09d848337d37d1db336f0dd99001dadbfd348a4ff5439814b",
+        "46f1e02934ca7d995b86e5c61aaff9d2e81acad21050819e31d998432f5a4ddc"
       ]
     }
   }

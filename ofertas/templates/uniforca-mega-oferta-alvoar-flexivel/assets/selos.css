@@ -69,3 +69,13 @@
 .produto[data-estilo-selo="amarelo"] .equivalencia-unidade{font-family:Barlow,sans-serif;font-size:8px}
 
 .produto[data-estilo-selo="amarelo"] .equivalencia-moeda{top:0}
+
+/* Chamada da oferta no selo ("LEVE 2 POR:"): logo abaixo do título; o preço desce e encolhe. */
+.selo-chamada{position:absolute;left:8px;right:8px;text-align:center;font-family:Montserrat,sans-serif;font-weight:900;line-height:1;white-space:nowrap;overflow:hidden;z-index:2;text-transform:uppercase}
+.produto[data-estilo-selo="amarelo"] .selo-chamada{top:41px;font-size:21px;color:#5f4535}
+.produto[data-estilo-selo="vermelho"] .selo-chamada{top:33px;font-size:19px;color:#fff}
+.produto[data-chamada="1"] .selo-preco{transform:translateY(12px) scale(.84);transform-origin:center bottom}
+.produto[data-chamada="1"][data-estilo-selo="vermelho"] .selo-preco{transform:translateY(8px) scale(.82)}
+.produto[data-chamada="1"][data-equivalencia="1"] .selo-preco{transform:translateY(-5px) scale(.74)}
+.produto[data-chamada="1"][data-equivalencia="1"][data-estilo-selo="amarelo"] .selo-chamada{top:44px;font-size:17px}
+.produto[data-chamada="1"][data-equivalencia="1"][data-estilo-selo="amarelo"] .selo-preco{transform:translateY(12px) scale(.7)}

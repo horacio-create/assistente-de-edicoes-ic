@@ -54,7 +54,8 @@ def atualizar(base, publicados):
                             # por último: depois das anteriores, o template já está na versão que esta espera
                             ('tags-produtos-20261105.json', 'antes-tags-produtos-20261105'),
                             ('nome-montserrat-20261109.json', 'antes-nome-montserrat-20261109'),
-                            ('cores-textos-20261111.json', 'antes-cores-textos-20261111')]:
-        # cores do nome e do preço: vale para todos os flexíveis de fábrica (os personalizados são preservados)
-        resultados.extend(_atualizar_manifesto(base, publicados, arquivo, backup, todos=arquivo.startswith('cores-textos')))
+                            ('cores-textos-20261111.json', 'antes-cores-textos-20261111'),
+                            ('chamada-selo-20261112.json', 'antes-chamada-selo-20261112')]:
+        # cores do nome e do preço e chamada do selo: valem para todos os flexíveis de fábrica (os personalizados são preservados)
+        resultados.extend(_atualizar_manifesto(base, publicados, arquivo, backup, todos=arquivo.startswith(('cores-textos', 'chamada-selo'))))
     return resultados

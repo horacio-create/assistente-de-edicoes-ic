@@ -1,6 +1,6 @@
 /* Os mesmos elementos e ajustes são usados na conferência e na exportação. */
 (function(global) {
-  const valido = /^(titulo|produto|precos|selo|normal|selo-titulo|(?:de|clube)-(?:int|cent)-\d{1,2}|complemento|complemento-texto|complemento-preco|complemento-unidade|seta|tag-[1-4]|tag-promo|tag-promo-texto|tag-promo-preco|clube-virgula|(?:de|clube)-(?:unidade|moeda))$/;
+  const valido = /^(titulo|produto|precos|selo|normal|selo-titulo|selo-chamada|(?:de|clube)-(?:int|cent)-\d{1,2}|complemento|complemento-texto|complemento-preco|complemento-unidade|seta|tag-[1-4]|tag-promo|tag-promo-texto|tag-promo-preco|clube-virgula|(?:de|clube)-(?:unidade|moeda))$/;
   const escalaMaxima=id=>id==='produto'?12:4;
   const caixasAlpha=new WeakMap();
   function caixaImagem(caixa,largura,altura,alpha={x0:0,y0:0,x1:1,y1:1},posicao='50% 50%') {
@@ -88,6 +88,7 @@
     marcar(p.querySelector('.tag-promo-preco'),'tag-promo-preco','Tag · preço','caractere');
     marcar(p.querySelector('.virgula'),'clube-virgula','Clube · vírgula','caractere');
     marcar(p.querySelector('.selo-titulo'),'selo-titulo','Texto do selo','caractere');
+    marcar(p.querySelector('.selo-chamada'),'selo-chamada','Chamada do selo','caractere');
   }
   const transformacao=(no)=>no.closest('.produto').__ajustes.elementos[no.dataset.editavel]||{x:0,y:0,escala:1};
   function pintar(no) {
@@ -195,23 +196,34 @@
         }
       }mover(dx,dy);
     }
+    // Partes que a padronização copia. Os números do preço são um grupo ("clube-int": cada dígito tem seu
+    // ajuste): cada dígito do destino recebe o ajuste do dígito na mesma posição do modelo (ou do último).
+    const PARTES=['produto','titulo','normal','selo','precos','de-unidade','clube-virgula','clube-unidade','clube-moeda','de-moeda',
+      'clube-int','clube-cent','de-int','de-cent','selo-titulo','selo-chamada','complemento','complemento-texto','complemento-preco','complemento-unidade'];
+    const GRUPOS=new Set(['clube-int','clube-cent','de-int','de-cent']);
+    const nosDaParte=(p,parte)=>GRUPOS.has(parte)
+      ?[...p.querySelectorAll(`[data-editavel^="${parte}-"]`)].filter(n=>new RegExp(`^${parte}-\\d+$`).test(n.dataset.editavel))
+        .sort((a,b)=>Number(a.dataset.editavel.split('-').pop())-Number(b.dataset.editavel.split('-').pop()))
+      :[p.querySelector(`[data-editavel="${parte}"]`)].filter(Boolean);
     function padronizar(c) {
-      const partes=['produto','titulo','normal','selo','precos','de-unidade','clube-virgula'];if(!partes.includes(c.parte))return;
+      if(!PARTES.includes(c.parte))return;
       const origem=produtos.find(p=>Number(p.dataset.numeroProduto)===Number(c.origem));if(!origem)return;
-      const noOrigem=origem.querySelector(`[data-editavel="${c.parte}"]`);if(!noOrigem)return;
-      const ajuste=transformacao(noOrigem),destinos=new Set((c.cartelas||[]).map(Number));
+      const modelos=nosDaParte(origem,c.parte);if(!modelos.length)return;
+      const destinos=new Set((c.cartelas||[]).map(Number));
       produtos.filter(p=>destinos.has(paineis.indexOf(p.closest('.painel')))).forEach(p=>{
-        const no=p.querySelector(`[data-editavel="${c.parte}"]`);if(!no)return;
-        // Copia a escala relativa ao desenho do template; posições só mudam por escolha explícita.
         const painel=p.closest('.painel'),anterior=painel.style.cssText;painel.style.setProperty('display','flex','important');painel.style.setProperty('visibility','hidden','important');
-        escrever(no,c.posicao?{...ajuste}:{...transformacao(no),escala:ajuste.escala});
-        const r=limitesVisuais(no),lim=p.closest('.painel').getBoundingClientRect(),a=transformacao(no);
-        const fator=Math.min(1,(lim.width-16)/Math.max(1,r.width),(lim.height-16)/Math.max(1,r.height));
-        if(fator<1)escrever(no,{...a,escala:a.escala*fator});
-        const b=limitesVisuais(no),s=herdada(no),atual=transformacao(no);
-        const dx=b.left<lim.left+8?lim.left+8-b.left:b.right>lim.right-8?lim.right-8-b.right:0;
-        const dy=b.top<lim.top+8?lim.top+8-b.top:b.bottom>lim.bottom-8?lim.bottom-8-b.bottom:0;
-        if(dx||dy)escrever(no,{...atual,x:atual.x+dx/s,y:atual.y+dy/s});
+        nosDaParte(p,c.parte).forEach((no,i)=>{
+          const ajuste=transformacao(modelos[Math.min(i,modelos.length-1)]);
+          // Copia a escala relativa ao desenho do template; posições só mudam por escolha explícita.
+          escrever(no,c.posicao?{...ajuste}:{...transformacao(no),escala:ajuste.escala});
+          const r=limitesVisuais(no),lim=painel.getBoundingClientRect(),a=transformacao(no);
+          const fator=Math.min(1,(lim.width-16)/Math.max(1,r.width),(lim.height-16)/Math.max(1,r.height));
+          if(fator<1)escrever(no,{...a,escala:a.escala*fator});
+          const b=limitesVisuais(no),s=herdada(no),atual=transformacao(no);
+          const dx=b.left<lim.left+8?lim.left+8-b.left:b.right>lim.right-8?lim.right-8-b.right:0;
+          const dy=b.top<lim.top+8?lim.top+8-b.top:b.bottom>lim.bottom-8?lim.bottom-8-b.bottom:0;
+          if(dx||dy)escrever(no,{...atual,x:atual.x+dx/s,y:atual.y+dy/s});
+        });
         painel.style.cssText=anterior;
       });
     }

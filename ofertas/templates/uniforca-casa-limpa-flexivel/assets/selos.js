@@ -57,6 +57,17 @@
     tag.style.setProperty('--promo-inteiro',(m[1].length>2?38:m[1].length>1?52:60)+'px');
     produto.querySelector('.foto-box').appendChild(tag);
   }
+  // Chamada da oferta no selo ("LEVE 2 POR:"), acima do preço: o preço encolhe para abrir espaço.
+  function chamada(produto, texto) {
+    produto.querySelector('.selo-chamada')?.remove();
+    delete produto.dataset.chamada;
+    const t = String(texto || '').trim();
+    if (!t) return;
+    const no = produto.ownerDocument.createElement('div');
+    no.className = 'selo-chamada'; no.textContent = t;
+    produto.dataset.chamada = '1';
+    produto.querySelector('.selo').appendChild(no);
+  }
   // Cores do nome e do preço normal escolhidas no projeto (vazio: as cores da arte do template).
   function cores(v) {
     const cor = c => /^#[0-9a-f]{6}$/i.test(String(c || '')) ? c : '';
@@ -72,5 +83,5 @@
   if (typeof document !== 'undefined') document.addEventListener('DOMContentLoaded', () => {
     try { cores(window.__hyperframes && window.__hyperframes.getVariables()); } catch (e) {}
   });
-  window.SelosOfertas = {resolver, aplicar, complemento, promocao, cores};
+  window.SelosOfertas = {resolver, aplicar, complemento, promocao, cores, chamada};
 })();
