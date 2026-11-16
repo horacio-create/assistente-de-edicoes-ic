@@ -10,14 +10,15 @@ def extrair_grade(page,doc,selos,objetos,imagens,spans,caracteres,precos_selo,nu
     centro=lambda r:(r.tl+r.br)/2
     alturas=sorted(s[0].height for s in selos)
     altura=alturas[len(alturas)//2]
-    candidatos=[s for s in spans if max(4,altura*.1)<s[2]<altura*.42
+    # títulos pequenos em painéis de destaque (3,76 pt no "Bem+ Proteína", selo de 38 pt): mínimo de 9% do selo
+    candidatos=[s for s in spans if max(3.5,altura*.09)<s[2]<altura*.42
                 and re.search('[A-Za-zÀ-ú]',s[1]) and '$' not in s[1]
                 and not re.fullmatch(r'cada|kg|un|100g|CLUBE DE DESCONTO',s[1],re.I)
                 and not any(r[0].contains(centro(s[0])) for r in selos)]
     grupos=[]
     for s in sorted(candidatos,key=lambda s:(s[0].y0,s[0].x0)):
         op=[g for g in grupos if abs(g['size']-s[2])<.5
-            and -2<s[0].y0-g['last'].y1<s[2]*.8
+            and -s[2]*.4<s[0].y0-g['last'].y1<s[2]*.8   # linhas com entrelinha apertada se sobrepõem um pouco
             and min(g['rect'].x1,s[0].x1)-max(g['rect'].x0,s[0].x0)>min(g['rect'].width,s[0].width)*.3]
         if op:
             g=min(op,key=lambda g:abs(centro(g['rect']).x-centro(s[0]).x))
@@ -25,7 +26,7 @@ def extrair_grade(page,doc,selos,objetos,imagens,spans,caracteres,precos_selo,nu
         else:grupos.append(dict(rect=pymupdf.Rect(s[0]),last=s[0],size=s[2],text=s[1]))
     def distancia_titulo(g,r):
         t=g['rect']
-        lateral=t.x1<=r.x0+5 and 0<=r.x0-t.x1<r.width and abs(centro(t).y-centro(r).y)<r.height
+        lateral=t.x1<=r.x0+5 and -5<=r.x0-t.x1<r.width and abs(centro(t).y-centro(r).y)<r.height   # título encostado à esquerda do selo
         if t.y0>r.y0 and not lateral:return float('inf')
         dx=abs(centro(t).x-(centro(r).x-r.width*.3))/r.width
         dy=max(0,r.y0-t.y1)/r.height
@@ -86,8 +87,8 @@ def extrair_grade(page,doc,selos,objetos,imagens,spans,caracteres,precos_selo,nu
     resultado=[]
     for i,selo in enumerate(selos):
         r=selo[0];titulo=titulos.get(i);partes=fotos[i]
-        if not titulo:raise ValueError('Não foi possível identificar o título de uma oferta. Marque essa oferta na página.')
-        nome=titulo['text'];principal=precos_selo[id(selo)]
+        # sem título: a oferta entra com o nome vazio (aviso "Nome não identificado") em vez de derrubar o encarte
+        nome=titulo['text'] if titulo else '';principal=precos_selo[id(selo)]
         extra,caixa_extra=_complemento(spans,principal[0])
         faixa=pymupdf.Rect(r.x0-r.width*.9,r.y0-r.height*.8,r.x1,r.y1+r.height*.7)
         normais=[c for c in caracteres if faixa.contains(centro(c[0]))
@@ -103,12 +104,12 @@ def extrair_grade(page,doc,selos,objetos,imagens,spans,caracteres,precos_selo,nu
         if unidade=='100G':unidade='100g'
         por,de=principal[1],normal[1] if normal else ''
         notas=avisos(nome,por,de,unidade)
-        area=pymupdf.Rect(r)|titulo['rect']
+        area=pymupdf.Rect(r)|titulo['rect'] if titulo else pymupdf.Rect(r)
         partes,tags=separar_tags(doc,partes,nome)  # +18, logo da marca: tags, não a foto
         com_fundo=not partes or not any(im[2] for im in partes)  # foto sai com o fundo da arte: tirar na importação
         if partes:
             # painel sem transparência com título e preços dentro (ex.: bandeja sobre fogo): só o lado da foto
-            png=_foto_sem_transparencia(page,partes,[(titulo['rect'],nome,0)],r,normal) if not any(im[2] for im in partes) else None
+            png=_foto_sem_transparencia(page,partes,[(titulo['rect'],nome,0)] if titulo else [],r,normal) if not any(im[2] for im in partes) else None
             if png:notas.append('Foto com o fundo do encarte: o PDF não traz o produto recortado')
             else:png=_foto(doc,partes)
             for im in partes:area|=im[0]
