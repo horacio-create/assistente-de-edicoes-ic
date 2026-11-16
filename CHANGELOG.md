@@ -1,5 +1,12 @@
 # Histórico de versões
 
+## 1.16.2 — Encartes em página única, "Leve 2 por" no selo e padronização dos valores — 16/11/2026
+
+- Encartes em imagem numa página única comprida (ex.: encarte inteiro exportado como uma tira) e em alta resolução passam a ser lidos por completo, com fotos e preços tirados da imagem original.
+- A faixa escura embaixo do selo ("Nessa promoção a unidade sai por", "Nesta embalagem 1L sai a") é lida como o complemento do selo editável, não como tag.
+- Novo campo "Chamada no selo" nos templates flexíveis (ex.: "LEVE 2 POR:"), acima do preço do selo; o leitor preenche quando o encarte traz a chamada.
+- "Padronizar várias cartelas" também copia R$, números inteiros, centavos e unidades do preço normal, do selo e do complemento, além do texto e da chamada do selo.
+
 ## 1.16.1 — Item ativo do menu igual em todas as ferramentas — 12/11/2026
 
 - O item da ferramenta aberta no menu lateral fica igual em todas as ferramentas (fundo discreto e tracinho verde, como em Vídeos). Em Ofertas, Vetorização M6S, Logo EAP e Molduras de TV ele era pintado inteiro com a cor da ferramenta e o texto perdia o contraste.
