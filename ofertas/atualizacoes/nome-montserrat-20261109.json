@@ -10,7 +10,10 @@
     },
     "assets/layout.js": {
       "antes": "2b05ad25b169841e8f0ecb6401dba59a8a526806bab23c66b405556b469bcb0c",
-      "depois": "91a39c107eebbd81cb62d8e6f5192cbf847020caed847e27ac9815ee96e04f1e"
+      "depois": "54869cc41553dffe2895eeaed16ee101087b8b88a6a845aed56c3a2d38f6916d",
+      "intermediarios": [
+        "91a39c107eebbd81cb62d8e6f5192cbf847020caed847e27ac9815ee96e04f1e"
+      ]
     },
     "capa.png": {
       "antes": "af3f1d3aedff54248a733ef33a780a4c61d49f168be7dbc5fa140f0c36537b24",

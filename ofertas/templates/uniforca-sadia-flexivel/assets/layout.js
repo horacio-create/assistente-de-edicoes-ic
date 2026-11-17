@@ -13,7 +13,7 @@
   }
 
   function organizarVertical(produtos, animacoes) {
-    // Todos os títulos do pedido usam a mesma fonte. A largura acompanha a coluna.
+    // Todos os títulos da cartela usam a mesma fonte. A largura acompanha a coluna.
     let fonte = 30;
     produtos.forEach(p => {
       p.style.width = p.parentElement.clientWidth + 'px';
@@ -135,6 +135,17 @@
       p.dataset.distribuicao='lateral';
     });
   }
-  global.LayoutOfertas = {distribuir, organizarVertical, geometriaLateral, organizar};
+  // Cada cartela é medida sozinha (escala dos preços, tamanho dos títulos): o editor, que mostra todos os produtos
+  // do pedido, e cada vídeo, que leva só parte deles, desenham a mesma cartela do mesmo jeito.
+  const porCartela = (organizarGrupo) => (produtos, animacoes) => {
+    const cartelas = new Map();
+    produtos.forEach(p => {
+      const cartela = p.closest('.painel') || p.parentElement;
+      if (!cartelas.has(cartela)) cartelas.set(cartela, []);
+      cartelas.get(cartela).push(p);
+    });
+    cartelas.forEach(grupo => organizarGrupo(grupo, animacoes));
+  };
+  global.LayoutOfertas = {distribuir, organizarVertical: porCartela(organizarVertical), geometriaLateral, organizar: porCartela(organizar)};
   if (typeof module !== 'undefined') module.exports = global.LayoutOfertas;
 })(globalThis);

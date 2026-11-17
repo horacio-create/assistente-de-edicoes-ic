@@ -1,0 +1,92 @@
+{
+  "uniforca-3-dias-baratos-flexivel": {
+    "assets/layout.js": {
+      "antes": "2b05ad25b169841e8f0ecb6401dba59a8a526806bab23c66b405556b469bcb0c",
+      "depois": "8cf473319b584c5822c542677f5faf064d8f4edd93e0d09605af86c483600f3e"
+    }
+  },
+  "uniforca-casa-limpa-flexivel": {
+    "assets/layout.js": {
+      "antes": "91a39c107eebbd81cb62d8e6f5192cbf847020caed847e27ac9815ee96e04f1e",
+      "depois": "54869cc41553dffe2895eeaed16ee101087b8b88a6a845aed56c3a2d38f6916d"
+    }
+  },
+  "uniforca-dia-dos-supermercados-flexivel": {
+    "assets/layout.js": {
+      "antes": "91a39c107eebbd81cb62d8e6f5192cbf847020caed847e27ac9815ee96e04f1e",
+      "depois": "54869cc41553dffe2895eeaed16ee101087b8b88a6a845aed56c3a2d38f6916d"
+    }
+  },
+  "uniforca-hora-da-carne-flexivel": {
+    "assets/layout.js": {
+      "antes": "2b05ad25b169841e8f0ecb6401dba59a8a526806bab23c66b405556b469bcb0c",
+      "depois": "8cf473319b584c5822c542677f5faf064d8f4edd93e0d09605af86c483600f3e"
+    }
+  },
+  "uniforca-hora-da-feira-flexivel": {
+    "assets/layout.js": {
+      "antes": "2b05ad25b169841e8f0ecb6401dba59a8a526806bab23c66b405556b469bcb0c",
+      "depois": "8cf473319b584c5822c542677f5faf064d8f4edd93e0d09605af86c483600f3e"
+    }
+  },
+  "uniforca-mega-oferta-alvoar-flexivel": {
+    "assets/layout.js": {
+      "antes": "91a39c107eebbd81cb62d8e6f5192cbf847020caed847e27ac9815ee96e04f1e",
+      "depois": "54869cc41553dffe2895eeaed16ee101087b8b88a6a845aed56c3a2d38f6916d"
+    }
+  },
+  "uniforca-momento-do-bebe-flexivel": {
+    "assets/layout.js": {
+      "antes": "2b05ad25b169841e8f0ecb6401dba59a8a526806bab23c66b405556b469bcb0c",
+      "depois": "8cf473319b584c5822c542677f5faf064d8f4edd93e0d09605af86c483600f3e"
+    }
+  },
+  "uniforca-ofertas-carrinho-flexivel": {
+    "assets/layout.js": {
+      "antes": "91a39c107eebbd81cb62d8e6f5192cbf847020caed847e27ac9815ee96e04f1e",
+      "depois": "54869cc41553dffe2895eeaed16ee101087b8b88a6a845aed56c3a2d38f6916d"
+    }
+  },
+  "uniforca-ofertas-incriveis-flexivel": {
+    "assets/layout.js": {
+      "antes": "2b05ad25b169841e8f0ecb6401dba59a8a526806bab23c66b405556b469bcb0c",
+      "depois": "8cf473319b584c5822c542677f5faf064d8f4edd93e0d09605af86c483600f3e"
+    }
+  },
+  "uniforca-perdigao-flexivel": {
+    "assets/layout.js": {
+      "antes": "2b05ad25b169841e8f0ecb6401dba59a8a526806bab23c66b405556b469bcb0c",
+      "depois": "8cf473319b584c5822c542677f5faf064d8f4edd93e0d09605af86c483600f3e"
+    }
+  },
+  "uniforca-sadia-flexivel": {
+    "assets/layout.js": {
+      "antes": "2b05ad25b169841e8f0ecb6401dba59a8a526806bab23c66b405556b469bcb0c",
+      "depois": "8cf473319b584c5822c542677f5faf064d8f4edd93e0d09605af86c483600f3e"
+    }
+  },
+  "uniforca-super-oferta-tijuca-flexivel": {
+    "assets/layout.js": {
+      "antes": "91a39c107eebbd81cb62d8e6f5192cbf847020caed847e27ac9815ee96e04f1e",
+      "depois": "54869cc41553dffe2895eeaed16ee101087b8b88a6a845aed56c3a2d38f6916d"
+    }
+  },
+  "uniforca-vitrine-itambe-flexivel": {
+    "assets/layout.js": {
+      "antes": "2b05ad25b169841e8f0ecb6401dba59a8a526806bab23c66b405556b469bcb0c",
+      "depois": "8cf473319b584c5822c542677f5faf064d8f4edd93e0d09605af86c483600f3e"
+    }
+  },
+  "uniforca-vitrine-laranja-flexivel": {
+    "assets/layout.js": {
+      "antes": "2b05ad25b169841e8f0ecb6401dba59a8a526806bab23c66b405556b469bcb0c",
+      "depois": "8cf473319b584c5822c542677f5faf064d8f4edd93e0d09605af86c483600f3e"
+    }
+  },
+  "uniforca-vitrine-nestle-flexivel": {
+    "assets/layout.js": {
+      "antes": "2b05ad25b169841e8f0ecb6401dba59a8a526806bab23c66b405556b469bcb0c",
+      "depois": "8cf473319b584c5822c542677f5faf064d8f4edd93e0d09605af86c483600f3e"
+    }
+  }
+}
