@@ -1,5 +1,10 @@
 # Histórico de versões
 
+## 1.16.5 — Preços do vídeo iguais aos do editor — 17/11/2026
+
+- Nos templates de cartelas flexíveis, o tamanho do selo, dos preços e dos títulos passa a ser calculado em cada cartela. Antes era calculado com todos os produtos da página: o editor (com todos os produtos do encarte) e cada vídeo (só com os seus) desenhavam a mesma cartela de jeitos diferentes, e os preços apareciam deslocados no vídeo.
+- Os templates já instalados recebem a correção automaticamente; templates personalizados pelo designer são preservados.
+
 ## 1.16.4 — Template Ofertas para Encher o Seu Carrinho — 16/11/2026
 
 - Novo template "Ofertas para Encher o Seu Carrinho" (Rede Uniforça), com a data editável abaixo de "Ofertas Válidas para os dias" (dias e mês em negrito, como na arte).

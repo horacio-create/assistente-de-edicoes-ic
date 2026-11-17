@@ -38,9 +38,10 @@
     },
     "assets/layout.js": {
       "antes": "97cc9be83dedbd9a58a45946f8aa59f0b493ca2cba5679147db333717e72be19",
-      "depois": "2b05ad25b169841e8f0ecb6401dba59a8a526806bab23c66b405556b469bcb0c",
+      "depois": "8cf473319b584c5822c542677f5faf064d8f4edd93e0d09605af86c483600f3e",
       "intermediarios": [
-        "078e7b4324dffcd7655dc1b1dfde000a4560452712000e67ca53dcd941a2b77c"
+        "078e7b4324dffcd7655dc1b1dfde000a4560452712000e67ca53dcd941a2b77c",
+        "2b05ad25b169841e8f0ecb6401dba59a8a526806bab23c66b405556b469bcb0c"
       ]
     },
     "assets/selos.css": {
@@ -108,9 +109,10 @@
     },
     "assets/layout.js": {
       "antes": "97cc9be83dedbd9a58a45946f8aa59f0b493ca2cba5679147db333717e72be19",
-      "depois": "2b05ad25b169841e8f0ecb6401dba59a8a526806bab23c66b405556b469bcb0c",
+      "depois": "8cf473319b584c5822c542677f5faf064d8f4edd93e0d09605af86c483600f3e",
       "intermediarios": [
-        "078e7b4324dffcd7655dc1b1dfde000a4560452712000e67ca53dcd941a2b77c"
+        "078e7b4324dffcd7655dc1b1dfde000a4560452712000e67ca53dcd941a2b77c",
+        "2b05ad25b169841e8f0ecb6401dba59a8a526806bab23c66b405556b469bcb0c"
       ]
     },
     "assets/selos.css": {
@@ -185,9 +187,10 @@
     },
     "assets/layout.js": {
       "antes": "97cc9be83dedbd9a58a45946f8aa59f0b493ca2cba5679147db333717e72be19",
-      "depois": "2b05ad25b169841e8f0ecb6401dba59a8a526806bab23c66b405556b469bcb0c",
+      "depois": "8cf473319b584c5822c542677f5faf064d8f4edd93e0d09605af86c483600f3e",
       "intermediarios": [
-        "078e7b4324dffcd7655dc1b1dfde000a4560452712000e67ca53dcd941a2b77c"
+        "078e7b4324dffcd7655dc1b1dfde000a4560452712000e67ca53dcd941a2b77c",
+        "2b05ad25b169841e8f0ecb6401dba59a8a526806bab23c66b405556b469bcb0c"
       ]
     },
     "assets/selos.css": {
