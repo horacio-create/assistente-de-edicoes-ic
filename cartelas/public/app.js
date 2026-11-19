@@ -449,7 +449,7 @@ document.querySelectorAll('[data-view]').forEach(button=>button.onclick=async()=
   }catch(err){toast('Não foi possível listar os trabalhos: '+err.message);}finally{await diskBackups.show();}
   if(view==='references'&&!$('reference-grid').children.length) {try{const response=await fetch('api/references');if(!response.ok)throw new Error('Referências indisponíveis');const refs=await response.json();$('reference-grid').innerHTML=refs.map(r=>`<article class="reference-card"><a href="${esc(r.url)}" target="_blank" rel="noopener"><img loading="lazy" src="${esc(r.url)}" alt="Referência ${esc(r.name)}"></a><p>${esc(r.name)}</p></article>`).join('');}catch(err){toast(err.message);}}
 });
-workflowUi=setupWorkflow({getProject:()=>project,getIssues:card=>issues(card)});
+workflowUi=setupWorkflow({getProject:()=>project,getIssues:card=>issues(card),notify:toast});
 // A selection belongs to editing; other steps show the card without the selection frame.
 document.addEventListener('cartelas:step',e=>{if(e.detail!=='edicao'&&selectedId){selectedId=null;multiIds.clear();render();}});
 visualDirectionUi=setupVisualDirection({getProject:()=>project,getCard:active,change,notify:toast});
