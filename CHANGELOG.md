@@ -1,5 +1,10 @@
 # Histórico de versões
 
+## 1.17.1 — Cartelas: roteiro organizado ao avançar — 19/11/2026
+
+- No Cartelas de VT, avançar do Pedido para Materiais, Estilo ou as etapas seguintes organiza o roteiro em cartelas automaticamente. Antes era possível seguir sem clicar em "Organizar cartelas": o trabalho ficava sem cartelas, os templates não podiam ser aplicados e o roteiro, a logo e as fotos não eram distribuídos.
+- Sem roteiro escrito, o Cartelas permanece no Pedido e avisa o que falta.
+
 ## 1.17.0 — Cartelas de VT no Assistente de Edições — 19/11/2026
 
 - O Assistente de Cartelas passa a ser uma ferramenta do Assistente de Edições: "Cartelas de VT" aparece no menu e na tela inicial e abre dentro do sistema, sem precisar iniciar o Cartelas separado.
