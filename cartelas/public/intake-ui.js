@@ -126,7 +126,11 @@ function renderSources(){
   };
   $('intake-generate').onclick=()=>{try{$('intake-proposal').value=formatBriefing(readFields());scriptNeedsUpdate=false;$('intake-script-found').hidden=true;storeDraft();notify('Roteiro proposto. Confira os textos e instruções antes de usar.');}catch(err){notify(err.message);}};
   $('intake-apply').onclick=()=>{
-    try{const script=$('intake-proposal').value.trim();parseBrief(script);applyScript(script);document.querySelector('[data-view="editor"]').click();notify('Roteiro levado ao pedido do trabalho. Confira e clique em “Organizar cartelas” para montar.');}catch(err){notify(err.message);}
+    // A conferência do briefing já é a revisão do roteiro: as cartelas são montadas em seguida.
+    // Se o trabalho já tiver cartelas, "Organizar cartelas" pede confirmação antes de substituí-las.
+    try{const script=$('intake-proposal').value.trim();parseBrief(script);applyScript(script);document.querySelector('[data-view="editor"]').click();
+      const before=getProject().cards;$('parse').click();
+      if(getProject().cards===before)notify('Roteiro levado ao pedido. As cartelas atuais foram mantidas; clique em “Reorganizar cartelas” para montar com o novo roteiro.');}catch(err){notify(err.message);}
   };
   refreshAvailability();aiAvailability();return {sync};
 }
