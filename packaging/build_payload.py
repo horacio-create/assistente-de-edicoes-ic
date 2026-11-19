@@ -6,7 +6,7 @@ app, work, build, output = map(lambda p: Path(p).resolve(), sys.argv[1:])
 assert build.parent == work, 'Build directory must belong to the named work directory'
 stage = build / 'stage'
 stage.mkdir()
-excluded = {'__pycache__', 'test', 'tests', 'idlelib', 'tkinter', 'turtledemo', 'ensurepip', 'lib2to3', 'pip', 'mupdf-devel'}
+excluded = {'__pycache__', 'test', 'tests', 'idlelib', 'tkinter', 'turtledemo', 'ensurepip', 'lib2to3', 'pip', 'mupdf-devel', '.local-reader', '.reader-models', '.reader-tmp'}
 def ignore(directory, names):
     return [n for n in names if n in excluded or n.endswith(('.pyc', '.pyo'))]
 shutil.copytree(work / 'python' / 'Lib', stage / 'python' / 'Lib', ignore=ignore)
@@ -24,7 +24,7 @@ for wheel in sorted((work / 'wheels').glob('*.whl')):
         else: z.extractall(site)
 (stage / 'app').mkdir()
 for file in app.glob('*.py'): shutil.copy2(file, stage / 'app' / file.name)
-for folder in ('modules', 'static', 'ofertas'): shutil.copytree(app / folder, stage / 'app' / folder, ignore=ignore)
+for folder in ('modules', 'static', 'ofertas', 'cartelas'): shutil.copytree(app / folder, stage / 'app' / folder, ignore=ignore)
 if not (app / 'tools' / 'ffmpeg' / 'ffmpeg.exe').is_file() or not (app / 'tools' / 'ffmpeg' / 'ffprobe.exe').is_file():
     raise RuntimeError('Instale os vídeos com Instalar-video.ps1 antes de empacotar o portátil.')
 shutil.copytree(app / 'tools' / 'ffmpeg', stage / 'app' / 'tools' / 'ffmpeg')

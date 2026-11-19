@@ -1,0 +1,8 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {feedCells,feedSummary} from '../public/feed-analysis.js';
+import {graphicPatterns} from '../public/reference-patterns.js';
+import {recurringColors} from '../public/reference-analysis.js';
+test('paleta aceita até 36 publicações separadas e limita lotes maiores',()=>{const posts=Array.from({length:36},(_,i)=>({name:'Post '+i,colors:[{hex:'#6a65cc',share:.3}]}));const colors=recurringColors(posts);assert.equal(colors[0].count,36);assert.equal(colors[0].total,36);assert.throws(()=>recurringColors([...posts,posts[0]]));});
+test('grade divide o recorte original sem sair da imagem nem perder a origem',()=>{const crop={x:.1,y:.2,w:.8,h:.6},cells=feedCells(crop,2,3);assert.equal(cells.length,6);assert.equal(cells[0].x,.1);assert.equal(cells[3].y,.5);assert.ok(Math.abs(cells.reduce((sum,c)=>sum+c.w*c.h,0)-crop.w*crop.h)<1e-9);assert.ok(cells.every(c=>c.x>=crop.x&&c.y>=crop.y&&c.x+c.w<=.900001&&c.y+c.h<=.800001));for(const args of [[crop,7,3],[crop,2,4],[{...crop,x:.9},2,3],[crop,1.5,3]])assert.throws(()=>feedCells(...args));});
+test('frequência do feed conta publicações com padrão e não quantas formas existem',()=>{const element={type:'band',box:{x:.1,y:.1,w:.6,h:.05}},samples=[{name:'Post 1',colors:[{hex:'#6a65cc',elements:[element,element,element]}]},{name:'Post 2',colors:[{hex:'#6a65cc',elements:[element]}]},{name:'Post 3',colors:[]}],patterns=graphicPatterns(samples),summary=feedSummary(samples,patterns);assert.equal(summary.total,3);assert.equal(summary.repeated[0].count,2);assert.equal(summary.repeated[0].total,3);assert.deepEqual(patterns[0].positions,[]);});

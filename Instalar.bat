@@ -17,10 +17,15 @@ rem Ofertas de supermercados: motor de video (opcional, requer Node.js 20+)
 where node >nul 2>nul
 if errorlevel 1 (
   echo.
-  echo Node.js nao encontrado: o modulo Ofertas de supermercados fica desativado.
+  echo Node.js nao encontrado: os modulos Ofertas de supermercados e Cartelas de VT ficam desativados.
   echo Para usar, instale o Node.js 20+ de https://nodejs.org e rode este arquivo de novo.
 ) else (
   pushd ofertas\motor
+  call npm install --no-audit --no-fund
+  if errorlevel 1 (popd & goto :falha)
+  popd
+  rem Cartelas de VT
+  pushd cartelas
   call npm install --no-audit --no-fund
   if errorlevel 1 (popd & goto :falha)
   popd

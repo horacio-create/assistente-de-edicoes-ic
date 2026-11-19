@@ -1214,3 +1214,5 @@ body.video-editor .image-pdf-import{display:none}
 .vector-shell{--respiro-y:16px;--respiro-x:50px;padding:var(--respiro-y) var(--respiro-x)}
 #vector-svg,#vector-original{position:absolute;left:var(--respiro-x);top:var(--respiro-y);width:calc(100% - 2 * var(--respiro-x));height:calc(100% - 2 * var(--respiro-y))}
 @media(max-width:700px){.vector-shell{--respiro-y:10px;--respiro-x:12px}}
+/* Cartelas de VT: o app ocupa toda a área ao lado do menu */
+.secao-cartelas main{padding:0;max-width:none}.secao-cartelas main>header{display:none}#cartelas{height:100vh;height:100dvh}#cartelas-frame{display:block;width:100%;height:100%;border:0;background:#fff}

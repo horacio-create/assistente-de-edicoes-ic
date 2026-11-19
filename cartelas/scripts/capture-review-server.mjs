@@ -1,0 +1,20 @@
+// UI harness only: Chrome APIs are simulated. No extension is installed by this script.
+import {readFile,mkdir} from 'node:fs/promises';
+import path from 'node:path';
+import {createServer} from '../server.mjs';
+import {createCaptureService} from '../capture.mjs';
+import {createBackupService} from '../backups.mjs';
+import {createLibraryBackupService} from '../library-backups.mjs';
+const directory=path.resolve('test-results/capture-review');await mkdir(directory,{recursive:true});const origin='chrome-extension://'+'a'.repeat(32),capture=createCaptureService({directory:path.join(directory,'connections')});
+const shots=await Promise.all(['073713','073708'].map(s=>readFile('C:/Users/TM-Mídia/Pictures/Screenshots/Captura de tela 2026-10-23 '+s+'.png')));
+const stub=`const area=(storage,key)=>({async get(keys){const value=JSON.parse(storage.getItem(key)||'{}');return typeof keys==='string'?{[keys]:value[keys]}:Object.fromEntries(keys.map(k=>[k,value[k]]));},async set(value){storage.setItem(key,JSON.stringify({...JSON.parse(storage.getItem(key)||'{}'),...value}));},async remove(field){const value=JSON.parse(storage.getItem(key)||'{}');delete value[field];storage.setItem(key,JSON.stringify(value));}});let shot=0;const profile=()=>sessionStorage.getItem('qa-profile')||'cliente_simulado';window.chrome={storage:{session:area(sessionStorage,'capture-batch'),local:area(localStorage,'capture-settings')},tabs:{async query(query){return query.url?[]:[{id:1,windowId:1,url:'https://www.instagram.com/'+profile()+'/'}];},async captureVisibleTab(){const r=await fetch('/qa-shot/'+(shot++%2));const b=await r.blob();return await new Promise(resolve=>{const f=new FileReader();f.onload=()=>resolve(f.result);f.readAsDataURL(b);});},async create(){},async update(){}}};const settings=JSON.parse(localStorage.getItem('capture-settings')||'{}');if(!settings.port)chrome.storage.local.set({port:'3239'});const bar=document.createElement('aside');bar.style='background:#30274e;color:white;padding:8px;font:11px Arial';bar.textContent='SIMULAÇÃO DE INTERFACE · APIs do Chrome simuladas · capturas de prints de teste';document.body.prepend(bar);`;
+const server=createServer({capture,backups:createBackupService({directory:path.join(directory,'backups')}),libraries:createLibraryBackupService(path.join(directory,'libraries'))}),handler=server.listeners('request')[0];server.removeAllListeners('request');server.on('request',async(req,res)=>{try{
+  if(req.headers.host!=='127.0.0.1:3239'){res.writeHead(403);return res.end();}
+  if(['/api/capture/pair','/api/capture/receive'].includes(req.url)&&req.headers.origin==='http://127.0.0.1:3239')req.headers.origin=origin;
+  if(req.url==='/qa-shot/0'||req.url==='/qa-shot/1'){res.setHeader('Content-Type','image/png');return res.end(shots[+req.url.at(-1)]);}
+  if(req.url==='/extension-popup.html'){const html=await readFile('extensao-cartelas/popup.html','utf8');res.setHeader('Content-Type','text/html; charset=utf-8');return res.end(html.replace('<script type="module" src="popup.js">','<script src="/chrome-simulation.js"></script><script type="module" src="/extension/popup.js">').replace('href="popup.css"','href="/extension/popup.css"'));}
+  if(req.url==='/chrome-simulation.js'){res.setHeader('Content-Type','application/javascript');return res.end(stub);}
+  const file=req.url.match(/^\/extension\/(popup.js|popup.css|model.js)$/);if(file){res.setHeader('Content-Type',file[1].endsWith('css')?'text/css':'application/javascript');return res.end(await readFile(path.join('extensao-cartelas',file[1])));}
+  if(req.url==='/'){const html=await readFile('public/index.html','utf8');res.setHeader('Content-Type','text/html; charset=utf-8');return res.end(html.replace('<main','<aside style="position:fixed;bottom:0;left:0;right:0;z-index:9999;padding:7px;background:#30274e;color:white">TESTE ISOLADO · capturas recebidas de uma simulação da extensão</aside><main'));}
+  return handler(req,res);
+}catch{res.writeHead(400);res.end('Falha no ambiente de teste.');}});server.listen(3239,'127.0.0.1',()=>console.log('Capture UI review: http://127.0.0.1:3239/'));

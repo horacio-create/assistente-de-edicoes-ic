@@ -17,3 +17,9 @@ snapshots/
 .hyperframes/
 deploy/.env
 tools/ffmpeg/
+
+# Cartelas de VT: leitura local (modelos grandes) e configuração privada ficam só no computador
+cartelas/.local-reader/
+cartelas/.reader-models/
+cartelas/.reader-tmp/
+cartelas/.env
