@@ -1,5 +1,10 @@
 # Histórico de versões
 
+## 1.17.2 — Cartelas: conferência do briefing já monta as cartelas — 19/11/2026
+
+- No Cartelas de VT, depois de ler mensagens, prints e áudios, o botão "Montar as cartelas" leva o roteiro ao pedido e já monta as cartelas, abrindo a etapa Materiais. Antes era preciso clicar em "Usar no pedido do trabalho" e depois em "Organizar cartelas".
+- Se o trabalho já tiver cartelas, o sistema pede confirmação antes de substituí-las.
+
 ## 1.17.1 — Cartelas: roteiro organizado ao avançar — 19/11/2026
 
 - No Cartelas de VT, avançar do Pedido para Materiais, Estilo ou as etapas seguintes organiza o roteiro em cartelas automaticamente. Antes era possível seguir sem clicar em "Organizar cartelas": o trabalho ficava sem cartelas, os templates não podiam ser aplicados e o roteiro, a logo e as fotos não eram distribuídos.
