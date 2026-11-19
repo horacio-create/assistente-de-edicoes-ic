@@ -27,6 +27,8 @@ USER indoor
 COPY --chown=indoor ofertas/motor/package.json ofertas/motor/package-lock.json ofertas/motor/
 RUN cd ofertas/motor && npm ci --no-audit --no-fund \
  && node node_modules/hyperframes/bin/hyperframes.mjs browser ensure
+COPY --chown=indoor cartelas/package.json cartelas/package-lock.json cartelas/
+RUN cd cartelas && npm ci --omit=dev --no-audit --no-fund
 
 COPY --chown=indoor . .
 EXPOSE 8080

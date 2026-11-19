@@ -9,7 +9,8 @@ const HOME_TOOLS = {
  ms6: {name: 'Vetorização M6S', icon: 'spline', view: 'vector', text: 'Transforma a logo do cliente em contornos DXF para gravar o microfone M6S no laser.'},
  eap: {name: 'Logo EAP', icon: 'hexagon', view: 'eap', text: 'Limpa ou vetoriza a logo do cliente e entrega os PNGs em 1024 × 1024 prontos para uso.'},
  molduras: {name: 'Molduras de TV', icon: 'moldura', view: 'molduras', text: 'Cria a moldura da TV na identidade do cliente e gera a folha de impressão e a faca de corte em PDF.'},
- estampas: {name: 'Estampas de camisa', icon: 'shirt', view: 'estampas', text: 'Prepara a estampa para o DTF em cada tamanho de camisa, dentro da área segura, com folha de conferência.'}
+ estampas: {name: 'Estampas de camisa', icon: 'shirt', view: 'estampas', text: 'Prepara a estampa para o DTF em cada tamanho de camisa, dentro da área segura, com folha de conferência.'},
+ cartelas: {name: 'Cartelas de VT', icon: 'cartelas', view: 'cartelas', text: 'Transforma o pedido do cliente em cartelas de VT prontas para aprovação, com PSDs em camadas para a produção.'}
 };
 const HOME_BRAND = {
  indoor: {eyebrow: 'Indoor Channel · Assistente de Edições', title: 'Artes, vídeos e ofertas para as telas da Indoor Channel', text: 'Tudo direto no navegador. Escolha uma ferramenta abaixo ou veja um tutorial antes de começar.'},

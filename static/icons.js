@@ -59,6 +59,7 @@ const ICON_BODIES={
  'aproximado':'<path d="M5 8.6c1.8-2.6 4.4-2.6 7 0s5.2 2.6 7 0"/><path d="M5 13.5h14M5 18h14"/>','brace-open':'<path transform="translate(6.5 0)" d="M8 3H7a2 2 0 0 0-2 2v5a2 2 0 0 1-2 2a2 2 0 0 1 2 2v5c0 1.1.9 2 2 2h1"/>',
  'brace-close':'<path transform="translate(-6.5 0)" d="M16 21h1a2 2 0 0 0 2-2v-5c0-1.1.9-2 2-2a2 2 0 0 1-2-2V5a2 2 0 0 0-2-2h-1"/>',
   'shirt':'<path d="M20.38 3.46L16 2a4 4 0 0 1-8 0L3.62 3.46a2 2 0 0 0-1.34 2.23l.58 3.47a1 1 0 0 0 .99.84H6v10c0 1.1.9 2 2 2h8a2 2 0 0 0 2-2V10h2.15a1 1 0 0 0 .99-.84l.58-3.47a2 2 0 0 0-1.34-2.23"/>',
+ 'cartelas':'<path d="M2 3h20"/><path d="M21 3v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V3"/><path d="m7 21 5-5 5 5"/>',
  'moldura':'<path d="M3.2 3.6H20.8Q21.8 3.6 21.8 4.6V17.6Q21.8 18.6 20.8 18.6H16C13.6 18.6 12.6 20.4 10 20.4H4.2Q2.2 20.4 2.2 18.4V4.6Q2.2 3.6 3.2 3.6Z"/><rect width="11.1" height="6.5" x="6.45" y="7.85" rx=".5"/>',
  'palette':'<path d="M12 22a1 1 0 0 1 0-20a10 9 0 0 1 10 9a5 5 0 0 1-5 5h-2.25a1.75 1.75 0 0 0-1.4 2.8l.3.4a1.75 1.75 0 0 1-1.4 2.8z"/><circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/><circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/><circle cx="6.5" cy="12.5" r=".5" fill="currentColor"/><circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/>',
  'arrow-up-to-line':'<path d="M5 3h14m-1 10l-6-6l-6 6m6-6v14"/>',

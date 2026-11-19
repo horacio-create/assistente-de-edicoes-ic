@@ -1,0 +1,60 @@
+/* Flow layer: step progress, material needs, live order guide and browser surfaces.
+   Loaded last; uses the tokens defined in indoor-theme.css. */
+:root{--pending:oklch(84% .11 75);--pending-ink:oklch(38% .08 60);--done:var(--green)}
+
+/* Browser surfaces carry the palette too. */
+::selection{background:color-mix(in oklch,var(--accent) 55%,transparent);color:var(--ink)}
+input,textarea{caret-color:var(--green)}
+html{scrollbar-color:var(--rule-strong) transparent}
+.sidebar{scrollbar-color:#ffffff30 transparent}
+
+/* Step bar: each step reports what is left. */
+.workflow .step{position:relative}
+.workflow .step .step-label{min-width:0;flex:1}
+.step-state{margin-left:auto;flex:none;display:grid;place-items:center;min-width:22px;height:22px;padding:0 6px;border-radius:11px;font-size:11px;font-weight:700;font-variant-numeric:tabular-nums;line-height:1}
+.step-state:empty{display:none}
+.step-state svg{width:14px;height:14px}
+.workflow .step.done .step-state{background:color-mix(in oklch,var(--accent) 40%,var(--surface));color:var(--done);padding:0}
+.workflow .step.pending .step-state{background:var(--pending);color:var(--pending-ink)}
+.workflow .step:not(.done):not(.pending) .step-state{background:var(--tint);color:var(--ink-secondary)}
+.workflow .step.done:not(.active) .step-number{background:color-mix(in oklch,var(--accent) 30%,var(--surface));color:var(--done)}
+.workflow .step:hover:not(.active){background:var(--tint)}
+.workflow .step{transition:background 160ms ease-out}
+
+/* Materials: what the order asks for, before the drop zones. */
+.materials-needs{display:flex;flex-wrap:wrap;align-items:center;gap:10px 28px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px 20px;margin-bottom:18px}
+.materials-needs h2{font-size:14px;margin:0;letter-spacing:-.01em}
+.materials-needs ul{display:flex;flex-wrap:wrap;gap:8px 24px;list-style:none;margin:0;padding:0}
+.materials-needs li{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--ink-secondary)}
+.materials-needs li strong{color:var(--ink);font-weight:650}
+.need-mark{display:grid;place-items:center;width:20px;height:20px;border-radius:50%;flex:none}
+.need-mark svg{width:13px;height:13px}
+.materials-needs li.ok .need-mark{background:color-mix(in oklch,var(--accent) 40%,var(--surface));color:var(--done)}
+.materials-needs li.missing .need-mark{border:2px solid var(--pending);background:transparent}
+.materials-needs li.missing>span:last-child{color:var(--pending-ink);font-weight:600}
+.material-heading{gap:0}
+
+/* Order guide: intro while empty, the organized cards afterwards. */
+.order-guide h2{margin-top:0}
+.order-guide[data-mode=cards] h2{font-size:20px;margin-bottom:16px}
+.guide-cards{list-style:none;margin:0 0 20px;padding:0;display:grid;gap:8px;counter-reset:none}
+.order-guide .guide-cards li{margin:0;display:grid;gap:2px;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px 14px}
+.order-guide .guide-cards li::before{content:none}
+.guide-cards strong{font-size:13px;color:var(--ink)}
+.guide-cards span{font-size:12px;color:var(--ink-secondary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.guide-cards small{font-size:11px;color:var(--muted)}
+.guide-next{width:100%;min-height:40px}
+
+
+/* Style: the gallery is the main decision of this step, so it gets more room. */
+@media(min-width:1300px){
+  .workspace[data-step=estilo]{grid-template-columns:420px minmax(0,1fr)}
+}
+
+/* Apply options sit with the other secondary settings, below the styles. */
+.apply-options{border-top:1px solid var(--line);padding-top:8px;margin-top:24px}
+.apply-options>summary,.style-advanced>summary{font-size:12px;color:var(--ink-secondary);cursor:pointer;padding:6px 0}
+.apply-options[open]>summary{margin-bottom:8px}
+.workspace[data-step=estilo] .apply-options .style-preferences{border-top:0;margin-top:0;padding-top:0}
+.workspace[data-step=estilo] .apply-options+.style-advanced{margin-top:0}
+.workspace[data-step=estilo] .precision-details{display:none}

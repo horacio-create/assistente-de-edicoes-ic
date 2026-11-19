@@ -1,5 +1,12 @@
 # Histórico de versões
 
+## 1.17.0 — Cartelas de VT no Assistente de Edições — 19/11/2026
+
+- O Assistente de Cartelas passa a ser uma ferramenta do Assistente de Edições: "Cartelas de VT" aparece no menu e na tela inicial e abre dentro do sistema, sem precisar iniciar o Cartelas separado.
+- O fluxo continua o mesmo (Pedido → Materiais → Estilo → Edição → Revisão e entrega), com PSDs em camadas quando o Photoshop está instalado no computador e leitura local de prints e áudios quando preparada (Preparar leitura local.cmd na pasta cartelas).
+- Backups, entregas e capturas do Cartelas ficam na pasta de dados do sistema (dados/cartelas).
+- No servidor, o acesso é liberado por cargo em Usuários, como as demais ferramentas.
+
 ## 1.16.5 — Preços do vídeo iguais aos do editor — 17/11/2026
 
 - Nos templates de cartelas flexíveis, o tamanho do selo, dos preços e dos títulos passa a ser calculado em cada cartela. Antes era calculado com todos os produtos da página: o editor (com todos os produtos do encarte) e cada vídeo (só com os seus) desenhavam a mesma cartela de jeitos diferentes, e os preços apareciam deslocados no vídeo.

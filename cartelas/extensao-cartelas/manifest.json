@@ -1,0 +1,19 @@
+{
+  "manifest_version": 3,
+  "name": "Capturar para o Cartelas",
+  "version": "1.1.0",
+  "description": "Capture o perfil do Instagram aberto, com rolagem automática, e envie referências ao Cartelas neste computador.",
+  "minimum_chrome_version": "114",
+  "permissions": [
+    "activeTab",
+    "scripting",
+    "storage"
+  ],
+  "host_permissions": [
+    "http://127.0.0.1/*"
+  ],
+  "action": {
+    "default_title": "Capturar para o Cartelas",
+    "default_popup": "popup.html"
+  }
+}

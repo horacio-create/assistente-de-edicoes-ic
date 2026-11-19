@@ -16,7 +16,7 @@ class PackagingTests(unittest.TestCase):
             build = work/'build'; build.mkdir(parents=True)
             for rel, data in {'version.py':b'VERSION="1.8.0"', 'portable.py':b'# portable', 'modules/videos.py':b'# videos',
                               'static/app.js':b'// app', 'ofertas/motor/package.json':b'{}',
-                              'ofertas/templates/example/index.html':b'<html></html>',
+                              'ofertas/templates/example/index.html':b'<html></html>', 'cartelas/server.mjs':b'// cartelas',
                               'tools/ffmpeg/ffmpeg.exe':b'ffmpeg', 'tools/ffmpeg/ffprobe.exe':b'ffprobe'}.items():
                 f=app/rel; f.parent.mkdir(parents=True,exist_ok=True); f.write_bytes(data)
             for directory in ('python/Lib', 'python/DLLs', 'wheels'): (work/directory).mkdir(parents=True)
@@ -28,5 +28,5 @@ class PackagingTests(unittest.TestCase):
             size=struct.unpack('<Q',content[-8:])[0]
             with zipfile.ZipFile(io.BytesIO(content[-16-size:-16])) as archive:
                 for name in ('app/ofertas/motor/package.json','app/ofertas/templates/example/index.html',
-                             'app/tools/ffmpeg/ffmpeg.exe','app/tools/ffmpeg/ffprobe.exe','app/portable.py'):
+                             'app/tools/ffmpeg/ffmpeg.exe','app/tools/ffmpeg/ffprobe.exe','app/portable.py','app/cartelas/server.mjs'):
                     self.assertIn(name,archive.namelist())

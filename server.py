@@ -20,7 +20,7 @@ from version import VERSION
 from modules.images import DEFAULT, SUPPORTED, decode, dominant, encoded, render, settings
 from modules import ofertas
 from modules import videos, audio, composition, naming, export_progress, export_queue, projects, import_tasks
-from modules import eap, vector, auth, home, relatorios, relatorios_export, clockify, molduras_api, estampas_api
+from modules import eap, vector, auth, home, relatorios, relatorios_export, clockify, molduras_api, estampas_api, cartelas
 from PIL import Image
 from storage import DATA, FERRAMENTA, ROOT, USUARIO, connect, event, get_job, init, mine, now, owner, uid
 
@@ -60,7 +60,7 @@ def validate_host(host):
             raise ValueError()
     except ValueError:
         raise ValueError('Host não autorizado.') from None
-MODULES = [{'id': 'images', 'name': 'Imagens', 'active': True}, {'id': 'video', 'name': 'Vídeos', 'active': True}, {'id': 'conteudos', 'name': 'Conteúdos Indoor', 'active': False}, {'id': 'offers', 'name': 'Ofertas de supermercados', 'active': True}, {'id': 'eap', 'name': 'Logo EAP', 'active': True}, {'id': 'ms6', 'name': 'Vetorização M6S', 'active': True}, {'id': 'molduras', 'name': 'Molduras de TV', 'active': True}, {'id': 'estampas', 'name': 'Estampas de camisa', 'active': True}]
+MODULES = [{'id': 'images', 'name': 'Imagens', 'active': True}, {'id': 'video', 'name': 'Vídeos', 'active': True}, {'id': 'conteudos', 'name': 'Conteúdos Indoor', 'active': False}, {'id': 'offers', 'name': 'Ofertas de supermercados', 'active': True}, {'id': 'eap', 'name': 'Logo EAP', 'active': True}, {'id': 'ms6', 'name': 'Vetorização M6S', 'active': True}, {'id': 'molduras', 'name': 'Molduras de TV', 'active': True}, {'id': 'estampas', 'name': 'Estampas de camisa', 'active': True}, {'id': 'cartelas', 'name': 'Cartelas de VT', 'active': True}]
 
 # login só no servidor (deploy/compose.yaml); o app local/portátil continua aberto
 AUTH = os.environ.get('INDOOR_AUTH') == '1'
@@ -68,7 +68,7 @@ AUTH = os.environ.get('INDOOR_AUTH') == '1'
 CRONOMETRO = os.environ.get('INDOOR_CRONOMETRO') == '1'
 PUBLIC = ('/theme.js', '/theme.css', '/polish.css', '/login.html', '/login.js', '/style.css', '/acesso.css', '/favicon.svg', '/logo-indoor.png', '/api/info')
 # ferramenta exigida por prefixo; o resto do /api e as mídias são do editor (Imagens ou Vídeos)
-TOOLS = [(('/api/history', '/api/home', '/home/', '/api/atividades', '/api/relatorios', '/relatorios/'), None), (('/api/ofertas/', '/ofertas/'), {'offers'}), (('/api/vector/', '/vetor/'), {'ms6'}), (('/api/molduras/', '/molduras/'), {'molduras'}), (('/api/estampas/', '/estampas/'), {'estampas'}), (('/api/eap/', '/eap/'), {'eap'}),
+TOOLS = [(('/api/history', '/api/home', '/home/', '/api/atividades', '/api/relatorios', '/relatorios/'), None), (('/api/ofertas/', '/ofertas/'), {'offers'}), (('/api/vector/', '/vetor/'), {'ms6'}), (('/api/molduras/', '/molduras/'), {'molduras'}), (('/api/estampas/', '/estampas/'), {'estampas'}), (('/api/eap/', '/eap/'), {'eap'}), (('/cartelas/',), {'cartelas'}),
          (('/api/', '/media/', '/logo/', '/video/', '/audio/', '/entrega'), {'images', 'video'})]
 
 class Conflict(Exception): pass
@@ -858,7 +858,7 @@ def app(environ, start_response):
                 raise auth.Denied('Faça login.', '401 Unauthorized')
             need = next((tools for prefixes, tools in TOOLS if path.startswith(prefixes)), None)
             if need and not need & set(auth.allowed(user, MODULES)): raise auth.Denied('Seu cargo não tem acesso a esta ferramenta.')
-        resposta = ofertas.handle(environ)  # /api/ofertas/* e /ofertas/*; o módulo trata os próprios erros
+        resposta = ofertas.handle(environ) or cartelas.handle(environ)  # /ofertas/* e /cartelas/*: os módulos tratam os próprios erros
         if resposta:
             start_response(resposta[0], resposta[1])
             return [resposta[2]] if isinstance(resposta[2], bytes) else resposta[2]
@@ -917,7 +917,7 @@ def app(environ, start_response):
             content_type = 'image/png'
         else:
             name = 'index.html' if path == '/' else path.lstrip('/')
-            if name not in ('theme.js','theme.css','index.html','app.js','video-controls.js','composition-controls.js','project-controls.js','video-batch.js','editor-layout.js','audio-panels.js','transform-controls.js','clip-dialogs.js','timeline-sequence.js','editing-tabs.js','preview-ruler.js','icons.js', 'edition-names.js','export-progress.js','undo-history.js','vector.js','eap.js','style.css','polish.css','favicon.svg','logo-indoor.png','ofertas.js','ofertas-editor.js','ofertas-entregas.js','ofertas.css','tarefas.js','tarefas.css','login.html','login.js','admin.js','acesso.css','conta.js','home.js','eap-icon.svg','atividades.js','relatorios.js','molduras.js','zoom.js','estampas.js'): raise FileNotFoundError()
+            if name not in ('theme.js','theme.css','index.html','app.js','video-controls.js','composition-controls.js','project-controls.js','video-batch.js','editor-layout.js','audio-panels.js','transform-controls.js','clip-dialogs.js','timeline-sequence.js','editing-tabs.js','preview-ruler.js','icons.js', 'edition-names.js','export-progress.js','undo-history.js','vector.js','eap.js','style.css','polish.css','favicon.svg','logo-indoor.png','ofertas.js','ofertas-editor.js','ofertas-entregas.js','ofertas.css','tarefas.js','tarefas.css','login.html','login.js','admin.js','acesso.css','conta.js','home.js','eap-icon.svg','atividades.js','relatorios.js','molduras.js','zoom.js','estampas.js','cartelas.js'): raise FileNotFoundError()
             data = (ROOT / 'static' / name).read_bytes()
             content_type = mimetypes.guess_type(name)[0] or 'application/octet-stream'
     except Conflict as exc:

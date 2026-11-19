@@ -31,7 +31,9 @@ jobs:
         with:
           node-version: '22'
           cache: npm
-          cache-dependency-path: ofertas/motor/package-lock.json
+          cache-dependency-path: |
+            ofertas/motor/package-lock.json
+            cartelas/package-lock.json
       # FFmpeg estático fixo, guardado em cache entre execuções. Pelo apt levava ~10 min (apt-get update + dezenas de
       # dependências). Sem FFmpeg os testes de vídeo são pulados. O hash garante que o arquivo é o mesmo conferido.
       - name: FFmpeg em cache
@@ -61,6 +63,11 @@ jobs:
       - name: Contrato dos templates de Ofertas
         working-directory: ofertas/motor
         run: npm test
+      - name: Cartelas de VT
+        working-directory: cartelas
+        run: |
+          npm ci --no-audit --no-fund
+          npm test
       - name: Testes JavaScript
         run: node tests/test_undo.cjs
       - name: Testes Python

@@ -1,0 +1,19 @@
+// Run explicitly: integration check uses the open Photoshop, outside npm test.
+import {readFile,writeFile} from 'node:fs/promises';import path from 'node:path';
+import {startPhotoshopJob,photoshopJobStatus,photoshopJobDownload,photoshopAvailability} from '../photoshop.mjs';
+const dir=path.resolve('test-results/finishes'),available=await photoshopAvailability();if(!available.available)throw new Error(available.message);
+const payload=JSON.parse(await readFile(path.join(dir,'payload.json'),'utf8'));if(!payload.manifest.cards.some(c=>c.layers.some(l=>l.type==='photo')))throw new Error('Prepare o payload atualizado com finishes-smoke primeiro.');
+const job=await startPhotoshopJob(payload);let status;
+for(let attempt=0;attempt<150;attempt++){status=await photoshopJobStatus(job.id);if(['complete','error'].includes(status.state))break;await new Promise(resolve=>setTimeout(resolve,1000));}
+await writeFile(path.join(dir,'smart-photos-result.json'),JSON.stringify(status,null,2));if(status.state!=='complete')throw new Error(status.message||'Entrega não concluída.');
+await writeFile(path.join(dir,'psds-com-mascaras.zip'),Buffer.from(await(await photoshopJobDownload(job.id)).arrayBuffer()));console.log('Entrega:',status.count,'PSDs em',status.output);
+const jsx=`#target photoshop
+(function(){var spec=${JSON.stringify(payload.manifest)},folder=${JSON.stringify(status.output.replaceAll('\\','/'))},report=${JSON.stringify(path.join(dir,'auditoria-mascaras.txt').replaceAll('\\','/'))},original=app.documents.length?app.activeDocument:null,count=app.documents.length,doc=null,photos=0,texts=0,edited=false,result='',units=app.preferences.rulerUnits,dialogs=app.displayDialogs;
+function check(layer){if(layer.kind!==LayerKind.SMARTOBJECT)throw new Error('Foto não é objeto inteligente');doc.activeLayer=layer;var ref=new ActionReference();ref.putEnumerated(stringIDToTypeID('layer'),stringIDToTypeID('ordinal'),stringIDToTypeID('targetEnum'));var d=executeActionGet(ref);if(!d.getBoolean(stringIDToTypeID('hasUserMask'))||d.getBoolean(stringIDToTypeID('userMaskLinked')))throw new Error('Máscara ausente ou vinculada');}
+try{app.preferences.rulerUnits=Units.PIXELS;app.displayDialogs=DialogModes.NO;
+for(var c=0;c<spec.cards.length;c++){doc=app.open(new File(folder+'/'+spec.cards[c].filename+'.psd'));if(doc.width.as('px')!==1280||doc.height.as('px')!==720)throw new Error('Tamanho incorreto');if(doc.layers.length!==spec.cards[c].layers.length)throw new Error('Camadas divergentes');
+for(var i=0;i<spec.cards[c].layers.length;i++){var item=spec.cards[c].layers[i],layer=doc.layers.getByName(item.name);if(item.type==='photo'){check(layer);photos++;if(!edited){layer.translate(12,0);var opt=new PhotoshopSaveOptions();opt.layers=true;doc.saveAs(new File(folder+'/foto-ajustada.psd'),opt,true,Extension.LOWERCASE);edited=true;}}if(item.type==='text'){if(layer.kind!==LayerKind.TEXT||layer.textItem.contents!==item.lines.join('\\r'))throw new Error('Texto alterado');texts++;}}
+doc.close(SaveOptions.DONOTSAVECHANGES);doc=null;}
+doc=app.open(new File(folder+'/foto-ajustada.psd'));check(doc.layers.getByName('Foto'));doc.close(SaveOptions.DONOTSAVECHANGES);doc=null;if(app.documents.length!==count)throw new Error('Documentos do usuário divergentes');result='OK|photos='+photos+'|texts='+texts+'|editedAndReopened='+edited+'|userDocumentsPreserved=true';
+}catch(e){result='ERROR|'+e.message;}finally{if(doc){try{doc.close(SaveOptions.DONOTSAVECHANGES);}catch(e){}}app.preferences.rulerUnits=units;app.displayDialogs=dialogs;if(original){try{app.activeDocument=original;}catch(e){}}}var file=new File(report);file.encoding='UTF-8';file.open('w');file.write(result);file.close();return result;}());`;
+await writeFile(path.join(dir,'auditar-mascaras.jsx'),jsx,'utf8');console.log('Auditoria preparada:',path.join(dir,'auditar-mascaras.jsx'));
