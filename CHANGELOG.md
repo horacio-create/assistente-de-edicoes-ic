@@ -1,5 +1,10 @@
 # Histórico de versões
 
+## 1.17.3 — Ofertas: template Black Friday Uniforça — 26/11/2026
+
+- Novo template "Black Friday — Rede Uniforça" no formato do 3 Dias + Baratos: arte do encarte Black Friday (bloco de neon, logo, "Ofertas Imbatíveis pra você!" e o aviso do Clube de Descontos), com as texturas do fundo do encarte.
+- Mesmos campos e cartelas flexíveis do 3 Dias + Baratos; a data já vem como 27 a 29 de novembro de 2026 e continua editável.
+
 ## 1.17.2 — Cartelas: conferência do briefing já monta as cartelas — 19/11/2026
 
 - No Cartelas de VT, depois de ler mensagens, prints e áudios, o botão "Montar as cartelas" leva o roteiro ao pedido e já monta as cartelas, abrindo a etapa Materiais. Antes era preciso clicar em "Usar no pedido do trabalho" e depois em "Organizar cartelas".
