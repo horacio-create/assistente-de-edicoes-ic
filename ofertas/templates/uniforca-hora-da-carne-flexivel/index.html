@@ -27931,6 +27931,12 @@
       // Mede depois que a fonte local carregou; valores longos não atravessam a borda do selo.
       Promise.all([document.fonts.ready, ...[...document.querySelectorAll('.foto')].map(img => img.decode().catch(() => {}))]).then(() => {
         LayoutOfertas.organizar([...document.querySelectorAll('.produto')], animacoes);
+        // datas numa linha só: abaixo dela começa o painel; período longo diminui a letra até caber
+        const datas = document.getElementById("validade-datas");
+        datas.style.whiteSpace = "nowrap";
+        for (let t = parseFloat(getComputedStyle(datas).fontSize); datas.scrollWidth > datas.clientWidth && t > 16; ) {
+          t -= 0.5; datas.style.fontSize = t + "px";
+        }
         document.querySelectorAll('.selo-preco .valor').forEach((caixa) => {
           const conteudo = caixa.querySelector('.valor-conteudo');
           const escala = Math.min(1, caixa.clientWidth / Math.max(1, conteudo.scrollWidth));
