@@ -56,7 +56,8 @@ def atualizar(base, publicados):
                             ('nome-montserrat-20261109.json', 'antes-nome-montserrat-20261109'),
                             ('cores-textos-20261111.json', 'antes-cores-textos-20261111'),
                             ('chamada-selo-20261112.json', 'antes-chamada-selo-20261112'),
-                            ('layout-cartela-20261117.json', 'antes-layout-cartela-20261117')]:
+                            ('layout-cartela-20261117.json', 'antes-layout-cartela-20261117'),
+                            ('validade-uma-linha-20261128.json', 'antes-validade-uma-linha-20261128')]:
         # cores do nome e do preço, chamada do selo e layout por cartela: valem para todos os flexíveis de fábrica (os personalizados são preservados)
         resultados.extend(_atualizar_manifesto(base, publicados, arquivo, backup, todos=arquivo.startswith(('cores-textos', 'chamada-selo', 'layout-cartela'))))
     return resultados

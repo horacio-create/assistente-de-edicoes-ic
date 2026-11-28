@@ -71,9 +71,10 @@
   "uniforca-hora-da-carne-flexivel": {
     "index.html": {
       "antes": "07e94915f9bfdf6b568e14e965a9ab9c8e5251aecfc1f521255e1b58ddb088e3",
-      "depois": "c2195044fca92b05a3f8fc2d3908438272983260ccf2cbba6a619d2918b5f4cb",
+      "depois": "fa2f1e072cf2876d504c58d0aee7c45fae9f50e217b5cb11bf1869658980a2e6",
       "intermediarios": [
-        "9f0f6d0f62eb26494fb94cccabbb742948fcb233518c3702a40394169aa2573a"
+        "9f0f6d0f62eb26494fb94cccabbb742948fcb233518c3702a40394169aa2573a",
+        "c2195044fca92b05a3f8fc2d3908438272983260ccf2cbba6a619d2918b5f4cb"
       ]
     },
     "template.json": {
@@ -94,9 +95,10 @@
   "uniforca-hora-da-feira-flexivel": {
     "index.html": {
       "antes": "e61e84ca78eb717ffb57472ff7dc828d9b694683999ce0f25cb38c59860a496e",
-      "depois": "80351e7fd0fa37f829d47bea3396562cb65cf75f269e975f03c809e7cede46ce",
+      "depois": "cec92cfc8d4358b42a122b2a754b0578148fcc386a4de9733a508bd38f7b90be",
       "intermediarios": [
-        "14d2e911f4ba48d49dc29b4b36e37e973562f6d787c6879ffff8aa7f44218803"
+        "14d2e911f4ba48d49dc29b4b36e37e973562f6d787c6879ffff8aa7f44218803",
+        "80351e7fd0fa37f829d47bea3396562cb65cf75f269e975f03c809e7cede46ce"
       ]
     },
     "template.json": {

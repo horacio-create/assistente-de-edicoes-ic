@@ -1,5 +1,10 @@
 # Histórico de versões
 
+## 1.17.4 — Ofertas: data da oferta numa linha só (Hora da Feira e Hora da Carne) — 28/11/2026
+
+- Nos templates Hora da Feira e Hora da Carne, o período das ofertas fica numa linha só abaixo de "Ofertas válidas para os dias". Datas longas, como "30 de Novembro e 01 de Dezembro de 2026", quebravam para uma terceira linha que ficava escondida atrás do painel branco; agora a letra diminui o necessário para caber.
+- As cópias desses templates já instaladas são atualizadas automaticamente, com backup; templates personalizados pela tela são preservados.
+
 ## 1.17.3 — Ofertas: template Black Friday Uniforça — 26/11/2026
 
 - Novo template "Black Friday — Rede Uniforça" no formato do 3 Dias + Baratos: arte do encarte Black Friday (bloco de neon, logo, "Ofertas Imbatíveis pra você!" e o aviso do Clube de Descontos), com as texturas do fundo do encarte.

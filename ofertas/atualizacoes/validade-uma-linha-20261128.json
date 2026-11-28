@@ -1,0 +1,14 @@
+{
+  "uniforca-hora-da-feira-flexivel": {
+    "index.html": {
+      "antes": "80351e7fd0fa37f829d47bea3396562cb65cf75f269e975f03c809e7cede46ce",
+      "depois": "cec92cfc8d4358b42a122b2a754b0578148fcc386a4de9733a508bd38f7b90be"
+    }
+  },
+  "uniforca-hora-da-carne-flexivel": {
+    "index.html": {
+      "antes": "c2195044fca92b05a3f8fc2d3908438272983260ccf2cbba6a619d2918b5f4cb",
+      "depois": "fa2f1e072cf2876d504c58d0aee7c45fae9f50e217b5cb11bf1869658980a2e6"
+    }
+  }
+}

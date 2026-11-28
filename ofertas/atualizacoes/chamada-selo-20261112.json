@@ -68,7 +68,10 @@
   "uniforca-hora-da-carne-flexivel": {
     "index.html": {
       "antes": "9f0f6d0f62eb26494fb94cccabbb742948fcb233518c3702a40394169aa2573a",
-      "depois": "c2195044fca92b05a3f8fc2d3908438272983260ccf2cbba6a619d2918b5f4cb"
+      "depois": "fa2f1e072cf2876d504c58d0aee7c45fae9f50e217b5cb11bf1869658980a2e6",
+      "intermediarios": [
+        "c2195044fca92b05a3f8fc2d3908438272983260ccf2cbba6a619d2918b5f4cb"
+      ]
     },
     "template.json": {
       "antes": "621978bf6def8017865188461fed65549cbe3ea89f8d5b7b0264df5a4cb50840",
@@ -90,7 +93,10 @@
   "uniforca-hora-da-feira-flexivel": {
     "index.html": {
       "antes": "14d2e911f4ba48d49dc29b4b36e37e973562f6d787c6879ffff8aa7f44218803",
-      "depois": "80351e7fd0fa37f829d47bea3396562cb65cf75f269e975f03c809e7cede46ce"
+      "depois": "cec92cfc8d4358b42a122b2a754b0578148fcc386a4de9733a508bd38f7b90be",
+      "intermediarios": [
+        "80351e7fd0fa37f829d47bea3396562cb65cf75f269e975f03c809e7cede46ce"
+      ]
     },
     "template.json": {
       "antes": "c2bdccde924a472eac1d41ebc285b8518e9477ea11dbfb6aae83fa897945b29c",
